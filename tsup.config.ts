@@ -9,4 +9,12 @@ export default defineConfig({
   banner: {
     js: "#!/usr/bin/env node",
   },
+  external: [
+    "@remotion/bundler",
+    "@remotion/renderer",
+    "@remotion/cli",
+    "remotion",
+    "react",
+    "react-dom",
+  ],
 });

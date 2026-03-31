@@ -9,6 +9,7 @@
     "node": ">=22.0.0"
   },
   "scripts": {
+    "start": "tsx --env-file=.env src/index.ts",
     "dev": "tsx --env-file=.env src/index.ts",
     "build": "tsup",
     "test": "vitest run",

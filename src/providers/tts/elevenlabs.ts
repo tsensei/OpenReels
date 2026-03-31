@@ -6,7 +6,7 @@ export class ElevenLabsTTS implements TTSProvider {
   private apiKey: string;
   private voiceId: string;
 
-  constructor(voiceId: string = "21m00Tcm4TlvDq8ikWAM") {
+  constructor(voiceId: string = "yl2ZDV1MzN4HbQJbMihG") {
     const key = process.env["ELEVENLABS_API_KEY"];
     if (!key) throw new Error("ELEVENLABS_API_KEY environment variable is required");
     this.apiKey = key;

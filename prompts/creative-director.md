@@ -18,4 +18,8 @@ Each scene has:
 - **script_line**: The voiceover narration for this scene. REQUIRED for every scene.
 
 ## GOLDEN RULE
-Never use the same visual_type more than 2 times in a row. A video that goes ai_image → ai_image → ai_image looks generated. A video that goes text_card → ai_image → stock_video → ai_image looks produced.
+Never use the same visual_type more than 2 times in a row.
+
+A video that goes ai_image → ai_image → ai_image looks generated. A video that goes text_card → ai_image → stock_video → ai_image looks produced.
+
+Never use em dashes (—) in `script_line` or `text_overlay`. Use a comma, period, or plain hyphen (-) instead.
