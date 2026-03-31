@@ -2,6 +2,47 @@
 
 Open-source AI pipeline that turns any topic into a fully rendered YouTube Short.
 
+## Project structure
+
+```
+src/
+  index.ts              # CLI entry point
+  cli/                  # args parser, progress display, cost estimator
+  agents/               # creative-director, critic, image-prompter, research
+  pipeline/             # orchestrator (6-stage pipeline)
+  providers/
+    llm/                # anthropic.ts, openai.ts
+    tts/                # elevenlabs.ts
+    image/              # gemini.ts
+    stock/              # pexels.ts, pixabay.ts
+  config/
+    archetypes/         # 14 archetype JSON configs
+    archetype-registry.ts
+    playbook.ts, platforms.ts
+  schema/               # director-score.ts, archetype.ts, providers.ts
+  remotion/
+    compositions/       # OpenReelsVideo.tsx (main composition)
+    beats/              # AIImageBeat, StockImageBeat, StockVideoBeat, TextCardBeat
+    captions/           # 6 caption styles + timing utils
+    audio/              # MusicTrack (ducking), VoiceoverTrack
+    lib/                # score-to-props mapper, font loading
+prompts/                # system prompts for each agent + playbook
+fixtures/               # sample DirectorScore JSONs
+```
+
+## Commands
+
+```bash
+pnpm install          # install dependencies
+pnpm start "topic"    # run full pipeline
+pnpm test             # run vitest suite (38 tests)
+```
+
+## Testing
+
+Test files are colocated with source: `*.test.ts` suffix, vitest with `describe/it/expect`.
+Config: `vitest.config.ts`. Run: `npx vitest run`.
+
 ## Skill routing
 
 When the user's request matches an available skill, ALWAYS invoke it using the Skill
