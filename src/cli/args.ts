@@ -7,6 +7,7 @@ const { version } = require("../../package.json") as { version: string };
 export interface CLIOptions {
   topic: string;
   provider: "anthropic" | "openai";
+  imageProvider: "gemini" | "openai";
   archetype?: string;
   platform: string;
   dryRun: boolean;
@@ -23,6 +24,7 @@ export function parseArgs(): CLIOptions {
     .version(version)
     .argument("<topic>", "The topic for your video")
     .addOption(new Option("-p, --provider <provider>", "LLM provider").choices(["anthropic", "openai"]).default("anthropic"))
+    .addOption(new Option("-i, --image-provider <provider>", "Image generation provider").choices(["gemini", "openai"]).default("gemini"))
     .option("-a, --archetype <archetype>", "Visual archetype override")
     .option("--platform <platform>", "Target platform (youtube, tiktok, instagram)", "youtube")
     .option("--dry-run", "Output DirectorScore JSON without generating assets", false)
@@ -40,6 +42,7 @@ export function parseArgs(): CLIOptions {
   return {
     topic,
     provider: opts["provider"] as "anthropic" | "openai",
+    imageProvider: opts["imageProvider"] as "gemini" | "openai",
     archetype: opts["archetype"] as string | undefined,
     platform: opts["platform"] as string,
     dryRun: opts["dryRun"] as boolean,

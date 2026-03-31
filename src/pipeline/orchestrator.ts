@@ -22,6 +22,7 @@ export interface PipelineOptions {
   llm: LLMProvider;
   tts: TTSProvider;
   imageGen: ImageProvider;
+  imageProvider: "gemini" | "openai";
   stock: StockProvider;
   archetype?: string;
   platform: string;
@@ -141,8 +142,8 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
   }
 
   // Cost estimation
-  const costBreakdown = estimateCost(directorScore);
-  console.log(`\n${formatCostEstimate(costBreakdown)}`);
+  const costBreakdown = estimateCost(directorScore, opts.imageProvider);
+  console.log(`\n${formatCostEstimate(costBreakdown, opts.imageProvider)}`);
   log.totalCost = { estimated: costBreakdown.totalCost };
 
   const proceed = await confirm("Proceed with generation?");
@@ -287,7 +288,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
     // Compute and report actual cost
     const aiImages = directorScore.scenes.filter((s) => s.visual_type === "ai_image").length;
     const ttsCharacters = directorScore.scenes.reduce((sum, s) => sum + s.script_line.length, 0);
-    const actualCost = computeActualLLMCost(llmUsages, { aiImages, ttsCharacters }, opts.llm.id);
+    const actualCost = computeActualLLMCost(llmUsages, { aiImages, ttsCharacters }, opts.llm.id, opts.imageProvider);
     log.totalCost = { estimated: costBreakdown.totalCost, actual: actualCost.totalCost };
     console.log(`\n${formatActualCost(actualCost)}`);
 

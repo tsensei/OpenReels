@@ -7,7 +7,7 @@ export class OpenAILLM implements LLMProvider {
   private client: OpenAI;
   private model: string;
 
-  constructor(model: string = "gpt-4.1") {
+  constructor(model: string = "gpt-5.4") {
     this.client = new OpenAI();
     this.model = model;
   }

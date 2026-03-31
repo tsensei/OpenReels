@@ -6,6 +6,7 @@ import { AnthropicLLM } from "./providers/llm/anthropic.js";
 import { OpenAILLM } from "./providers/llm/openai.js";
 import { ElevenLabsTTS } from "./providers/tts/elevenlabs.js";
 import { GeminiImage } from "./providers/image/gemini.js";
+import { OpenAIImage } from "./providers/image/openai.js";
 import { PexelsStock } from "./providers/stock/pexels.js";
 import type { LLMProvider } from "./schema/providers.js";
 
@@ -17,7 +18,7 @@ async function main(): Promise<void> {
     opts.provider === "openai" ? new OpenAILLM() : new AnthropicLLM();
 
   const tts = new ElevenLabsTTS();
-  const imageGen = new GeminiImage();
+  const imageGen = opts.imageProvider === "openai" ? new OpenAIImage() : new GeminiImage();
   const stock = new PexelsStock();
 
   // Run pipeline
@@ -26,6 +27,7 @@ async function main(): Promise<void> {
     llm,
     tts,
     imageGen,
+    imageProvider: opts.imageProvider,
     stock,
     archetype: opts.archetype,
     platform: opts.platform,

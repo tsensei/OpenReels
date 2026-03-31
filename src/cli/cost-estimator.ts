@@ -47,6 +47,9 @@ const PRICING = {
   // 1080x1920 (>1024px, <=2048px) = 1680 tokens = $0.101/image
   // Plus input tokens at $0.50/M for the prompt text (~200 tokens avg = ~$0.0001)
   geminiPerImage: 0.101,             // $0.101 per image at 2K resolution (1080x1920)
+  // GPT Image 1.5 (high quality, 1024x1536): $0.167/image
+  // Source: platform.openai.com/docs/pricing — high quality portrait
+  openaiPerImage: 0.167,
 };
 
 // Per-call-type token estimates for pre-run cost prediction
@@ -57,7 +60,10 @@ const TOKEN_ESTIMATES = {
   imagePrompter: { input: 800, output: 200 },
 };
 
-export function estimateCost(score: DirectorScore): CostBreakdown {
+export function estimateCost(
+  score: DirectorScore,
+  imageProvider: "gemini" | "openai" = "gemini",
+): CostBreakdown {
   const aiImages = score.scenes.filter((s) => s.visual_type === "ai_image").length;
   const ttsCharacters = score.scenes.reduce((sum, s) => sum + s.script_line.length, 0);
   const llmCalls = 3 + aiImages; // research + CD + critic + 1 per ai_image
@@ -72,18 +78,23 @@ export function estimateCost(score: DirectorScore): CostBreakdown {
     callCost(TOKEN_ESTIMATES.critic) +
     aiImages * callCost(TOKEN_ESTIMATES.imagePrompter);
   const ttsCost = ttsCharacters * PRICING.elevenLabsPerChar;
-  const imageCost = aiImages * PRICING.geminiPerImage;
+  const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
+  const imageCost = aiImages * perImage;
   const totalCost = llmCost + ttsCost + imageCost;
 
   return { llmCost, ttsCost, imageCost, totalCost, details: { llmCalls, ttsCharacters, aiImages } };
 }
 
-export function formatCostEstimate(breakdown: CostBreakdown): string {
+export function formatCostEstimate(
+  breakdown: CostBreakdown,
+  imageProvider: "gemini" | "openai" = "gemini",
+): string {
+  const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
   return [
     `Estimated cost: $${breakdown.totalCost.toFixed(3)}`,
     `  LLM:    $${breakdown.llmCost.toFixed(4)} (${breakdown.details.llmCalls} calls)`,
     `  TTS:    $${breakdown.ttsCost.toFixed(4)} (${breakdown.details.ttsCharacters} chars)`,
-    `  Images: $${breakdown.imageCost.toFixed(4)} (${breakdown.details.aiImages} AI images @ $${PRICING.geminiPerImage.toFixed(3)}/ea)`,
+    `  Images: $${breakdown.imageCost.toFixed(4)} (${breakdown.details.aiImages} AI images @ $${perImage.toFixed(3)}/ea)`,
     `  Stock:  free`,
   ].join("\n");
 }
@@ -95,6 +106,7 @@ export function computeActualLLMCost(
   usages: LLMUsage[],
   nonLlm: { aiImages: number; ttsCharacters: number },
   provider: "anthropic" | "openai" = "anthropic",
+  imageProvider: "gemini" | "openai" = "gemini",
 ): ActualCostBreakdown {
   const p = PRICING[provider];
   const totalInputTokens = usages.reduce((sum, u) => sum + u.inputTokens, 0);
@@ -102,7 +114,8 @@ export function computeActualLLMCost(
 
   const llmCost = totalInputTokens * p.perInputToken + totalOutputTokens * p.perOutputToken;
   const ttsCost = nonLlm.ttsCharacters * PRICING.elevenLabsPerChar;
-  const imageCost = nonLlm.aiImages * PRICING.geminiPerImage;
+  const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
+  const imageCost = nonLlm.aiImages * perImage;
   const totalCost = llmCost + ttsCost + imageCost;
 
   return {
