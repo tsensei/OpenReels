@@ -36,13 +36,13 @@ export const TextCardBeat: React.FC<SceneProps> = ({ textOverlay, colorPalette, 
       >
         {textOverlay ?? ""}
       </div>
-      {/* Accent bar */}
+      {/* Accent bar — above caption safe zone (bottom 18%) */}
       <div
         style={{
           position: "absolute",
-          bottom: "15%",
-          left: "20%",
-          right: "20%",
+          bottom: "35%",
+          left: "25%",
+          right: "25%",
           height: 6,
           backgroundColor: accent,
           borderRadius: 3,

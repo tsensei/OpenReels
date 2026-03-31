@@ -17,9 +17,14 @@ Each scene has:
 - **text_overlay**: Optional text shown on screen (REQUIRED for text_card, optional for others). Use for key stats, lesson numbers, or emphasis.
 - **script_line**: The voiceover narration for this scene. REQUIRED for every scene.
 
-## GOLDEN RULE
-Never use the same visual_type more than 2 times in a row.
+## Visual Type Selection
 
-A video that goes ai_image → ai_image → ai_image looks generated. A video that goes text_card → ai_image → stock_video → ai_image looks produced.
+Choose the best visual_type for each scene based on what serves the content:
+
+- **stock_video / stock_image**: Prefer when the scene depicts something real, concrete, and likely to have good stock results (landmarks, animals, everyday actions, nature, well-known objects). Stock footage grounds the video in reality.
+- **ai_image**: Use when the scene is abstract, fantastical, hyper-specific, or unlikely to have quality stock matches. Also use when you need precise visual storytelling that stock can't deliver.
+- **text_card**: Use for punchy stats, key takeaways, or rhetorical questions that hit harder as text.
+
+Mixing visual types makes the video feel produced rather than generated - but don't force variety where it doesn't fit. If the topic is best served by mostly AI images (e.g., speculative sci-fi) or mostly stock (e.g., travel destinations), lean into that. Let the content drive the choice.
 
 Never use em dashes (—) in `script_line` or `text_overlay`. Use a comma, period, or plain hyphen (-) instead.

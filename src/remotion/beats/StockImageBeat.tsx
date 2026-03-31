@@ -14,6 +14,9 @@ export const StockImageBeat: React.FC<SceneProps> = ({ assetSrc, motion, textOve
         return interpolate(progress, [0, 1], [1, 1 + 0.15 * intensity]);
       case "zoom_out":
         return interpolate(progress, [0, 1], [1 + 0.15 * intensity, 1]);
+      case "pan_left":
+      case "pan_right":
+        return 1.15;
       default:
         return 1;
     }
