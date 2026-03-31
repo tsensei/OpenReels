@@ -7,7 +7,6 @@ export interface CLIOptions {
   platform: string;
   dryRun: boolean;
   preview: boolean;
-  verbose: boolean;
   output: string;
 }
 
@@ -24,7 +23,6 @@ export function parseArgs(): CLIOptions {
     .option("--platform <platform>", "Target platform (youtube, tiktok, instagram)", "youtube")
     .option("--dry-run", "Output DirectorScore JSON without generating assets", false)
     .option("--preview", "Open Remotion Studio preview after rendering", false)
-    .option("-v, --verbose", "Enable verbose output", false)
     .option("-o, --output <dir>", "Output directory", "./output")
     .parse();
 
@@ -42,7 +40,6 @@ export function parseArgs(): CLIOptions {
     platform: opts["platform"] as string,
     dryRun: opts["dryRun"] as boolean,
     preview: opts["preview"] as boolean,
-    verbose: opts["verbose"] as boolean,
     output: opts["output"] as string,
   };
 }

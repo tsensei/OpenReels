@@ -11,6 +11,7 @@ export interface LLMResult<T> {
 }
 
 export interface LLMProvider {
+  readonly id: "anthropic" | "openai";
   generate<T extends z.ZodType>(opts: {
     systemPrompt: string;
     userMessage: string;

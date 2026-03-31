@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { LLMProvider, LLMResult, LLMUsage } from "../../schema/providers.js";
 
 export class AnthropicLLM implements LLMProvider {
+  readonly id = "anthropic" as const;
   private client: Anthropic;
   private model: string;
 

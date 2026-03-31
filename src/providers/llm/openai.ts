@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { LLMProvider, LLMResult } from "../../schema/providers.js";
 
 export class OpenAILLM implements LLMProvider {
+  readonly id = "openai" as const;
   private client: OpenAI;
   private model: string;
 

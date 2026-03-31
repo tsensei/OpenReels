@@ -58,7 +58,6 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 | `--platform <name>` | Target platform (`youtube`, `tiktok`, `instagram`) | `youtube` |
 | `--dry-run` | Output DirectorScore JSON without generating assets | off |
 | `--preview` | Open Remotion Studio after rendering | off |
-| `--verbose` | Verbose output | off |
 | `-o, --output <dir>` | Output directory | `./output` |
 
 ## Archetypes

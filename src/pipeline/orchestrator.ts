@@ -27,7 +27,6 @@ export interface PipelineOptions {
   platform: string;
   dryRun: boolean;
   preview: boolean;
-  verbose: boolean;
   outputDir: string;
 }
 
@@ -147,170 +146,173 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
 
   const proceed = await confirm("Proceed with generation?");
   if (!proceed) {
-    console.log("Aborted.");
-    process.exit(0);
+    const logPath = path.join(runDir, "log.json");
+    fs.writeFileSync(logPath, JSON.stringify(log, null, 2));
+    return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
   }
 
-  // Stage 3: TTS
-  progress.start(ttsIdx);
-  const ttsStart = Date.now();
-  const fullScript = directorScore.scenes.map((s) => s.script_line).join(" ");
-  const ttsResult = await opts.tts.generate(fullScript);
-  const ttsDur = (Date.now() - ttsStart) / 1000;
-
-  // Save audio
-  const voiceoverPath = path.join(assetsDir, "voiceover.mp3");
-  fs.writeFileSync(voiceoverPath, ttsResult.audio);
-
-  // Split word timestamps into per-scene groups
-  const sceneWords = splitWordsIntoScenes(directorScore, ttsResult.words);
-  progress.complete(ttsIdx, `${ttsResult.words.length} words`);
-  log.stages.push({ name: "tts", duration: ttsDur, status: "done" });
-
-  // Stage 4: Visual Assets (parallel)
-  progress.start(visualsIdx);
-  const visualStart = Date.now();
-  const totalScenes = directorScore.scenes.length;
-  const sceneResults = await Promise.all(
-    directorScore.scenes.map(async (scene, i) => {
-      try {
-        return await resolveVisualAsset(scene, i, totalScenes, assetsDir, opts, archetypeConfig);
-      } catch (err) {
-        console.warn(`[visuals] Scene ${i} asset failed: ${err}. Using fallback.`);
-        return { path: null as string | null, usage: null as LLMUsage | null, durationSeconds: null };
-      }
-    }),
-  );
-  const sceneAssets = sceneResults.map((r) => r.path);
-  const sceneSourceDurations = sceneResults.map((r) => r.durationSeconds);
-  for (const r of sceneResults) {
-    if (r.usage) llmUsages.push(r.usage);
-  }
-  const visualDur = (Date.now() - visualStart) / 1000;
-  const assetCount = sceneAssets.filter(Boolean).length;
-  progress.complete(visualsIdx, `${assetCount}/${directorScore.scenes.length} assets`);
-  log.stages.push({ name: "visuals", duration: visualDur, status: "done" });
-
-  // Stage 5: Remotion Assembly
-  progress.start(assemblyIdx);
-  const assemblyStart = Date.now();
-  const platformConfig = getPlatformConfig(opts.platform);
-
-  // Symlink assets into a temp public dir for Remotion to serve via staticFile()
-  // (same approach as ReelMistri's remotion_bridge.py)
-  const publicDir = path.join(runDir, "_remotion_public");
-  fs.mkdirSync(publicDir, { recursive: true });
-  const assetsLink = path.join(publicDir, "assets");
-  if (fs.existsSync(assetsLink)) fs.rmSync(assetsLink, { recursive: true });
-  fs.symlinkSync(path.resolve(assetsDir), assetsLink);
-
-  // Voiceover also needs to be accessible — symlink it into public
-  fs.copyFileSync(voiceoverPath, path.join(publicDir, "voiceover.mp3"));
-
-  const compositionProps = mapScoreToProps(
-    directorScore,
-    {
-      // staticFile() paths — served by Remotion's bundler from publicDir
-      sceneAssets: sceneAssets.map((a) => {
-        if (!a) return null;
-        const filename = path.basename(a);
-        return `assets/${filename}`;
-      }),
-      voiceoverPath: "voiceover.mp3",
-      musicPath: null,
-      sceneWords,
-      allWords: ttsResult.words, // absolute timestamps for timeline-centric captions
-      sceneSourceDurations,
-    },
-    platformConfig.fps,
-  );
-
-  const totalFrames = getTotalDurationInFrames(compositionProps);
-
-  // Bundle Remotion compositions with our assets as the public directory
-  const remotionEntry = path.join(process.cwd(), "src", "remotion", "index.ts");
-  const bundled = await bundle({
-    entryPoint: remotionEntry,
-    webpackOverride: (config: object) => config,
-    publicDir,
-  });
-
-  const composition = await selectComposition({
-    serveUrl: bundled,
-    id: "OpenReelsVideo",
-    inputProps: compositionProps as unknown as Record<string, unknown>,
-  });
-
-  const videoPath = path.join(runDir, "final.mp4");
-  await renderMedia({
-    composition: {
-      ...composition,
-      width: platformConfig.width,
-      height: platformConfig.height,
-      fps: platformConfig.fps,
-      durationInFrames: totalFrames,
-    },
-    serveUrl: bundled,
-    codec: "h264",
-    outputLocation: videoPath,
-    inputProps: compositionProps as unknown as Record<string, unknown>,
-  });
-
-  const assemblyDur = (Date.now() - assemblyStart) / 1000;
-  progress.complete(assemblyIdx, `${(totalFrames / platformConfig.fps).toFixed(1)}s video`);
-  log.stages.push({ name: "assembly", duration: assemblyDur, status: "done" });
-
-  // Stage 6: Critic
-  progress.start(criticIdx);
-  const criticStart = Date.now();
-  try {
-    const critiqueOutput = await evaluate(opts.llm, directorScore, opts.topic);
-    const critique = critiqueOutput.data;
-    llmUsages.push(critiqueOutput.usage);
-    const criticDur = (Date.now() - criticStart) / 1000;
-
-    if (critique.revision_needed && critique.score < 7) {
-      progress.complete(criticIdx, `score ${critique.score}/10, revision needed`);
-      console.log(`\nCritic score: ${critique.score}/10 — ${critique.weaknesses.join(", ")}`);
-      console.log("Revision support coming in Phase 4. Using current version.");
-    } else {
-      progress.complete(criticIdx, `score ${critique.score}/10`);
-    }
-    log.stages.push({ name: "critic", duration: criticDur, status: "done" });
-  } catch (err) {
-    const criticDur = (Date.now() - criticStart) / 1000;
-    progress.complete(criticIdx, "skipped");
-    log.stages.push({ name: "critic", duration: criticDur, status: "skipped", error: String(err) });
-  }
-
-  progress.summary();
-
-  // Compute and report actual cost
-  const aiImages = directorScore.scenes.filter((s) => s.visual_type === "ai_image").length;
-  const ttsCharacters = directorScore.scenes.reduce((sum, s) => sum + s.script_line.length, 0);
-  const actualCost = computeActualLLMCost(llmUsages, { aiImages, ttsCharacters }, opts.llm.constructor.name === "OpenAILLM" ? "openai" : "anthropic");
-  log.totalCost = { estimated: costBreakdown.totalCost, actual: actualCost.totalCost };
-  console.log(`\n${formatActualCost(actualCost)}`);
-
-  // Save log
   const logPath = path.join(runDir, "log.json");
-  fs.writeFileSync(logPath, JSON.stringify(log, null, 2));
+  let videoPath: string | null = null;
 
-  // Preview
-  if (opts.preview) {
-    console.log("\nOpening Remotion Studio preview...");
-    const { execSync } = await import("node:child_process");
-    try {
-      execSync("npx remotion studio", { stdio: "inherit" });
-    } catch {
-      console.warn("Preview closed or failed to open.");
+  try {
+    // Stage 3: TTS
+    progress.start(ttsIdx);
+    const ttsStart = Date.now();
+    const fullScript = directorScore.scenes.map((s) => s.script_line).join(" ");
+    const ttsResult = await opts.tts.generate(fullScript);
+    const ttsDur = (Date.now() - ttsStart) / 1000;
+
+    // Save audio
+    const voiceoverPath = path.join(assetsDir, "voiceover.mp3");
+    fs.writeFileSync(voiceoverPath, ttsResult.audio);
+
+    // Split word timestamps into per-scene groups
+    const sceneWords = splitWordsIntoScenes(directorScore, ttsResult.words);
+    progress.complete(ttsIdx, `${ttsResult.words.length} words`);
+    log.stages.push({ name: "tts", duration: ttsDur, status: "done" });
+
+    // Stage 4: Visual Assets (parallel)
+    progress.start(visualsIdx);
+    const visualStart = Date.now();
+    const totalScenes = directorScore.scenes.length;
+    const sceneResults = await Promise.all(
+      directorScore.scenes.map(async (scene, i) => {
+        try {
+          return await resolveVisualAsset(scene, i, totalScenes, assetsDir, opts, archetypeConfig);
+        } catch (err) {
+          console.warn(`[visuals] Scene ${i} asset failed: ${err}. Using fallback.`);
+          return { path: null as string | null, usage: null as LLMUsage | null, durationSeconds: null };
+        }
+      }),
+    );
+    const sceneAssets = sceneResults.map((r) => r.path);
+    const sceneSourceDurations = sceneResults.map((r) => r.durationSeconds);
+    for (const r of sceneResults) {
+      if (r.usage) llmUsages.push(r.usage);
     }
-  }
+    const visualDur = (Date.now() - visualStart) / 1000;
+    const assetCount = sceneAssets.filter(Boolean).length;
+    progress.complete(visualsIdx, `${assetCount}/${directorScore.scenes.length} assets`);
+    log.stages.push({ name: "visuals", duration: visualDur, status: "done" });
 
-  console.log(`\nOutput: ${runDir}`);
-  console.log(`  Video:     ${videoPath}`);
-  console.log(`  Score:     ${scorePath}`);
-  console.log(`  Log:       ${logPath}`);
+    // Stage 5: Remotion Assembly
+    progress.start(assemblyIdx);
+    const assemblyStart = Date.now();
+    const platformConfig = getPlatformConfig(opts.platform);
+
+    // Symlink assets into a temp public dir for Remotion to serve via staticFile()
+    // (same approach as ReelMistri's remotion_bridge.py)
+    const publicDir = path.join(runDir, "_remotion_public");
+    fs.mkdirSync(publicDir, { recursive: true });
+    const assetsLink = path.join(publicDir, "assets");
+    if (fs.existsSync(assetsLink)) fs.rmSync(assetsLink, { recursive: true });
+    fs.symlinkSync(path.resolve(assetsDir), assetsLink);
+
+    // Voiceover also needs to be accessible — symlink it into public
+    fs.copyFileSync(voiceoverPath, path.join(publicDir, "voiceover.mp3"));
+
+    const compositionProps = mapScoreToProps(
+      directorScore,
+      {
+        // staticFile() paths — served by Remotion's bundler from publicDir
+        sceneAssets: sceneAssets.map((a) => {
+          if (!a) return null;
+          const filename = path.basename(a);
+          return `assets/${filename}`;
+        }),
+        voiceoverPath: "voiceover.mp3",
+        musicPath: null,
+        sceneWords,
+        allWords: ttsResult.words, // absolute timestamps for timeline-centric captions
+        sceneSourceDurations,
+      },
+      platformConfig.fps,
+    );
+
+    const totalFrames = getTotalDurationInFrames(compositionProps);
+
+    // Bundle Remotion compositions with our assets as the public directory
+    const remotionEntry = path.join(process.cwd(), "src", "remotion", "index.ts");
+    const bundled = await bundle({
+      entryPoint: remotionEntry,
+      webpackOverride: (config: object) => config,
+      publicDir,
+    });
+
+    const composition = await selectComposition({
+      serveUrl: bundled,
+      id: "OpenReelsVideo",
+      inputProps: compositionProps as unknown as Record<string, unknown>,
+    });
+
+    videoPath = path.join(runDir, "final.mp4");
+    await renderMedia({
+      composition: {
+        ...composition,
+        width: platformConfig.width,
+        height: platformConfig.height,
+        fps: platformConfig.fps,
+        durationInFrames: totalFrames,
+      },
+      serveUrl: bundled,
+      codec: "h264",
+      outputLocation: videoPath,
+      inputProps: compositionProps as unknown as Record<string, unknown>,
+    });
+
+    const assemblyDur = (Date.now() - assemblyStart) / 1000;
+    progress.complete(assemblyIdx, `${(totalFrames / platformConfig.fps).toFixed(1)}s video`);
+    log.stages.push({ name: "assembly", duration: assemblyDur, status: "done" });
+
+    // Stage 6: Critic
+    progress.start(criticIdx);
+    const criticStart = Date.now();
+    try {
+      const critiqueOutput = await evaluate(opts.llm, directorScore, opts.topic);
+      const critique = critiqueOutput.data;
+      llmUsages.push(critiqueOutput.usage);
+      const criticDur = (Date.now() - criticStart) / 1000;
+
+      if (critique.revision_needed && critique.score < 7) {
+        progress.complete(criticIdx, `score ${critique.score}/10, revision needed`);
+        console.log(`\nCritic score: ${critique.score}/10 — ${critique.weaknesses.join(", ")}`);
+        console.log("Revision support coming in Phase 4. Using current version.");
+      } else {
+        progress.complete(criticIdx, `score ${critique.score}/10`);
+      }
+      log.stages.push({ name: "critic", duration: criticDur, status: "done" });
+    } catch (err) {
+      const criticDur = (Date.now() - criticStart) / 1000;
+      progress.complete(criticIdx, "skipped");
+      log.stages.push({ name: "critic", duration: criticDur, status: "skipped", error: String(err) });
+    }
+
+    progress.summary();
+
+    // Compute and report actual cost
+    const aiImages = directorScore.scenes.filter((s) => s.visual_type === "ai_image").length;
+    const ttsCharacters = directorScore.scenes.reduce((sum, s) => sum + s.script_line.length, 0);
+    const actualCost = computeActualLLMCost(llmUsages, { aiImages, ttsCharacters }, opts.llm.id);
+    log.totalCost = { estimated: costBreakdown.totalCost, actual: actualCost.totalCost };
+    console.log(`\n${formatActualCost(actualCost)}`);
+
+    // Preview
+    if (opts.preview) {
+      console.log("\nOpening Remotion Studio preview...");
+      try {
+        execSync("npx remotion studio", { stdio: "inherit" });
+      } catch {
+        console.warn("Preview closed or failed to open.");
+      }
+    }
+
+    console.log(`\nOutput: ${runDir}`);
+    console.log(`  Video:     ${videoPath}`);
+    console.log(`  Score:     ${scorePath}`);
+    console.log(`  Log:       ${logPath}`);
+  } finally {
+    fs.writeFileSync(logPath, JSON.stringify(log, null, 2));
+  }
 
   return { outputDir: runDir, videoPath, thumbnailPath: null, scorePath, logPath };
 }

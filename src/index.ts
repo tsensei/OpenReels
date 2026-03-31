@@ -31,7 +31,6 @@ async function main(): Promise<void> {
     platform: opts.platform,
     dryRun: opts.dryRun,
     preview: opts.preview,
-    verbose: opts.verbose,
     outputDir: opts.output,
   });
 
