@@ -2,7 +2,7 @@ import React from "react";
 import { AbsoluteFill, Loop, OffthreadVideo, useVideoConfig } from "remotion";
 import type { SceneProps } from "../lib/score-to-props";
 
-export const StockVideoBeat: React.FC<SceneProps> = ({ assetSrc, colorPalette, sourceDurationInSeconds }) => {
+export const StockVideoBeat: React.FC<SceneProps> = ({ assetSrc, sourceDurationInSeconds }) => {
   const { fps, durationInFrames } = useVideoConfig();
   const sceneDurationSeconds = durationInFrames / fps;
 
