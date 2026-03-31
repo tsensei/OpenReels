@@ -15,7 +15,7 @@ Give it a topic. It handles everything else:
 7. **Critique** — an AI critic scores the output and re-runs the pipeline if quality is below threshold
 
 ```
-openreels generate "OpenAI shut down Sora to redirect compute into robotics — why they killed their most hyped product" --lang en --archetype dramatic_caricature
+openreels generate "OpenAI shut down Sora to redirect compute into robotics — why they killed their most hyped product" --lang en --archetype editorial_caricature
 ```
 
 Topic in → MP4 out. No editing.

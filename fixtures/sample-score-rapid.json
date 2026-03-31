@@ -1,0 +1,49 @@
+{
+  "emotional_arc": "shock-to-understanding",
+  "archetype": "infographic",
+  "music_mood": "tense_electronic",
+  "scenes": [
+    {
+      "visual_type": "text_card",
+      "visual_prompt": "SORA IS DEAD",
+      "motion": "static",
+      "text_overlay": "OpenAI Just Killed Sora",
+      "script_line": "OpenAI just shut down Sora, their most hyped product ever. Here is why."
+    },
+    {
+      "visual_type": "ai_image",
+      "visual_prompt": "A glowing AI neural network being unplugged, wires disconnecting, dark futuristic server room, neon blue and red lighting",
+      "motion": "zoom_in",
+      "text_overlay": null,
+      "script_line": "Sora was supposed to be the future of video generation. They teased it for over a year."
+    },
+    {
+      "visual_type": "stock_video",
+      "visual_prompt": "robotics lab with robot arms moving",
+      "motion": "static",
+      "text_overlay": "$10B+ in Compute",
+      "script_line": "But running Sora was burning through compute like nothing else. We are talking billions of dollars in GPU costs."
+    },
+    {
+      "visual_type": "text_card",
+      "visual_prompt": "THE REAL REASON",
+      "motion": "static",
+      "text_overlay": "The Real Reason",
+      "script_line": "The real reason? OpenAI is pivoting hard into robotics. And robots need that compute way more than video generation does."
+    },
+    {
+      "visual_type": "ai_image",
+      "visual_prompt": "Humanoid robot walking through a modern office, photorealistic, cinematic lighting, slight lens flare",
+      "motion": "pan_right",
+      "text_overlay": null,
+      "script_line": "Sam Altman bet that physical AI is worth more than digital content creation."
+    },
+    {
+      "visual_type": "stock_image",
+      "visual_prompt": "futuristic city skyline at night with AI holographic displays",
+      "motion": "zoom_out",
+      "text_overlay": "The Future Is Physical",
+      "script_line": "Whether he is right or not, one thing is clear. The AI video generation race just lost its biggest player."
+    }
+  ]
+}

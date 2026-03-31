@@ -1,0 +1,42 @@
+{
+  "emotional_arc": "wonder-to-appreciation",
+  "archetype": "warm_narrative",
+  "music_mood": "chill_lofi",
+  "scenes": [
+    {
+      "visual_type": "ai_image",
+      "visual_prompt": "Ancient Ethiopian highlands, a goat herder discovering red coffee berries on a bush, warm golden light, storybook illustration style",
+      "motion": "zoom_in",
+      "text_overlay": null,
+      "script_line": "In the ninth century, an Ethiopian goat herder named Kaldi noticed his goats dancing after eating red berries from a strange bush."
+    },
+    {
+      "visual_type": "stock_video",
+      "visual_prompt": "coffee beans roasting in traditional roaster close up",
+      "motion": "static",
+      "text_overlay": null,
+      "script_line": "Those berries would become the most traded commodity on Earth after oil."
+    },
+    {
+      "visual_type": "text_card",
+      "visual_prompt": "2.25 BILLION CUPS",
+      "motion": "static",
+      "text_overlay": "2.25 Billion Cups Every Single Day",
+      "script_line": "Today, the world drinks two point two five billion cups of coffee every single day."
+    },
+    {
+      "visual_type": "stock_image",
+      "visual_prompt": "busy coffee shop interior with people working on laptops warm lighting",
+      "motion": "pan_right",
+      "text_overlay": null,
+      "script_line": "Coffee houses became the birthplace of the Enlightenment, the French Revolution, and Silicon Valley startup culture."
+    },
+    {
+      "visual_type": "ai_image",
+      "visual_prompt": "A steaming cup of coffee on a desk next to a world map with trade routes drawn in golden light, warm editorial illustration",
+      "motion": "zoom_out",
+      "text_overlay": "One Berry Changed Everything",
+      "script_line": "All because one goat herder noticed his goats were dancing."
+    }
+  ]
+}

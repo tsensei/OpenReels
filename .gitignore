@@ -3,3 +3,4 @@ dist/
 *.tsbuildinfo
 .env
 staging_docs/
+output/

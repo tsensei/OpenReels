@@ -1,0 +1,42 @@
+{
+  "emotional_arc": "curiosity-to-wisdom",
+  "archetype": "editorial_caricature",
+  "music_mood": "epic_cinematic",
+  "scenes": [
+    {
+      "visual_type": "text_card",
+      "visual_prompt": "5 STOIC LESSONS",
+      "motion": "static",
+      "text_overlay": "5 Stoic Lessons That Changed My Life",
+      "script_line": "Marcus Aurelius ruled the Roman Empire for nearly two decades, and he left behind a journal that was never meant to be published."
+    },
+    {
+      "visual_type": "ai_image",
+      "visual_prompt": "Marcus Aurelius sitting alone in a dimly lit Roman tent, writing in a leather journal by candlelight, dramatic chiaroscuro lighting, oil painting style",
+      "motion": "zoom_in",
+      "text_overlay": null,
+      "script_line": "His private meditations became one of the most influential philosophy books ever written."
+    },
+    {
+      "visual_type": "stock_video",
+      "visual_prompt": "sunrise over ancient Roman ruins columns",
+      "motion": "static",
+      "text_overlay": "Lesson 1: Control Your Perception",
+      "script_line": "Lesson one. You have power over your mind, not outside events. Realize this, and you will find strength."
+    },
+    {
+      "visual_type": "ai_image",
+      "visual_prompt": "A stoic philosopher standing calm amid a raging storm, dramatic lighting, bold illustration style with deep shadows",
+      "motion": "pan_right",
+      "text_overlay": null,
+      "script_line": "Most of what we suffer is not from the event itself, but from our judgment about it."
+    },
+    {
+      "visual_type": "stock_image",
+      "visual_prompt": "person meditating on mountain peak at golden hour",
+      "motion": "zoom_out",
+      "text_overlay": "Start Today",
+      "script_line": "The obstacle is the way. Start practicing today, and your life will never be the same."
+    }
+  ]
+}
