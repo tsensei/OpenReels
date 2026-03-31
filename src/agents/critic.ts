@@ -37,7 +37,7 @@ export async function evaluate(
 
   // Inject Critic Rubric from playbook for weighted scoring criteria
   try {
-    const rubric = loadPlaybookSections(["Critic Rubric"]);
+    const rubric = loadPlaybookSections(["Pacing Rules", "Critic Rubric"]);
     systemPrompt += "\n\n" + rubric;
   } catch (err) {
     console.warn(`[critic] Playbook rubric not loaded: ${err}`);

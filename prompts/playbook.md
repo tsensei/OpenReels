@@ -149,11 +149,11 @@ The critic evaluates each Short across 7 dimensions using this concrete rubric. 
 - **7-8**: Clear arc matching the selected pattern.
 - **9-10**: Perfect arc. Each scene earns the next.
 
-### Pacing (Weight: 10%)
-- **1-3**: Dead zones. Scenes exceed 12 seconds.
-- **4-6**: Acceptable but uneven pacing.
-- **7-8**: Consistent rhythm with retention checkpoints.
-- **9-10**: Dynamic pacing with deliberate surprise.
+### Pacing (Weight: 15%)
+- **1-3**: Total script >160 words OR any scene >35 words OR hook >15 words.
+- **4-6**: Total script 141-160 words OR any scene 26-35 words OR one scene holds >30% of total words.
+- **7-8**: Total script 90-140 words, all scenes <=25 words, hook <=15 words, 5-7 scenes.
+- **9-10**: Meets 7-8 criteria PLUS dynamic rhythm — short-long-short sentence variation, builds energy toward climax.
 
 ### Visual Variety (Weight: 15%)
 - **1-3**: Same visual_type repeated throughout. Looks like an AI slideshow.
@@ -167,7 +167,7 @@ The critic evaluates each Short across 7 dimensions using this concrete rubric. 
 - **7-8**: Accurate match with enriching details beyond narration.
 - **9-10**: Perfect sync. Visuals add context the narration doesn't cover.
 
-### Style Adherence (Weight: 15%)
+### Style Adherence (Weight: 10%)
 - **1-3**: Wildly inconsistent visual styles across scenes.
 - **4-6**: Some consistency but noticeable drift from archetype.
 - **7-8**: All scenes follow the archetype's palette, lighting, and art style.
@@ -180,6 +180,6 @@ The critic evaluates each Short across 7 dimensions using this concrete rubric. 
 - **9-10**: Creates urgency and matches psychology triggers.
 
 ### Scoring Formula
-Overall score = round(Hook*0.20 + Arc*0.20 + Pacing*0.10 + Variety*0.15 + Sync*0.10 + Style*0.15 + CTA*0.10)
+Overall score = round(Hook*0.20 + Arc*0.20 + Pacing*0.15 + Variety*0.15 + Sync*0.10 + Style*0.10 + CTA*0.10)
 
 Pass threshold: 7

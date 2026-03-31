@@ -71,7 +71,8 @@ ${archetypeInstruction}
 Create a DirectorScore with 4-7 scenes. Use all 4 visual types (ai_image, stock_image, stock_video, text_card).
 CRITICAL RULE: Never use the same visual_type more than 2 times in a row.
 Every scene MUST have a script_line (the voiceover text).
-The first scene should be a strong hook.`;
+The first scene should be a strong hook.
+PACING CONSTRAINT: Total script must be 110-140 words for stories, 90-110 for quick facts. At 150 WPM this produces a 40-55 second video. Each script_line should be 1-2 sentences. If over budget, cut a scene rather than cramming.`;
 
   const maxRetries = 3;
   let lastError: Error | null = null;
@@ -113,5 +114,7 @@ You must output a DirectorScore with:
 
 GOLDEN RULE: Never use the same visual_type more than 2 times consecutively. Mix ai_image, stock_image, stock_video, and text_card for variety.
 
-Think like a YouTube Shorts producer. The hook must grab in 1-2 seconds. Every scene should move the story forward. End with a memorable line.`;
+Think like a YouTube Shorts producer. The hook must grab in 1-2 seconds. Every scene should move the story forward. End with a memorable line.
+
+Keep total script under 140 words — verbose scripts create rushed, unwatchable videos.`;
 }

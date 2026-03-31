@@ -26,4 +26,15 @@ Choose the best visual_type for each scene based on what serves the content:
 
 Mixing visual types makes the video feel produced rather than generated - but don't force variety where it doesn't fit. If the topic is best served by mostly AI images (e.g., speculative sci-fi) or mostly stock (e.g., travel destinations), lean into that. Let the content drive the choice.
 
+## Pacing & Word Budget
+
+Your script_lines are spoken as voiceover at ~150 words per minute. Word count directly controls video duration.
+
+- **Total word budget**: 90-110 words for quick facts, 110-140 words for stories. This produces a 40-55 second video.
+- **Hook scene**: 8-15 words. Land the hook in one punchy sentence.
+- **Middle scenes**: 15-25 words each. One idea, one or two sentences.
+- **CTA/closing scene**: 8-15 words. Short and memorable.
+- **One idea per scene**: If a script_line covers multiple facts, split into separate scenes or cut.
+- **Self-check**: After drafting, count total words. If over budget, remove a scene or trim — never cram.
+
 Never use em dashes (—) in `script_line` or `visual_prompt`. Use a comma, period, or plain hyphen (-) instead.
