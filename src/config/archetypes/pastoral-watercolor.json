@@ -1,0 +1,23 @@
+{
+  "captionStyle": "gradient_rise",
+  "colorPalette": {
+    "background": "#2a3a2a",
+    "accent": "#7cb342",
+    "text": "#faf3e0"
+  },
+  "textCardFont": "Merriweather",
+  "motionIntensity": 0.9,
+  "artStyle": "Hand-painted animation style with lush watercolor backgrounds and incredible environmental detail. Soft character designs with simple expressive faces. Emphasis on nature, atmosphere, and quiet moments. Every frame could be a painting. A sense of wonder and loving attention to mundane beauty.",
+  "lighting": "Soft natural daylight with visible cloud shadows moving across landscapes. Warm afternoon glow. Gentle dappled light through leaves. Overcast skies with luminous silver edges. Dawn and dusk scenes with layered color gradients across the sky.",
+  "compositionRules": "Wide environmental shots establishing place and mood. Characters small within vast landscapes to emphasize wonder. Close-ups reserved for emotional moments. Layered parallax depth with detailed foreground foliage. Wind-swept elements showing movement.",
+  "culturalMarkers": "Richly detailed natural and built environments appropriate to the topic. Overgrown vegetation reclaiming structures. Steaming food, flowing water, swaying grass. Everyday objects rendered with loving detail.",
+  "mood": "Serene, wondrous, nostalgic, bittersweet.",
+  "antiArtifactGuidance": "Soft watercolor texture in backgrounds with visible brushwork. Simple clean character faces with minimal detail but maximum expression. Lush vegetation with individual leaf shapes. Consistent hand-painted aesthetic throughout. Clouds with visible layered painting technique. No photorealistic elements.",
+  "visualColorPalette": [
+    "forest green",
+    "sky blue",
+    "warm cream",
+    "terracotta brown",
+    "soft lavender"
+  ]
+}

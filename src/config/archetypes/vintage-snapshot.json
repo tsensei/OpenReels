@@ -1,0 +1,23 @@
+{
+  "captionStyle": "clean",
+  "colorPalette": {
+    "background": "#f5f0e8",
+    "accent": "#c97b3a",
+    "text": "#2a2a2a"
+  },
+  "textCardFont": "Merriweather",
+  "motionIntensity": 0.7,
+  "artStyle": "Vintage instant film photography with characteristic soft focus, slightly faded colors, and warm light leaks. Candid snapshot aesthetic with casual framing. Subtle vignetting at edges. Film grain visible throughout. Colors shift toward warm yellows and muted greens like aged instant film.",
+  "lighting": "Natural available light only. Soft overcast daylight or warm indoor ambient light. Slight overexposure in highlights characteristic of instant film. No studio lighting, everything feels like a candid moment captured in real light.",
+  "compositionRules": "Square-ish framing within vertical format as if a photo is placed on a surface. Casual imperfect composition, slightly off-center subjects. Intimate close-ups and candid mid-shots. No perfectly posed subjects, everything feels spontaneous and real. White border frame optional.",
+  "culturalMarkers": "Authentic everyday settings and moments appropriate to the topic. Candid human moments, real places, natural environments. Nothing staged or perfect. The imperfection is the point.",
+  "mood": "Intimate, nostalgic, authentic, personal.",
+  "antiArtifactGuidance": "Consistent vintage film color cast throughout. Soft but not blurry focus. Visible film grain that feels organic, not digital noise. Warm light leaks at edges feeling natural. Slightly muted saturation as if colors have aged. No HDR or hyper-sharp processing.",
+  "visualColorPalette": [
+    "faded warm yellow",
+    "muted sage green",
+    "soft coral",
+    "cream white",
+    "dusty brown"
+  ]
+}

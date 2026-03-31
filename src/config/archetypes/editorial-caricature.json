@@ -1,0 +1,23 @@
+{
+  "captionStyle": "bold_outline",
+  "colorPalette": {
+    "background": "#1a1a2e",
+    "accent": "#e94560",
+    "text": "#ffffff"
+  },
+  "textCardFont": "Inter",
+  "motionIntensity": 1.5,
+  "artStyle": "Digital caricature illustration with semi-realistic rendering and exaggerated proportions. Characters have enlarged heads and amplified facial expressions while maintaining detailed shading and volumetric depth. The style sits between graphic novel cover art and high-end editorial political cartoons.",
+  "lighting": "Dramatic theatrical spotlighting on primary subjects against dark surroundings. Strong warm rim light separates figures from backgrounds. Golden highlights on skin, cool blue-purple tones in shadows. Light sources feel like stage lights, intentional and directed.",
+  "compositionRules": "Multi-character narrative scenes arranged to tell a story. Primary figures large in the foreground with secondary characters layered behind at smaller scale for depth. Upper third of the frame kept as text-safe zone. Figures fill the frame generously. Slight low-angle perspective for visual authority.",
+  "culturalMarkers": "Context-appropriate attire, architecture, and environmental details that establish time and place authentically. Props and settings that ground the scene in its real-world context.",
+  "mood": "Bold, provocative, narrative-driven, theatrical.",
+  "antiArtifactGuidance": "Detailed expressive facial features with clean proportional exaggeration. Smooth skin rendering with warm natural tones. Crisp separation between foreground and background. Hands with clear finger definition. Background environments detailed enough to establish setting but softer than foreground subjects.",
+  "visualColorPalette": [
+    "deep navy blue",
+    "rich amber gold",
+    "dark burgundy",
+    "warm burnt orange",
+    "muted teal"
+  ]
+}

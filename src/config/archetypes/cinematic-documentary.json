@@ -1,0 +1,23 @@
+{
+  "captionStyle": "clean",
+  "colorPalette": {
+    "background": "#1a1a14",
+    "accent": "#c8a96e",
+    "text": "#e8e0d0"
+  },
+  "textCardFont": "Inter",
+  "motionIntensity": 0.9,
+  "artStyle": "Photorealistic documentary photography with cinematic framing. Shallow depth of field isolates subjects from background. Images look like stills from a high-budget documentary film. Natural textures, authentic environments, real-world detail.",
+  "lighting": "Natural side lighting with soft shadows. Golden hour warmth for outdoor scenes. Diffused overhead light for indoor scenes. No harsh direct flash.",
+  "compositionRules": "Rule of thirds with subject at power points. Camera at eye level or slightly below for authority. Wide establishing shots alternate with tight close-ups. Generous use of leading lines and depth layers.",
+  "culturalMarkers": "Context-appropriate architecture with weathered textures, authentic street life, traditional settings, urban landscapes and rural environments. Period-accurate details grounding every scene in its real-world geography and era.",
+  "mood": "Grounded, authoritative, contemplative.",
+  "antiArtifactGuidance": "Crisp sharp focus on subject with natural bokeh in background. Clean smooth skin textures without waxy appearance. Realistic fabric folds and material textures. Natural hair detail. Architecturally sound buildings with proper perspective.",
+  "visualColorPalette": [
+    "muted earth tones",
+    "warm amber",
+    "deep forest green",
+    "soft cream",
+    "charcoal gray"
+  ]
+}

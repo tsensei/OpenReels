@@ -1,0 +1,23 @@
+{
+  "captionStyle": "block_impact",
+  "colorPalette": {
+    "background": "#0f0f0f",
+    "accent": "#00d4ff",
+    "text": "#ffffff"
+  },
+  "textCardFont": "Space Grotesk",
+  "motionIntensity": 0.8,
+  "artStyle": "Clean photorealistic renders with sharp focus and modern aesthetics. Emphasis on clarity, scale, and data-driven visual metaphors. Crisp detail, high contrast, slightly desaturated color grading with selective color pops on key subjects.",
+  "lighting": "Bright, even studio-style lighting with subtle gradient backgrounds. Clean white or cool-toned ambient light. Minimal shadows for maximum clarity. Occasional dramatic backlighting for emphasis on key subjects.",
+  "compositionRules": "Single-subject centered compositions with generous negative space. Clean framing, no visual clutter. Subject occupies 60-70% of frame. Strong vertical alignment for mobile viewing. Infographic-style layouts for data scenes.",
+  "culturalMarkers": "Modern, globally recognizable settings and technology. Clean contemporary environments. Context-appropriate details that match the topic's geography and era.",
+  "mood": "Authoritative, fast-paced, modern, informative.",
+  "antiArtifactGuidance": "Sharp edges and clean lines. No blur or softness unless intentional depth-of-field. Accurate proportions on all subjects. Text-free renders. Consistent color temperature across all scenes. High-resolution detail on key subjects.",
+  "visualColorPalette": [
+    "stark white",
+    "electric cyan",
+    "charcoal black",
+    "silver gray",
+    "deep midnight blue"
+  ]
+}

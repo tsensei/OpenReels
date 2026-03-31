@@ -1,0 +1,23 @@
+{
+  "captionStyle": "clean",
+  "colorPalette": {
+    "background": "#0a0a0a",
+    "accent": "#c8a96e",
+    "text": "#ffffff"
+  },
+  "textCardFont": "Inter",
+  "motionIntensity": 1,
+  "artStyle": "Ultra-photorealistic high-end photography. Indistinguishable from real photographs taken with a professional full-frame camera. Sharp detail, natural skin textures, realistic material properties. Fashion and luxury editorial quality.",
+  "lighting": "Professional studio and natural lighting. Softbox key light with controlled fill. Dramatic rim lighting for separation. Golden hour outdoor scenes. High-end commercial photography lighting setups. Clean catchlights in eyes.",
+  "compositionRules": "Professional photography composition. Shallow depth of field with creamy bokeh. Rule of thirds with purposeful subject placement. Clean uncluttered backgrounds. Fashion editorial framing for people, architectural photography framing for places.",
+  "culturalMarkers": "Real-world settings and details matching the topic exactly as they would appear in a professional photograph. Authentic contemporary or period-accurate environments. No stylization, pure reality.",
+  "mood": "Aspirational, polished, authoritative, real.",
+  "antiArtifactGuidance": "Perfect skin texture with visible pores at close range. Natural subsurface scattering on skin. Realistic eye detail with proper iris texture. Fabric with correct weave pattern and drape physics. Metal with accurate reflections. No plastic skin, no uncanny smoothing, no AI tells.",
+  "visualColorPalette": [
+    "neutral gray",
+    "warm gold",
+    "deep black",
+    "clean white",
+    "rich brown"
+  ]
+}

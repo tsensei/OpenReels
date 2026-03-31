@@ -1,0 +1,23 @@
+{
+  "captionStyle": "color_highlight",
+  "colorPalette": {
+    "background": "#1a1a2e",
+    "accent": "#e94560",
+    "text": "#ffffff"
+  },
+  "textCardFont": "Inter",
+  "motionIntensity": 1.3,
+  "artStyle": "Classic comic book illustration with bold ink outlines, halftone dot shading, and vivid flat colors. Dynamic action poses and expressive characters. Strong black linework with cel-shaded coloring. Panel-art composition adapted to vertical format.",
+  "lighting": "Stylized directional lighting with hard-edged shadows. Bold rim lights on characters. Color-coded lighting to set mood per scene. No realistic light falloff, shadows are graphic shapes.",
+  "compositionRules": "Dynamic diagonal compositions with characters in action poses. Bold foreground subjects with speed lines or impact effects. Upper third kept clear for captions. Strong silhouettes readable at small scale.",
+  "culturalMarkers": "Context-appropriate settings and attire matching the topic's era and geography. Props and environments that establish the scene authentically.",
+  "mood": "Energetic, bold, action-driven, punchy.",
+  "antiArtifactGuidance": "Clean consistent ink line weights. Smooth flat color fills without gradients bleeding. Sharp panel-style framing. Expressive but proportional facial features. Clear hand and finger definition even in action poses.",
+  "visualColorPalette": [
+    "bold crimson red",
+    "deep ink black",
+    "sky blue",
+    "golden yellow",
+    "stark white"
+  ]
+}

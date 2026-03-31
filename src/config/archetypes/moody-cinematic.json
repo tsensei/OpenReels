@@ -1,0 +1,23 @@
+{
+  "captionStyle": "block_impact",
+  "colorPalette": {
+    "background": "#0a0a0f",
+    "accent": "#8b1a1a",
+    "text": "#d4d4d4"
+  },
+  "textCardFont": "Space Grotesk",
+  "motionIntensity": 1.1,
+  "artStyle": "High contrast cinematic imagery with dramatic chiaroscuro lighting. Desaturated base with selective color pops for emphasis. Film noir meets modern thriller aesthetic. Deep blacks, crushed shadows, and blown highlights for tension.",
+  "lighting": "Strong directional side lighting creating long shadows. Rim light separates subjects from dark backgrounds. Selective spotlighting draws attention. Atmospheric haze or fog for depth.",
+  "compositionRules": "Dutch angles for tension, extreme close-ups for emotion, silhouettes against lit backgrounds. Subjects often partially obscured — shadow, fog, architectural elements. Asymmetric framing creates unease.",
+  "culturalMarkers": "Rain-slicked city streets at night, narrow alleys with dim lamps, weathered architecture, dimly lit interiors with single hanging bulbs, river banks in twilight, crowded narrow passages. Settings appropriate to the topic's geography rendered with atmospheric tension.",
+  "mood": "Tense, mysterious, foreboding, dramatic.",
+  "antiArtifactGuidance": "Crisp focus on lit areas with clean falloff into shadow. Natural-looking fog and atmospheric haze without banding. Skin detail visible in highlights, cleanly lost in shadows. Sharp architectural edges. Consistent grain texture if present.",
+  "visualColorPalette": [
+    "deep charcoal",
+    "blood crimson",
+    "cold steel blue",
+    "amber accent",
+    "near-black"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "captionStyle": "block_impact",
+  "colorPalette": {
+    "background": "#0d0d14",
+    "accent": "#6a0dad",
+    "text": "#d4d4d4"
+  },
+  "textCardFont": "Merriweather",
+  "motionIntensity": 1.1,
+  "artStyle": "Dark fantasy digital painting with hyper-detailed environments and characters. Gothic architecture, ancient ruins, and otherworldly landscapes. Rich detail in armor, weapons, creatures, and magical elements. Semi-realistic with fantasy embellishment, evoking high-end concept art for dark medieval worlds.",
+  "lighting": "Moonlit scenes with cold blue-silver light. Firelight and torchlight casting warm orange pools against dark surroundings. Glowing magical elements providing supernatural illumination. Storm-lit skies with dramatic cloud breaks. Deep shadows with minimal fill.",
+  "compositionRules": "Epic scale compositions with tiny figures against massive structures or landscapes. Low camera angles emphasizing towering subjects. Atmospheric perspective with fog and haze layering depth. Throne-room and battlefield staging. Subjects framed by gothic arches or twisted trees.",
+  "culturalMarkers": "Fantasy interpretations of real-world settings appropriate to the topic. Medieval, ancient, or mythological environments. Weathered stone, ancient texts, ornate metalwork, and natural overgrowth. Topic grounded in fantastical but recognizable settings.",
+  "mood": "Epic, foreboding, awe-inspiring, mythic.",
+  "antiArtifactGuidance": "High detail in foreground subjects with atmospheric falloff in background. Clean armor and fabric rendering with realistic material properties. Creature designs with anatomical consistency. Magical effects with clear light emission and environmental interaction. No muddy undefined areas.",
+  "visualColorPalette": [
+    "midnight purple",
+    "cold silver",
+    "ember orange",
+    "moss green",
+    "bone white"
+  ]
+}

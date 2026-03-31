@@ -1,0 +1,23 @@
+{
+  "captionStyle": "color_highlight",
+  "colorPalette": {
+    "background": "#0a1628",
+    "accent": "#ff6b4a",
+    "text": "#ffffff"
+  },
+  "textCardFont": "Space Grotesk",
+  "motionIntensity": 1.0,
+  "artStyle": "Clean digital illustration with vibrant saturated colors. Strong outlines define shapes. Flat design elements with selective depth through layering and shadow. Modern editorial illustration style — clean infographic aesthetics with bold, accessible visuals.",
+  "lighting": "Flat even lighting with stylized shadows for depth. No realistic light sources — shadows are design elements. Bold color blocks create visual hierarchy. Selective gradient fills for dimension.",
+  "compositionRules": "Bold centered subjects with geometric framing. Clean negative space in complementary colors. Text-free zones preserved for subtitle overlay. Strong visual hierarchy — one dominant element per scene.",
+  "culturalMarkers": "Topic-appropriate settings rendered as clean geometric shapes. Architecture as bold forms, clothing as flat-color designs, food and objects as iconic symbols. Skylines as geometric silhouettes, traditional patterns as decorative borders.",
+  "mood": "Energetic, clear, accessible, modern.",
+  "antiArtifactGuidance": "Clean vector-like edges with consistent line weight. Smooth flat color fills without noise or texture artifacts. Geometric shapes with mathematically clean curves. Consistent illustration style — every element feels drawn by the same artist.",
+  "visualColorPalette": [
+    "vibrant teal",
+    "coral orange",
+    "bright yellow",
+    "deep navy",
+    "crisp white"
+  ]
+}

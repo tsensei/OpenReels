@@ -1,0 +1,23 @@
+{
+  "captionStyle": "karaoke_sweep",
+  "colorPalette": {
+    "background": "#2d1b00",
+    "accent": "#ff9f43",
+    "text": "#ffeaa7"
+  },
+  "textCardFont": "Merriweather",
+  "motionIntensity": 1.2,
+  "artStyle": "Warm cinematic photography with soft painterly post-processing. Rich, film-like color grading reminiscent of golden hour documentary footage. Visible texture and grain that feels handcrafted. The style bridges photojournalism and oil painting.",
+  "lighting": "Golden hour warmth with soft diffused light. Warm amber side lighting creating gentle shadows. Candlelit or lantern-lit interiors. Soft backlighting halos around subjects. Natural light sources that feel organic and intimate.",
+  "compositionRules": "Intimate close-up framing with shallow depth of field. Environmental portraits that place subjects in their world. Rule of thirds with subject offset for narrative tension. Layered foreground and background elements for depth. Warm vignetting draws eye to center.",
+  "culturalMarkers": "Historically and geographically authentic settings, clothing, and architecture. Period-appropriate details for historical topics. Natural landscapes and traditional environments that ground the story in place.",
+  "mood": "Warm, nostalgic, contemplative, immersive.",
+  "antiArtifactGuidance": "Naturalistic skin tones with warm undertones. Soft but defined facial features. Clothing with authentic texture and draping. Background environments with atmospheric depth (haze, dust motes, soft focus). Consistent warm color temperature. No harsh digital artifacts or over-sharpening.",
+  "visualColorPalette": [
+    "warm amber gold",
+    "deep chocolate brown",
+    "burnt sienna",
+    "soft cream",
+    "sage green"
+  ]
+}

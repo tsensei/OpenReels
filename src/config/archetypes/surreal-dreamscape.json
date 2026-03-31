@@ -1,0 +1,23 @@
+{
+  "captionStyle": "karaoke_sweep",
+  "colorPalette": {
+    "background": "#0a1628",
+    "accent": "#00e5ff",
+    "text": "#e0f7fa"
+  },
+  "textCardFont": "Merriweather",
+  "motionIntensity": 1.2,
+  "artStyle": "Surreal fantasy digital art with impossible architecture, dreamlike environments, and otherworldly scale. Hyper-detailed sci-fi and fantasy landscapes. Floating structures, bioluminescent elements, cosmic vistas. Concept art quality blending European sci-fi illustration with Nordic retrofuturism. Beautiful and strange in equal measure.",
+  "lighting": "Ethereal bioluminescent glows from organic and architectural elements. Volumetric light shafts piercing through massive structures. Dual light sources creating surreal color contrasts (warm vs cool). Underwater caustic patterns, aurora-like sky effects. Light itself as a character in the scene.",
+  "compositionRules": "Extreme scale contrast with tiny human figures against vast impossible structures. Vertical compositions exploiting height and depth. Leading lines pulling the eye through layered environments. Portals, doorways, and passages framing distant vistas. Sense of infinite depth and discovery.",
+  "culturalMarkers": "Fantastical reimaginings of real-world settings relevant to the topic. Ancient ruins fused with alien technology. Natural landscapes with surreal impossible additions. Topic grounded in wonder, not pure abstraction.",
+  "mood": "Awe-inspiring, dreamlike, mysterious, transcendent.",
+  "antiArtifactGuidance": "Consistent internal logic to impossible architecture. Clean geometric forms even in organic structures. Atmospheric perspective with clear depth layers. Bioluminescent elements with proper light emission and falloff. Human figures proportionally correct even at small scale. No muddy undefined areas.",
+  "visualColorPalette": [
+    "deep ocean teal",
+    "bioluminescent cyan",
+    "cosmic purple",
+    "warm amber glow",
+    "mist white"
+  ]
+}
