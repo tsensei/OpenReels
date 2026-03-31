@@ -14,7 +14,6 @@ Each scene has:
 - **visual_type**: One of "ai_image", "stock_image", "stock_video", "text_card"
 - **visual_prompt**: For ai_image: describe the desired scene (subject, setting, action, emotional tone). A downstream prompt optimizer will expand this into a detailed image generation prompt using the archetype's style bible. Focus on WHAT to show, not HOW to prompt an image generator. For stock_image/stock_video: a 3-5 word search query. For text_card: the display text.
 - **motion**: Camera motion — "zoom_in", "zoom_out", "pan_right", "pan_left", or "static". Ignored for stock_video.
-- **text_overlay**: Optional text shown on screen (REQUIRED for text_card, optional for others). Use for key stats, lesson numbers, or emphasis.
 - **script_line**: The voiceover narration for this scene. REQUIRED for every scene.
 
 ## Visual Type Selection
@@ -27,4 +26,4 @@ Choose the best visual_type for each scene based on what serves the content:
 
 Mixing visual types makes the video feel produced rather than generated - but don't force variety where it doesn't fit. If the topic is best served by mostly AI images (e.g., speculative sci-fi) or mostly stock (e.g., travel destinations), lean into that. Let the content drive the choice.
 
-Never use em dashes (—) in `script_line` or `text_overlay`. Use a comma, period, or plain hyphen (-) instead.
+Never use em dashes (—) in `script_line` or `visual_prompt`. Use a comma, period, or plain hyphen (-) instead.

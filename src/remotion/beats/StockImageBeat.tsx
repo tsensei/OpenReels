@@ -2,7 +2,7 @@ import React from "react";
 import { AbsoluteFill, Img, useCurrentFrame, useVideoConfig, interpolate } from "remotion";
 import type { SceneProps } from "../lib/score-to-props";
 
-export const StockImageBeat: React.FC<SceneProps> = ({ assetSrc, motion, textOverlay, motionIntensity = 1.2, colorPalette }) => {
+export const StockImageBeat: React.FC<SceneProps> = ({ assetSrc, motion, motionIntensity = 1.2, colorPalette }) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   const progress = frame / durationInFrames;
@@ -46,24 +46,6 @@ export const StockImageBeat: React.FC<SceneProps> = ({ assetSrc, motion, textOve
             transform: `scale(${scale}) translateX(${translateX}px)`,
           }}
         />
-      )}
-      {textOverlay && (
-        <div
-          style={{
-            position: "absolute",
-            top: "15%",
-            left: "5%",
-            right: "5%",
-            textAlign: "center",
-            color: colorPalette?.text ?? "#fff",
-            fontSize: 48,
-            fontWeight: 800,
-            textShadow: "0 4px 20px rgba(0,0,0,0.8)",
-            fontFamily: "Inter, sans-serif",
-          }}
-        >
-          {textOverlay}
-        </div>
       )}
     </AbsoluteFill>
   );

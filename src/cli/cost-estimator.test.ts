@@ -12,7 +12,6 @@ const makeScore = (scenes: Array<{ visual_type: string; script_line: string }>):
       ...s,
       visual_prompt: "prompt",
       motion: "static",
-      text_overlay: s.visual_type === "text_card" ? "text" : null,
     })),
   }) as DirectorScore;
 

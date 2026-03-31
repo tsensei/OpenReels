@@ -1,11 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { DirectorScore } from "./director-score.js";
 
-const validScene = (type: string, overlay: string | null = null) => ({
+const validScene = (type: string) => ({
   visual_type: type,
   visual_prompt: "test prompt",
   motion: "static",
-  text_overlay: overlay,
   script_line: "Test script line.",
 });
 
@@ -20,7 +19,7 @@ describe("DirectorScore schema", () => {
     const result = DirectorScore.safeParse({
       ...baseScore,
       scenes: [
-        validScene("text_card", "Title"),
+        validScene("text_card"),
         validScene("ai_image"),
         validScene("stock_video"),
         validScene("ai_image"),
@@ -68,36 +67,10 @@ describe("DirectorScore schema", () => {
         validScene("ai_image"),
         validScene("ai_image"),
         validScene("stock_video"),
-        validScene("text_card", "Text"),
+        validScene("text_card"),
       ],
     });
     expect(result.success).toBe(true);
   });
 
-  it("rejects text_card without text_overlay", () => {
-    const result = DirectorScore.safeParse({
-      ...baseScore,
-      scenes: [
-        validScene("text_card", null), // missing overlay
-        validScene("ai_image"),
-        validScene("stock_video"),
-      ],
-    });
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.issues[0]?.message).toContain("text_card");
-    }
-  });
-
-  it("accepts text_card with text_overlay", () => {
-    const result = DirectorScore.safeParse({
-      ...baseScore,
-      scenes: [
-        validScene("text_card", "HEADLINE"),
-        validScene("ai_image"),
-        validScene("stock_video"),
-      ],
-    });
-    expect(result.success).toBe(true);
-  });
 });

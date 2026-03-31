@@ -10,7 +10,6 @@ export const Scene = z.object({
   visual_type: VisualType,
   visual_prompt: z.string().min(1),
   motion: Motion,
-  text_overlay: z.string().nullable(),
   script_line: z.string().min(1),
 });
 export type Scene = z.infer<typeof Scene>;
@@ -37,13 +36,5 @@ export const DirectorScore = z
     },
     { message: "Golden rule violation: no more than 2 consecutive scenes of the same visual_type" },
   )
-  .refine(
-    (score) => {
-      // text_card scenes must have text_overlay
-      return score.scenes.every(
-        (s) => s.visual_type !== "text_card" || s.text_overlay !== null,
-      );
-    },
-    { message: "text_card scenes must have a text_overlay" },
-  );
+;
 export type DirectorScore = z.infer<typeof DirectorScore>;

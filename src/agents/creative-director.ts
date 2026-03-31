@@ -19,7 +19,6 @@ const DirectorScoreRaw = z.object({
       visual_type: VisualType,
       visual_prompt: z.string(),
       motion: Motion,
-      text_overlay: z.string().nullable(),
       script_line: z.string(),
     }),
   ),
@@ -72,7 +71,6 @@ ${archetypeInstruction}
 Create a DirectorScore with 4-7 scenes. Use all 4 visual types (ai_image, stock_image, stock_video, text_card).
 CRITICAL RULE: Never use the same visual_type more than 2 times in a row.
 Every scene MUST have a script_line (the voiceover text).
-text_card scenes MUST have a text_overlay.
 The first scene should be a strong hook.`;
 
   const maxRetries = 3;
@@ -111,7 +109,7 @@ You must output a DirectorScore with:
 - emotional_arc: A journey descriptor (e.g., "curiosity-to-wisdom", "shock-to-understanding")
 - archetype: Visual style that drives transitions, colors, and captions
 - music_mood: Tag for background music selection (e.g., "epic_cinematic", "chill_lofi", "tense_electronic")
-- scenes: Array of 4-7 scenes, each with visual_type, visual_prompt, motion, text_overlay, and script_line
+- scenes: Array of 4-7 scenes, each with visual_type, visual_prompt, motion, and script_line
 
 GOLDEN RULE: Never use the same visual_type more than 2 times consecutively. Mix ai_image, stock_image, stock_video, and text_card for variety.
 

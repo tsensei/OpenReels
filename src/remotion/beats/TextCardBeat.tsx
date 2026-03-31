@@ -1,8 +1,9 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig, spring } from "remotion";
 import type { SceneProps } from "../lib/score-to-props";
+import { TEXT_CARD_FONTS } from "../lib/fonts";
 
-export const TextCardBeat: React.FC<SceneProps> = ({ textOverlay, colorPalette, textCardFont }) => {
+export const TextCardBeat: React.FC<SceneProps> = ({ visualPrompt, colorPalette, textCardFont }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -29,12 +30,12 @@ export const TextCardBeat: React.FC<SceneProps> = ({ textOverlay, colorPalette, 
           color: text,
           fontSize: 72,
           fontWeight: 900,
-          fontFamily: textCardFont ?? "Inter, sans-serif",
+          fontFamily: (textCardFont && TEXT_CARD_FONTS[textCardFont]) ?? "Inter, sans-serif",
           lineHeight: 1.2,
           textShadow: `0 0 40px ${accent}66`,
         }}
       >
-        {textOverlay ?? ""}
+        {visualPrompt}
       </div>
       {/* Accent bar — above caption safe zone (bottom 18%) */}
       <div
