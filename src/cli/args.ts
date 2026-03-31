@@ -1,4 +1,8 @@
-import { Command } from "commander";
+import { createRequire } from "node:module";
+import { Command, Option } from "commander";
+
+const require = createRequire(import.meta.url);
+const { version } = require("../../package.json") as { version: string };
 
 export interface CLIOptions {
   topic: string;
@@ -16,9 +20,9 @@ export function parseArgs(): CLIOptions {
   program
     .name("openreels")
     .description("AI pipeline that turns any topic into a YouTube Short")
-    .version("2.0.0")
+    .version(version)
     .argument("<topic>", "The topic for your video")
-    .option("-p, --provider <provider>", "LLM provider (anthropic or openai)", "anthropic")
+    .addOption(new Option("-p, --provider <provider>", "LLM provider").choices(["anthropic", "openai"]).default("anthropic"))
     .option("-a, --archetype <archetype>", "Visual archetype override")
     .option("--platform <platform>", "Target platform (youtube, tiktok, instagram)", "youtube")
     .option("--dry-run", "Output DirectorScore JSON without generating assets", false)

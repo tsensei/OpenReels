@@ -10,7 +10,7 @@ export const StockVideoBeat: React.FC<SceneProps> = ({ assetSrc, textOverlay, co
   // Otherwise, play once with trim (endAt handles videos longer than the scene).
   const needsLoop = sourceDurationInSeconds != null && sourceDurationInSeconds < sceneDurationSeconds;
   const loopDurationInFrames = sourceDurationInSeconds != null
-    ? Math.round(sourceDurationInSeconds * fps)
+    ? Math.floor(sourceDurationInSeconds * fps)
     : durationInFrames;
 
   const video = assetSrc ? (

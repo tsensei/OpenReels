@@ -1,4 +1,4 @@
-import { execSync, execFileSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as readline from "node:readline";
@@ -66,6 +66,10 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
   const assetsDir = path.join(runDir, "assets");
   fs.mkdirSync(assetsDir, { recursive: true });
 
+  const logPath = path.join(runDir, "log.json");
+  let scorePath = path.join(runDir, "score.json");
+  let videoPath: string | null = null;
+
   const progress = new ProgressDisplay();
   const researchIdx = progress.addStage("Research");
   const directorIdx = progress.addStage("Director");
@@ -77,6 +81,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
   // Track all LLM token usage for actual cost reporting
   const llmUsages: LLMUsage[] = [];
 
+  try {
   // Stage 1: Research
   progress.start(researchIdx);
   let researchResult;
@@ -119,7 +124,6 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
   const archetypeConfig = getArchetype(directorScore.archetype);
 
   // Save DirectorScore
-  const scorePath = path.join(runDir, "score.json");
   fs.writeFileSync(scorePath, JSON.stringify(directorScore, null, 2));
 
   // Dry run exit
@@ -133,9 +137,6 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
     console.log("\n--- DirectorScore ---");
     console.log(JSON.stringify(directorScore, null, 2));
 
-    const logPath = path.join(runDir, "log.json");
-    fs.writeFileSync(logPath, JSON.stringify(log, null, 2));
-
     return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
   }
 
@@ -146,15 +147,9 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
 
   const proceed = await confirm("Proceed with generation?");
   if (!proceed) {
-    const logPath = path.join(runDir, "log.json");
-    fs.writeFileSync(logPath, JSON.stringify(log, null, 2));
     return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
   }
 
-  const logPath = path.join(runDir, "log.json");
-  let videoPath: string | null = null;
-
-  try {
     // Stage 3: TTS
     progress.start(ttsIdx);
     const ttsStart = Date.now();
@@ -300,7 +295,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
     if (opts.preview) {
       console.log("\nOpening Remotion Studio preview...");
       try {
-        execSync("npx remotion studio", { stdio: "inherit" });
+        execFileSync("npx", ["remotion", "studio"], { stdio: "inherit" });
       } catch {
         console.warn("Preview closed or failed to open.");
       }
@@ -310,11 +305,11 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
     console.log(`  Video:     ${videoPath}`);
     console.log(`  Score:     ${scorePath}`);
     console.log(`  Log:       ${logPath}`);
+
+  return { outputDir: runDir, videoPath, thumbnailPath: null, scorePath, logPath };
   } finally {
     fs.writeFileSync(logPath, JSON.stringify(log, null, 2));
   }
-
-  return { outputDir: runDir, videoPath, thumbnailPath: null, scorePath, logPath };
 }
 
 interface VisualAssetResult {
