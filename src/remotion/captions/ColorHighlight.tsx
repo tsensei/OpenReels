@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import type { WordTimestamp } from "../../schema/providers";
-import { findActiveWordIndex, getWordWindow } from "./caption-utils";
+import { getWordChunk } from "./caption-utils";
 import { CAPTION_FONTS } from "../lib/fonts";
 
 interface CaptionProps {
@@ -13,10 +13,7 @@ export const ColorHighlight: React.FC<CaptionProps> = ({ words }) => {
   const { fps } = useVideoConfig();
   const currentTime = frame / fps;
 
-  const activeIndex = findActiveWordIndex(words, currentTime);
-  if (activeIndex === -1) return null;
-
-  const { visible, startIndex } = getWordWindow(words, activeIndex, 2);
+  const { chunk, chunkStart } = getWordChunk(words, currentTime, 5);
 
   return (
     <AbsoluteFill
@@ -27,9 +24,9 @@ export const ColorHighlight: React.FC<CaptionProps> = ({ words }) => {
       }}
     >
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, padding: "0 40px" }}>
-        {visible.map((w, i) => {
-          const globalIndex = startIndex + i;
-          const isActive = globalIndex === activeIndex;
+        {chunk.map((w, i) => {
+          const isSpoken = currentTime >= w.start;
+          const globalIndex = chunkStart + i;
           return (
             <span
               key={`${w.word}-${globalIndex}`}
@@ -39,11 +36,11 @@ export const ColorHighlight: React.FC<CaptionProps> = ({ words }) => {
                 color: "#FFFFFF",
                 fontFamily: CAPTION_FONTS.montserrat,
                 textTransform: "uppercase",
-                backgroundColor: isActive ? "#E53E3E" : "transparent",
-                borderRadius: isActive ? 6 : 0,
-                padding: isActive ? "4px 10px" : "4px 2px",
-                opacity: isActive ? 1 : 0.5,
-                textShadow: isActive ? "none" : "0 2px 8px rgba(0,0,0,0.6)",
+                backgroundColor: isSpoken ? "#E53E3E" : "transparent",
+                borderRadius: isSpoken ? 6 : 0,
+                padding: isSpoken ? "4px 10px" : "4px 2px",
+                opacity: isSpoken ? 1 : 0.5,
+                textShadow: isSpoken ? "none" : "0 2px 8px rgba(0,0,0,0.6)",
               }}
             >
               {w.word}

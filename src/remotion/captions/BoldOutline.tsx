@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import type { WordTimestamp } from "../../schema/providers";
-import { findActiveWordIndex, getWordWindow } from "./caption-utils";
+import { getWordChunk } from "./caption-utils";
 import { CAPTION_FONTS } from "../lib/fonts";
 
 interface CaptionProps {
@@ -13,10 +13,7 @@ export const BoldOutline: React.FC<CaptionProps> = ({ words }) => {
   const { fps } = useVideoConfig();
   const currentTime = frame / fps;
 
-  const activeIndex = findActiveWordIndex(words, currentTime);
-  if (activeIndex === -1) return null;
-
-  const { visible, startIndex } = getWordWindow(words, activeIndex, 2);
+  const { chunk, chunkStart } = getWordChunk(words, currentTime, 5);
 
   return (
     <AbsoluteFill
@@ -27,21 +24,21 @@ export const BoldOutline: React.FC<CaptionProps> = ({ words }) => {
       }}
     >
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, padding: "0 40px" }}>
-        {visible.map((w, i) => {
-          const globalIndex = startIndex + i;
-          const isActive = globalIndex === activeIndex;
+        {chunk.map((w, i) => {
+          const isSpoken = currentTime >= w.start;
+          const globalIndex = chunkStart + i;
           return (
             <span
               key={`${w.word}-${globalIndex}`}
               style={{
-                fontSize: isActive ? 72 : 48,
-                fontWeight: isActive ? 900 : 700,
+                fontSize: isSpoken ? 72 : 48,
+                fontWeight: isSpoken ? 900 : 700,
                 color: "#FFFFFF",
                 fontFamily: CAPTION_FONTS.montserrat,
                 textTransform: "uppercase",
-                WebkitTextStroke: isActive ? "3px #000000" : "2px #000000",
+                WebkitTextStroke: isSpoken ? "3px #000000" : "2px #000000",
                 paintOrder: "stroke fill",
-                opacity: isActive ? 1 : 0.5,
+                opacity: isSpoken ? 1 : 0.5,
                 textShadow: "0 4px 12px rgba(0,0,0,0.8)",
               } as React.CSSProperties}
             >
