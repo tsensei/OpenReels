@@ -2,6 +2,13 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.1.1] - 2026-04-01
+
+### Added
+- Inworld TTS as an alternative voice provider (`--tts-provider inworld`). Native word-level timestamps, MP3 output, 15-language support. Includes response validation and a 2000-character input guard.
+- Provider key type aliases (`LLMProviderKey`, `TTSProviderKey`, `ImageProviderKey`) for DRY type usage across CLI, pipeline, and cost estimation.
+- Cost estimation support for Inworld TTS pricing.
+
 ## [0.1.0] - 2026-03-31
 
 ### Added
