@@ -136,6 +136,4 @@ v0.3.0 shipped. The core pipeline works end-to-end with Docker support for one-c
 
 ## License
 
-This project is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE) — free for personal, educational, research, and non-profit use.
-
-For commercial or for-profit use, a separate license is required. Contact **talhajsiam@gmail.com** for licensing inquiries.
+This project is licensed under the [MIT License](LICENSE).
