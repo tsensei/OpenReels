@@ -4,13 +4,13 @@
 
 ## Executive Summary
 
-OpenReels operates in a competitive space of open-source AI-powered short-form video generators. While projects like MoneyPrinterTurbo dominate in community size (~54K stars), OpenReels differentiates through its **multi-agent AI architecture**, **14 visual archetypes**, **TypeScript/Remotion rendering pipeline**, and **AI-generated imagery** (not just stock footage). This document analyzes 9 key competitors and identifies OpenReels' strengths, weaknesses, and opportunities.
+OpenReels operates in a competitive space of open-source AI-powered short-form video generators. While projects like MoneyPrinterTurbo (~54K stars) and MoneyPrinterV2 (~27.7K stars) dominate in community size, OpenReels differentiates through its **multi-agent AI architecture**, **14 visual archetypes**, **TypeScript/Remotion rendering pipeline**, and **AI-generated imagery** (not just stock footage). This document analyzes 11 direct competitors plus the adjacent AI video model ecosystem, identifying OpenReels' strengths, weaknesses, and opportunities.
 
 ---
 
 ## Competitive Landscape
 
-### Tier 1: Market Leaders (10K+ Stars)
+### Tier 1: Market Leaders (5K+ Stars)
 
 #### 1. MoneyPrinterTurbo
 - **GitHub:** harry0703/MoneyPrinterTurbo
@@ -22,7 +22,18 @@ OpenReels operates in a competitive space of open-source AI-powered short-form v
 - **Strengths:** Massive community (7,700+ forks), Docker & Google Colab support, local LLM support via Ollama, multilingual, web UI.
 - **Weaknesses:** Basic video composition (MoviePy/FFmpeg, no React-based rendering), no AI-generated images (stock-only), no archetype/style system, single-pass pipeline (no critic/revision), basic caption styles.
 
-#### 2. ShortGPT
+#### 2. MoneyPrinterV2 (FujiwaraChoki)
+- **GitHub:** FujiwaraChoki/MoneyPrinterV2
+- **Stars:** ~27,700
+- **Language:** Python
+- **License:** AGPL-3.0
+- **What it does:** Broader automation platform -- YouTube Shorts creation, Twitter bots, Amazon affiliate marketing, cold email outreach. The Shorts pipeline supports fully local operation.
+- **Features:** Fully local pipeline (Ollama + KittenTTS), Gemini image API for AI-generated visuals, MoviePy rendering. Active development (last push March 2026).
+- **Tech Stack:** Python, Ollama (local LLMs), KittenTTS (local free TTS with multiple voices), Gemini image API, MoviePy, ImageMagick.
+- **Strengths:** Massive community (27.7K stars, 2,930 forks), fully local/free operation, actively maintained, AI image generation via Gemini.
+- **Weaknesses:** AGPL-3.0 license (restrictive for commercial use), broad scope dilutes video pipeline depth, basic MoviePy rendering (no React-based compositions), no archetype system or multi-agent pipeline.
+
+#### 4. ShortGPT
 - **GitHub:** RayVentura/ShortGPT
 - **Stars:** ~7,100
 - **Language:** Python
@@ -32,7 +43,7 @@ OpenReels operates in a competitive space of open-source AI-powered short-form v
 - **Strengths:** Pioneer in the space, multilingual dubbing engine, well-structured with separate content engines.
 - **Weaknesses:** Had periods of inactivity, basic rendering pipeline, no style/archetype system, no AI image generation.
 
-#### 3. MoneyPrinterPlus
+#### 5. MoneyPrinterPlus
 - **GitHub:** ddean2009/MoneyPrinterPlus
 - **Stars:** ~5,990
 - **Language:** Python
@@ -45,7 +56,7 @@ OpenReels operates in a competitive space of open-source AI-powered short-form v
 
 ### Tier 2: Established Projects (1K-10K Stars)
 
-#### 4. Revideo
+#### 6. Revideo
 - **GitHub:** redotvideo/revideo
 - **Stars:** ~3,700
 - **Language:** TypeScript
@@ -54,7 +65,7 @@ OpenReels operates in a competitive space of open-source AI-powered short-form v
 - **Strengths:** Very fast rendering, developer-friendly TypeScript API, MIT license. Direct alternative to Remotion.
 - **Weaknesses:** Not a complete video generation pipeline -- just a rendering engine. Core team shifted focus to commercial Midrender product.
 
-#### 5. AI-Youtube-Shorts-Generator
+#### 7. AI-Youtube-Shorts-Generator
 - **GitHub:** SamurAIGPT/AI-Youtube-Shorts-Generator
 - **Stars:** ~3,180
 - **Language:** Python
@@ -63,7 +74,7 @@ OpenReels operates in a competitive space of open-source AI-powered short-form v
 - **Strengths:** Simple, focused on repurposing existing content.
 - **Weaknesses:** Not a topic-to-video generator. Requires source video input.
 
-#### 6. Text-To-Video-AI
+#### 8. Text-To-Video-AI
 - **GitHub:** SamurAIGPT/Text-To-Video-AI
 - **Stars:** ~1,500+
 - **Language:** Python
@@ -76,7 +87,7 @@ OpenReels operates in a competitive space of open-source AI-powered short-form v
 
 ### Tier 3: Emerging Projects (<1K Stars)
 
-#### 7. short-video-maker
+#### 9. short-video-maker
 - **GitHub:** gyoridavid/short-video-maker
 - **Stars:** ~981
 - **Language:** TypeScript
@@ -86,7 +97,7 @@ OpenReels operates in a competitive space of open-source AI-powered short-form v
 - **Strengths:** MCP integration (agent-friendly), identical stack to OpenReels (TS + Remotion), clean REST API, Docker-first, npm published.
 - **Weaknesses:** No AI image generation, no archetype system, English-only TTS (Kokoro), no multi-agent pipeline.
 
-#### 8. YumCut
+#### 10. YumCut
 - **GitHub:** IgorShadurin/app.yumcut.com
 - **Stars:** ~664
 - **Language:** TypeScript (Next.js)
@@ -95,7 +106,7 @@ OpenReels operates in a competitive space of open-source AI-powered short-form v
 - **Strengths:** Full product with web + mobile, multi-language, template system, bring-your-own-providers.
 - **Weaknesses:** Newer project, smaller community, commercial license required for reselling.
 
-#### 9. OpenShorts
+#### 11. OpenShorts
 - **GitHub:** mutonby/openshorts
 - **Stars:** ~342
 - **Language:** Python
@@ -108,29 +119,30 @@ OpenReels operates in a competitive space of open-source AI-powered short-form v
 
 ## Feature Comparison Matrix
 
-| Feature | OpenReels | MoneyPrinterTurbo | ShortGPT | short-video-maker | YumCut | MoneyPrinterPlus |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Stars** | New | ~54,600 | ~7,100 | ~981 | ~664 | ~5,990 |
-| **Language** | TypeScript | Python | Python | TypeScript | TypeScript | Python |
-| **Rendering Engine** | Remotion | MoviePy/FFmpeg | FFmpeg | Remotion | FFmpeg | FFmpeg |
-| **Multi-Agent Pipeline** | Yes (4 agents) | No | No | No | No | No |
-| **AI Image Generation** | Yes (Gemini, OpenAI) | No (stock only) | No (stock only) | No (stock only) | Yes | Yes (Stable Diffusion) |
-| **Style/Archetype System** | 14 archetypes | No | No | No | Templates | No |
-| **Caption Styles** | 6 styles | Basic | Basic | Configurable | Auto | Basic |
-| **Critic/Revision Loop** | Yes | No | No | No | No | No |
-| **Research Agent** | Yes (web search) | No | No | No | No | No |
-| **TTS Providers** | ElevenLabs, Inworld | Edge TTS, Azure | ElevenLabs, Edge | Kokoro.js | BYO | ChatTTS, GPTSoVITS, Azure |
-| **LLM Providers** | Anthropic, OpenAI | OpenAI, Gemini, Ollama | OpenAI, Gemini | External (MCP) | BYO | Multiple |
-| **Local LLM Support** | No | Yes (Ollama) | No | No | No | Yes |
-| **Web UI** | No (CLI) | Yes (Streamlit) | Yes | REST API | Yes (Next.js) | Yes |
-| **Auto-Publishing** | No | No | No | No | No | Yes (Chinese platforms) |
-| **Docker Support** | Yes | Yes | Yes | Yes | Yes | Yes |
-| **Audio Ducking** | Yes (intelligent) | No | No | No | Unknown | No |
-| **Stock Video Looping** | Yes | No | No | Yes | No | No |
-| **Platform Targeting** | YouTube, TikTok, IG | Portrait/Landscape | YouTube, TikTok | Portrait/Landscape | TikTok, Reels, Shorts | Multiple |
-| **Cost Tracking** | Yes | No | No | No | No | No |
-| **Transitions** | 5 types | Basic | Basic | Unknown | Unknown | Basic |
-| **Motion Effects** | 5 types + intensity | Basic Ken Burns | None | None | Unknown | None |
+| Feature | OpenReels | MoneyPrinterTurbo | MoneyPrinterV2 | ShortGPT | short-video-maker | YumCut | MoneyPrinterPlus |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Stars** | New | ~54,600 | ~27,700 | ~7,100 | ~981 | ~664 | ~5,990 |
+| **Language** | TypeScript | Python | Python | Python | TypeScript | TypeScript | Python |
+| **License** | MIT | MIT | AGPL-3.0 | MIT | MIT | Custom | MIT |
+| **Rendering Engine** | Remotion | MoviePy/FFmpeg | MoviePy | FFmpeg | Remotion | FFmpeg | FFmpeg |
+| **Multi-Agent Pipeline** | Yes (4 agents) | No | No | No | No | No | No |
+| **AI Image Generation** | Yes (Gemini, OpenAI) | No (stock only) | Yes (Gemini) | No (stock only) | No (stock only) | Yes | Yes (Stable Diffusion) |
+| **Style/Archetype System** | 14 archetypes | No | No | No | No | Templates | No |
+| **Caption Styles** | 6 styles | Basic | Basic | Basic | Configurable | Auto | Basic |
+| **Critic/Revision Loop** | Yes | No | No | No | No | No | No |
+| **Research Agent** | Yes (web search) | No | No | No | No | No | No |
+| **TTS Providers** | ElevenLabs, Inworld | Edge TTS, Azure | KittenTTS (local free) | ElevenLabs, Edge | Kokoro.js | BYO | ChatTTS, GPTSoVITS, Azure |
+| **LLM Providers** | Anthropic, OpenAI | OpenAI, Gemini, Ollama | Ollama (local free) | OpenAI, Gemini | External (MCP) | BYO | Multiple |
+| **Fully Local/Free** | No | Partial (Ollama) | Yes (Ollama + KittenTTS) | No | No | No | Partial |
+| **Web UI** | No (CLI) | Yes (Streamlit) | No (CLI) | Yes | REST API | Yes (Next.js) | Yes |
+| **Auto-Publishing** | No | No | No | No | No | No | Yes (Chinese platforms) |
+| **Docker Support** | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
+| **Audio Ducking** | Yes (intelligent) | No | No | No | No | Unknown | No |
+| **Stock Video Looping** | Yes | No | No | No | Yes | No | No |
+| **Platform Targeting** | YouTube, TikTok, IG | Portrait/Landscape | YouTube Shorts | YouTube, TikTok | Portrait/Landscape | TikTok, Reels, Shorts | Multiple |
+| **Cost Tracking** | Yes | No | No | No | No | No | No |
+| **Transitions** | 5 types | Basic | Basic | Basic | Unknown | Unknown | Basic |
+| **Motion Effects** | 5 types + intensity | Basic Ken Burns | None | None | None | Unknown | None |
 
 ---
 
