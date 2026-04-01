@@ -1,0 +1,11 @@
+services:
+  openreels:
+    build: .
+    env_file: .env
+    shm_size: '2gb'
+    volumes:
+      - ./output:/output
+      - openreels-cache:/root/.openreels/cache
+
+volumes:
+  openreels-cache:

@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+output
+.git
+.gitignore
+*.md
+!README.md
+.github
+.vscode
+.biome
+fixtures
