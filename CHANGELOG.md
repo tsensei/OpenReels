@@ -2,6 +2,20 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.3.0] - 2026-04-01
+
+### Added
+- Docker containerization. Run `docker run --env-file .env --shm-size=2gb -v ./output:/output openreels "your topic"` on any platform with Docker installed. No Node.js, Chrome, or ffmpeg setup required.
+- `--yes` / `-y` CLI flag to auto-confirm cost estimation prompt for non-interactive environments (Docker, CI).
+- Startup API key validation that checks required keys based on selected providers before any API calls, with clear error table showing missing keys and signup URLs.
+- `--preview` flag now detects non-interactive terminals and skips gracefully instead of hanging.
+- GitHub Actions workflow for building and pushing Docker images to GHCR on release.
+- docker-compose.yml with pre-configured shared memory, output volume, and stock asset cache.
+
+### Changed
+- `.env.example` now includes provider signup URLs and Docker usage instructions.
+- TODOS.md updated with Docker-related future work (HTTP API server mode, Remotion pre-bundling optimization).
+
 ## [0.2.0] - 2026-04-01
 
 ### Added

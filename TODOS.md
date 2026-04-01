@@ -8,8 +8,8 @@
 - [ ] **API call timeouts** — Add AbortSignal.timeout() to all fetch calls and SDK client timeouts to prevent hung requests blocking the pipeline indefinitely
   **Priority:** P1
 
-- [ ] **Resolve prompts relative to package** — Use import.meta.url instead of process.cwd() for prompt file paths so the CLI works when installed globally or run from outside project root
-  **Priority:** P1
+- [ ] **Resolve prompts relative to package** — Use import.meta.url instead of process.cwd() for prompt file paths so the CLI works when installed globally or run from outside project root. Not blocking Docker (tsx + WORKDIR /app handles it), but still needed for npm distribution.
+  **Priority:** P2
 
 - [ ] **Validate --provider and --archetype early** — Use Commander.choices() for --provider and validate --archetype against registry at CLI parse time, before spending API calls
   **Priority:** P2
@@ -31,5 +31,14 @@
 
 - [ ] **Verify beat component frame behavior under TransitionSeries** — Confirm that AIImageBeat/StockVideoBeat/TextCardBeat motion calculations (zoom, pan, spring) produce identical results inside TransitionSeries.Sequence vs regular Sequence. If frame context differs, motion animations would be stretched or compressed.
   **Priority:** P2
+
+## Docker
+
+- [ ] **Remotion pre-bundling optimization** — Pre-bundle Remotion compositions during `docker build` to cache webpack output and Google Fonts in the image layer. Each render currently pays ~30-60s for webpack bundling. Needs validation that `staticFile()` references don't fail with missing assets at build time.
+  **Priority:** P3
+
+- [ ] **HTTP API server mode** — Add a Fastify HTTP server (`openreels serve`) with POST /render, GET /render/:id/status, GET /render/:id/download, SSE /render/:id/events. Foundation for web UI and programmatic access.
+  **Priority:** P2
+  **Depends on:** Docker containerization shipping first
 
 ## Completed
