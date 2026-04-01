@@ -226,7 +226,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
       platformConfig.fps,
     );
 
-    const totalFrames = getTotalDurationInFrames(compositionProps);
+    const totalFrames = getTotalDurationInFrames(compositionProps, platformConfig.fps);
 
     // Bundle Remotion compositions with our assets as the public directory
     const remotionEntry = path.join(process.cwd(), "src", "remotion", "index.ts");

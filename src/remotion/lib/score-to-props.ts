@@ -15,6 +15,8 @@ export interface SceneProps {
   motionIntensity?: number;
   startFrom?: number;
   sourceDurationInSeconds?: number;
+  transition: string;
+  transitionDurationFrames: number;
 }
 
 export interface CompositionProps {
@@ -63,6 +65,8 @@ export function mapScoreToProps(
       motionIntensity: archetype.motionIntensity,
       startFrom: 0,
       sourceDurationInSeconds: assets.sceneSourceDurations[i] ?? undefined,
+      transition: scene.transition ?? archetype.defaultTransition ?? "none",
+      transitionDurationFrames: archetype.transitionDurationFrames ?? 15,
     };
   });
 
@@ -75,6 +79,27 @@ export function mapScoreToProps(
   };
 }
 
-export function getTotalDurationInFrames(props: CompositionProps): number {
-  return props.scenes.reduce((sum, s) => sum + s.durationInFrames, 0);
+export function getTotalDurationInFrames(props: CompositionProps, fps: number = 30): number {
+  const sceneDuration = props.scenes.reduce((sum, s) => sum + s.durationInFrames, 0);
+  const transitionOverlap = props.scenes.reduce((sum, s, i) => {
+    if (i < props.scenes.length - 1 && s.transition !== "none") {
+      return sum + s.transitionDurationFrames;
+    }
+    return sum;
+  }, 0);
+
+  const adjusted = sceneDuration - transitionOverlap;
+
+  // Voiceover is the spine — composition must be at least as long as voiceover.
+  // If overlap causes a deficit, extend the last scene to fill the visual gap.
+  const voiceoverEnd = props.allWords[props.allWords.length - 1]?.end ?? 0;
+  const minFrames = Math.ceil(voiceoverEnd * fps);
+
+  if (adjusted < minFrames && props.scenes.length > 0) {
+    const deficit = minFrames - adjusted;
+    props.scenes[props.scenes.length - 1].durationInFrames += deficit;
+    return minFrames;
+  }
+
+  return adjusted;
 }
