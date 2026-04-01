@@ -22,17 +22,25 @@ WORKDIR /app
 # Enable pnpm via corepack
 RUN corepack enable pnpm
 
-# Install dependencies first (layer caching)
+# Install backend dependencies first (layer caching)
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # Install Chrome Headless Shell for Remotion rendering
 RUN npx remotion browser ensure
 
-# Copy full source (needed for tsx runtime and Remotion webpack bundling)
+# Install frontend dependencies
+COPY web/package.json web/pnpm-lock.yaml ./web/
+RUN cd web && pnpm install --frozen-lockfile
+
+# Copy full source
 COPY . .
 
-# Create output directory
-RUN mkdir -p /output
+# Build frontend
+RUN cd web && npx vite build
 
+# Create directories
+RUN mkdir -p /output /app/jobs
+
+# Default: CLI mode (backwards compatible)
 ENTRYPOINT ["npx", "tsx", "src/index.ts", "--yes", "-o", "/output"]
