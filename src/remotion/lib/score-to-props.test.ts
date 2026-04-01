@@ -174,4 +174,20 @@ describe("getTotalDurationInFrames", () => {
     const total = getTotalDurationInFrames(props, 30);
     expect(total).toBe(sum - 15);
   });
+
+  it("does not compound last scene duration on double invocation", () => {
+    const props = mapScoreToProps(baseScore, baseAssets, 30);
+    props.scenes[0]!.transition = "crossfade";
+    props.scenes[0]!.transitionDurationFrames = 60;
+    props.scenes[1]!.transition = "crossfade";
+    props.scenes[1]!.transitionDurationFrames = 60;
+
+    const first = getTotalDurationInFrames(props, 30);
+    const lastSceneAfterFirst = props.scenes[2]!.durationInFrames;
+
+    // Second call on same props — should NOT grow the last scene further
+    const second = getTotalDurationInFrames(props, 30);
+    expect(second).toBe(first);
+    expect(props.scenes[2]!.durationInFrames).toBe(lastSceneAfterFirst);
+  });
 });

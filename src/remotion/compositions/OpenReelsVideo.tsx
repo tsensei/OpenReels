@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, Composition, Audio, staticFile } from "remotion";
-import { TransitionSeries, linearTiming, springTiming } from "@remotion/transitions";
+import { TransitionSeries, linearTiming } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import { slide } from "@remotion/transitions/slide";
 import { wipe } from "@remotion/transitions/wipe";
@@ -48,8 +48,8 @@ function getTransition(type: TransitionType, durationInFrames: number): { presen
     case "crossfade": return { presentation: fade(), timing: linear };
     case "slide_left": return { presentation: slide({ direction: "from-right" }), timing: linear };
     case "slide_right": return { presentation: slide({ direction: "from-left" }), timing: linear };
-    case "wipe": return { presentation: wipe({ direction: "from-top-left" }), timing: linear };
-    case "flip": return { presentation: flip(), timing: springTiming({ durationInFrames }) };
+    case "wipe": return { presentation: wipe({ direction: "from-left" }), timing: linear };
+    case "flip": return { presentation: flip(), timing: linear };
     case "none": return null;
     default: return null;
   }
@@ -64,7 +64,7 @@ const Main: React.FC<CompositionProps> = ({ scenes, captionStyle, voiceoverSrc, 
           const BeatComponent = BEAT_COMPONENTS[scene.visualType] ?? TextCardBeat;
           const prevScene = i > 0 ? scenes[i - 1] : undefined;
           const trans = prevScene
-            ? getTransition(prevScene.transition as TransitionType, prevScene.transitionDurationFrames)
+            ? getTransition(prevScene.transition, prevScene.transitionDurationFrames)
             : null;
 
           return (

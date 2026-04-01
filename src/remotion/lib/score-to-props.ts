@@ -1,4 +1,4 @@
-import type { DirectorScore } from "../../schema/director-score";
+import type { DirectorScore, TransitionType } from "../../schema/director-score";
 import type { ArchetypeConfig } from "../../schema/archetype";
 import type { WordTimestamp } from "../../schema/providers";
 import { getArchetype } from "../../config/archetype-registry.js";
@@ -15,7 +15,7 @@ export interface SceneProps {
   motionIntensity?: number;
   startFrom?: number;
   sourceDurationInSeconds?: number;
-  transition: string;
+  transition: TransitionType;
   transitionDurationFrames: number;
 }
 
