@@ -37,8 +37,28 @@
 - [ ] **Remotion pre-bundling optimization** — Pre-bundle Remotion compositions during `docker build` to cache webpack output and Google Fonts in the image layer. Each render currently pays ~30-60s for webpack bundling. Needs validation that `staticFile()` references don't fail with missing assets at build time.
   **Priority:** P3
 
-- [ ] **HTTP API server mode** — Add a Fastify HTTP server (`openreels serve`) with POST /render, GET /render/:id/status, GET /render/:id/download, SSE /render/:id/events. Foundation for web UI and programmatic access.
+## Web UI
+
+- [ ] **API key validation endpoint** — Add POST /api/v1/config/validate-keys that makes lightweight test calls to each provider to verify keys are valid before starting a job.
   **Priority:** P2
-  **Depends on:** Docker containerization shipping first
+  Deferred from plan: tsensei-main-design-20260401-202558.md
+
+- [ ] **SSE Last-Event-ID reconnection** — Support Last-Event-ID header on SSE reconnection to replay missed events. Currently clients get a fresh snapshot on reconnect but may miss intermediate stage events.
+  **Priority:** P2
+  Deferred from plan: tsensei-main-design-20260401-202558.md
+
+- [ ] **Gallery thumbnails** — Extract a frame at 1-second mark from rendered videos using FFmpeg for gallery card thumbnails. Fall back to first generated image from stage-visuals/.
+  **Priority:** P2
+  Deferred from plan: tsensei-main-design-20260401-202558.md
+
+- [ ] **API key headers** — Support per-provider API keys via request headers (X-OpenReels-Key-Anthropic, etc.) as alternative to request body keys field.
+  **Priority:** P3
+  Deferred from plan: tsensei-main-design-20260401-202558.md
+
+- [ ] **Integration test suite** — Add Docker-based integration tests for server.ts and worker.ts using testcontainers or docker-compose test profile with Redis.
+  **Priority:** P2
 
 ## Completed
+
+- [x] **HTTP API server mode** — Fastify HTTP server with POST /api/v1/jobs, GET /api/v1/jobs/:id, SSE /api/v1/jobs/:id/events, plus full React web UI.
+  **Completed:** v0.4.0 (2026-04-02)

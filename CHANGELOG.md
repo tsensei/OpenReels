@@ -2,6 +2,28 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.4.0] - 2026-04-02
+
+### Added
+- Web UI with live pipeline visualization. Watch AI research, write, speak, and paint in real time across 6 stages. React + Tailwind frontend served from the same Docker image.
+- REST API (Fastify) for programmatic job management. Create, list, monitor, cancel, and delete render jobs via `/api/v1/` endpoints.
+- Server-Sent Events (SSE) streaming for real-time job progress. Each pipeline stage emits typed events as it runs.
+- BullMQ job queue backed by Redis. Jobs survive restarts, support cancellation between stages, and auto-prune when `MAX_JOBS` is set.
+- Worker process that runs the rendering pipeline with callback-driven progress reporting, decoupled from the CLI.
+- Provider factory with bring-your-own-key (BYOK) support. Submit custom API keys per job without storing them server-side.
+- Job gallery page with pagination and status indicators.
+- Settings page for API key management (stored in browser localStorage).
+- Artifact serving with path traversal protection for downloading generated videos, images, and audio.
+- Health check endpoint (`/api/v1/health`) with Redis and filesystem status.
+- `StockProviderKey` type export for consistent stock provider typing.
+
+### Changed
+- Pipeline orchestrator refactored to use a `PipelineCallbacks` interface, decoupling progress reporting from terminal output. Both CLI and web worker provide their own callbacks.
+- CLI entry point (`src/index.ts`) now uses the shared provider factory and callback system instead of inline provider construction.
+- Docker Compose upgraded from single-service CLI to 3-service architecture (Redis + API + Worker) with shared job volume.
+- Dockerfile builds the React frontend during image creation and serves it via Fastify.
+- Imports alphabetized across all source files.
+
 ## [0.3.0] - 2026-04-01
 
 ### Added
