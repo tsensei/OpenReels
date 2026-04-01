@@ -5,10 +5,13 @@ import { validateEnv } from "./validate-env.js";
 let exitSpy: any;
 // biome-ignore lint: test spies
 let errorSpy: any;
+// biome-ignore lint: test spies
+let warnSpy: any;
 
 beforeEach(() => {
   exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as any);
   errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -100,5 +103,39 @@ describe("validateEnv", () => {
     delete process.env["ANTHROPIC_API_KEY"];
     delete process.env["ELEVENLABS_API_KEY"];
     delete process.env["GOOGLE_API_KEY"];
+  });
+
+  it("warns when no stock media API key is set", () => {
+    process.env["ANTHROPIC_API_KEY"] = "test";
+    process.env["ELEVENLABS_API_KEY"] = "test";
+    process.env["GOOGLE_API_KEY"] = "test";
+    delete process.env["PEXELS_API_KEY"];
+    delete process.env["PIXABAY_API_KEY"];
+
+    validateEnv({ provider: "anthropic", ttsProvider: "elevenlabs", imageProvider: "gemini" });
+
+    const output = warnSpy.mock.calls.flat().join("");
+    expect(output).toContain("No stock media API key found");
+
+    delete process.env["ANTHROPIC_API_KEY"];
+    delete process.env["ELEVENLABS_API_KEY"];
+    delete process.env["GOOGLE_API_KEY"];
+  });
+
+  it("does not warn about stock keys when PEXELS_API_KEY is set", () => {
+    process.env["ANTHROPIC_API_KEY"] = "test";
+    process.env["ELEVENLABS_API_KEY"] = "test";
+    process.env["GOOGLE_API_KEY"] = "test";
+    process.env["PEXELS_API_KEY"] = "test";
+
+    validateEnv({ provider: "anthropic", ttsProvider: "elevenlabs", imageProvider: "gemini" });
+
+    const output = warnSpy.mock.calls.flat().join("");
+    expect(output).not.toContain("No stock media API key found");
+
+    delete process.env["ANTHROPIC_API_KEY"];
+    delete process.env["ELEVENLABS_API_KEY"];
+    delete process.env["GOOGLE_API_KEY"];
+    delete process.env["PEXELS_API_KEY"];
   });
 });

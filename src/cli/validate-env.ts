@@ -47,6 +47,17 @@ export function validateEnv(opts: {
 
   const missing = requirements.filter((r) => r.required && !process.env[r.key]);
 
+  // Stock keys are optional — the pipeline degrades gracefully (black frames) — but
+  // warn upfront so users aren't surprised by missing visuals on stock_image/stock_video scenes.
+  const hasStockKey = process.env["PEXELS_API_KEY"] || process.env["PIXABAY_API_KEY"];
+  if (!hasStockKey) {
+    console.warn(
+      "\nWarning: No stock media API key found (PEXELS_API_KEY or PIXABAY_API_KEY).\n" +
+      "Scenes using stock_image or stock_video will render as blank frames.\n" +
+      "Get a free key: https://www.pexels.com/api/ or https://pixabay.com/api/docs/\n",
+    );
+  }
+
   if (missing.length === 0) return;
 
   console.error("\nMissing required API keys:\n");
