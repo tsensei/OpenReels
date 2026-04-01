@@ -39,7 +39,8 @@ const resolveAsset = (relativePath: string | null): string | null => {
   return staticFile(relativePath);
 };
 
-function getTransitionPresentation(type: string) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getTransitionPresentation(type: string): any {
   switch (type) {
     case "crossfade": return fade();
     case "slide_left": return slide({ direction: "from-right" });
@@ -58,16 +59,17 @@ const Main: React.FC<CompositionProps> = ({ scenes, captionStyle, voiceoverSrc, 
       <TransitionSeries>
         {scenes.map((scene, i) => {
           const BeatComponent = BEAT_COMPONENTS[scene.visualType] ?? TextCardBeat;
-          const presentation = i > 0
-            ? getTransitionPresentation(scenes[i - 1].transition)
+          const prevScene = i > 0 ? scenes[i - 1] : undefined;
+          const presentation = prevScene
+            ? getTransitionPresentation(prevScene.transition)
             : null;
 
           return (
             <React.Fragment key={i}>
-              {presentation && (
+              {presentation && prevScene && (
                 <TransitionSeries.Transition
                   presentation={presentation}
-                  timing={linearTiming({ durationInFrames: scenes[i - 1].transitionDurationFrames })}
+                  timing={linearTiming({ durationInFrames: prevScene.transitionDurationFrames })}
                 />
               )}
               <TransitionSeries.Sequence durationInFrames={scene.durationInFrames}>

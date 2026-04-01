@@ -39,17 +39,17 @@ describe("mapScoreToProps", () => {
   it("maps basic scene properties correctly", () => {
     const props = mapScoreToProps(baseScore, baseAssets);
     expect(props.scenes).toHaveLength(3);
-    expect(props.scenes[0].visualType).toBe("text_card");
-    expect(props.scenes[1].visualType).toBe("ai_image");
-    expect(props.scenes[1].assetSrc).toBe("/images/scene2.png");
-    expect(props.scenes[0].motion).toBe("static");
-    expect(props.scenes[1].motion).toBe("zoom_in");
+    expect(props.scenes[0]!.visualType).toBe("text_card");
+    expect(props.scenes[1]!.visualType).toBe("ai_image");
+    expect(props.scenes[1]!.assetSrc).toBe("/images/scene2.png");
+    expect(props.scenes[0]!.motion).toBe("static");
+    expect(props.scenes[1]!.motion).toBe("zoom_in");
   });
 
   it("calculates scene duration from word timestamps with padding", () => {
     const props = mapScoreToProps(baseScore, baseAssets, 30);
     // Scene 1: words from 0 to 3 = 3s + 0.5s padding = 3.5s = 105 frames
-    expect(props.scenes[0].durationInFrames).toBe(105);
+    expect(props.scenes[0]!.durationInFrames).toBe(105);
   });
 
   it("uses minimum 2 second duration for scenes with short voiceover", () => {
@@ -59,14 +59,14 @@ describe("mapScoreToProps", () => {
     };
     const props = mapScoreToProps(baseScore, shortAssets, 30);
     // 0.5s voiceover + 0.5s padding = 1.0s, but min is 2s = 60 frames
-    expect(props.scenes[0].durationInFrames).toBe(60);
+    expect(props.scenes[0]!.durationInFrames).toBe(60);
   });
 
   it("passes archetype config to scene props", () => {
     const props = mapScoreToProps(baseScore, baseAssets);
-    expect(props.scenes[0].colorPalette).toBeDefined();
-    expect(props.scenes[0].textCardFont).toBeTruthy();
-    expect(typeof props.scenes[0].motionIntensity).toBe("number");
+    expect(props.scenes[0]!.colorPalette).toBeDefined();
+    expect(props.scenes[0]!.textCardFont).toBeTruthy();
+    expect(typeof props.scenes[0]!.motionIntensity).toBe("number");
     expect(props.captionStyle).toBe("bold_outline");
   });
 
@@ -79,37 +79,33 @@ describe("mapScoreToProps", () => {
       })),
     };
     const props = mapScoreToProps(score, baseAssets);
-    expect(props.scenes[0].transition).toBe("crossfade");
-    expect(props.scenes[1].transition).toBe("wipe");
+    expect(props.scenes[0]!.transition).toBe("crossfade");
+    expect(props.scenes[1]!.transition).toBe("wipe");
   });
 
   it("falls back to archetype default when scene transition is undefined", () => {
     // editorial_caricature has defaultTransition: "slide_left"
     const props = mapScoreToProps(baseScore, baseAssets);
-    expect(props.scenes[0].transition).toBe("slide_left");
-    expect(props.scenes[1].transition).toBe("slide_left");
+    expect(props.scenes[0]!.transition).toBe("slide_left");
+    expect(props.scenes[1]!.transition).toBe("slide_left");
   });
 
   it("falls back to 'none' when archetype has no default transition", () => {
-    // Use a score with an archetype that might not have defaultTransition
-    // Since all archetypes now have it, we test the cascade logic directly
-    // by checking that the mapper produces the archetype's default
     const props = mapScoreToProps(baseScore, baseAssets);
     // editorial_caricature has defaultTransition: "slide_left", so we verify it's used
-    expect(props.scenes[0].transition).toBe("slide_left");
+    expect(props.scenes[0]!.transition).toBe("slide_left");
   });
 
   it("uses archetype transitionDurationFrames", () => {
     // editorial_caricature has transitionDurationFrames: 12
     const props = mapScoreToProps(baseScore, baseAssets);
-    expect(props.scenes[0].transitionDurationFrames).toBe(12);
+    expect(props.scenes[0]!.transitionDurationFrames).toBe(12);
   });
 });
 
 describe("getTotalDurationInFrames", () => {
   it("returns sum of scene durations when no transitions", () => {
     const props = mapScoreToProps(baseScore, baseAssets, 30);
-    // Override transitions to "none" for this test
     props.scenes.forEach(s => { s.transition = "none"; });
     const total = getTotalDurationInFrames(props, 30);
     const sum = props.scenes.reduce((acc, s) => acc + s.durationInFrames, 0);
@@ -118,12 +114,11 @@ describe("getTotalDurationInFrames", () => {
 
   it("subtracts transition overlaps from total duration", () => {
     const props = mapScoreToProps(baseScore, baseAssets, 30);
-    // Set transitions on first two scenes (not last)
-    props.scenes[0].transition = "crossfade";
-    props.scenes[0].transitionDurationFrames = 15;
-    props.scenes[1].transition = "wipe";
-    props.scenes[1].transitionDurationFrames = 10;
-    props.scenes[2].transition = "none";
+    props.scenes[0]!.transition = "crossfade";
+    props.scenes[0]!.transitionDurationFrames = 15;
+    props.scenes[1]!.transition = "wipe";
+    props.scenes[1]!.transitionDurationFrames = 10;
+    props.scenes[2]!.transition = "none";
 
     const sum = props.scenes.reduce((acc, s) => acc + s.durationInFrames, 0);
     const total = getTotalDurationInFrames(props, 30);
@@ -133,19 +128,18 @@ describe("getTotalDurationInFrames", () => {
 
   it("extends last scene when overlap causes voiceover truncation", () => {
     const props = mapScoreToProps(baseScore, baseAssets, 30);
-    // Set large transition durations to force truncation
-    props.scenes[0].transition = "crossfade";
-    props.scenes[0].transitionDurationFrames = 60; // 2 seconds
-    props.scenes[1].transition = "crossfade";
-    props.scenes[1].transitionDurationFrames = 60; // 2 seconds
+    props.scenes[0]!.transition = "crossfade";
+    props.scenes[0]!.transitionDurationFrames = 60;
+    props.scenes[1]!.transition = "crossfade";
+    props.scenes[1]!.transitionDurationFrames = 60;
 
-    const lastSceneBefore = props.scenes[2].durationInFrames;
+    const lastSceneBefore = props.scenes[2]!.durationInFrames;
     const total = getTotalDurationInFrames(props, 30);
 
     // Voiceover ends at 9 seconds = 270 frames
     const voiceoverEnd = Math.ceil(9 * 30);
     expect(total).toBeGreaterThanOrEqual(voiceoverEnd);
-    expect(props.scenes[2].durationInFrames).toBeGreaterThan(lastSceneBefore);
+    expect(props.scenes[2]!.durationInFrames).toBeGreaterThan(lastSceneBefore);
   });
 
   it("handles empty words array without clamping", () => {
@@ -154,14 +148,12 @@ describe("getTotalDurationInFrames", () => {
       allWords: [],
       sceneWords: [[], [], []],
     }, 30);
-    // Set all transitions to "none" except scene 0
     props.scenes.forEach(s => { s.transition = "none"; });
-    props.scenes[0].transition = "crossfade";
-    props.scenes[0].transitionDurationFrames = 15;
+    props.scenes[0]!.transition = "crossfade";
+    props.scenes[0]!.transitionDurationFrames = 15;
 
     const sum = props.scenes.reduce((acc, s) => acc + s.durationInFrames, 0);
     const total = getTotalDurationInFrames(props, 30);
-    // Only scene 0 has a non-"none" transition (and it's not last), so overlap = 15
     expect(total).toBe(sum - 15);
   });
 });

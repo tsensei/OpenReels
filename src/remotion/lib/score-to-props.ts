@@ -95,9 +95,10 @@ export function getTotalDurationInFrames(props: CompositionProps, fps: number = 
   const voiceoverEnd = props.allWords[props.allWords.length - 1]?.end ?? 0;
   const minFrames = Math.ceil(voiceoverEnd * fps);
 
-  if (adjusted < minFrames && props.scenes.length > 0) {
+  const lastScene = props.scenes[props.scenes.length - 1];
+  if (adjusted < minFrames && lastScene) {
     const deficit = minFrames - adjusted;
-    props.scenes[props.scenes.length - 1].durationInFrames += deficit;
+    lastScene.durationInFrames += deficit;
     return minFrames;
   }
 

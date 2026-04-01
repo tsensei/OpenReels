@@ -108,7 +108,7 @@ describe("DirectorScore schema", () => {
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.scenes[0].transition).toBeUndefined();
+      expect(result.data.scenes[0]!.transition).toBeUndefined();
     }
   });
 
