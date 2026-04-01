@@ -18,6 +18,11 @@ const WEB_DIST = path.join(process.cwd(), "web", "dist");
 // Ensure jobs directory exists
 fs.mkdirSync(JOBS_DIR, { recursive: true });
 
+/** Validate job ID to prevent path traversal — must be alphanumeric/hyphen/underscore only */
+function isValidJobId(id: string): boolean {
+  return /^[\w-]+$/.test(id);
+}
+
 const redis = new IORedis(REDIS_URL, { maxRetriesPerRequest: null });
 const queue = new Queue("openreels", { connection: redis });
 const queueEvents = new QueueEvents("openreels", { connection: redis.duplicate() });
@@ -183,6 +188,9 @@ app.get("/api/v1/jobs", async (request) => {
 
 // --- Job detail ---
 app.get<{ Params: { id: string } }>("/api/v1/jobs/:id", async (request, reply) => {
+  if (!isValidJobId(request.params.id)) {
+    return reply.status(400).send({ error: "Invalid job ID" });
+  }
   const jobDir = path.join(JOBS_DIR, request.params.id);
   const metaPath = path.join(jobDir, "meta.json");
 
@@ -196,6 +204,9 @@ app.get<{ Params: { id: string } }>("/api/v1/jobs/:id", async (request, reply) =
 
 // --- Job SSE events ---
 app.get<{ Params: { id: string } }>("/api/v1/jobs/:id/events", async (request, reply) => {
+  if (!isValidJobId(request.params.id)) {
+    return reply.status(400).send({ error: "Invalid job ID" });
+  }
   const jobId = request.params.id;
 
   // Check if job exists in BullMQ
@@ -277,6 +288,9 @@ app.get<{ Params: { id: string; "*": string } }>(
   "/api/v1/jobs/:id/artifacts/*",
   async (request, reply) => {
     const jobId = request.params.id;
+    if (!isValidJobId(jobId)) {
+      return reply.status(400).send({ error: "Invalid job ID" });
+    }
     const artifactPath = request.params["*"];
 
     const jobDir = path.join(JOBS_DIR, jobId);
@@ -300,6 +314,9 @@ app.get<{ Params: { id: string; "*": string } }>(
 
 // --- Job cancellation ---
 app.post<{ Params: { id: string } }>("/api/v1/jobs/:id/cancel", async (request, reply) => {
+  if (!isValidJobId(request.params.id)) {
+    return reply.status(400).send({ error: "Invalid job ID" });
+  }
   const job = await queue.getJob(request.params.id);
   if (!job) {
     return reply.status(404).send({ error: "Job not found" });
@@ -328,6 +345,9 @@ app.post<{ Params: { id: string } }>("/api/v1/jobs/:id/cancel", async (request, 
 // --- Job deletion ---
 app.delete<{ Params: { id: string } }>("/api/v1/jobs/:id", async (request, reply) => {
   const jobId = request.params.id;
+  if (!isValidJobId(jobId)) {
+    return reply.status(400).send({ error: "Invalid job ID" });
+  }
   const jobDir = path.join(JOBS_DIR, jobId);
 
   if (!fs.existsSync(jobDir)) {

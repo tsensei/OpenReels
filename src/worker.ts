@@ -221,16 +221,15 @@ worker.on("completed", (job) => {
 worker.on("failed", (job, err) => {
   console.error(`[worker] Job ${job?.id} failed:`, err.message);
 
-  // Update meta to reflect failure
+  // Update meta to reflect failure (atomic write to prevent corruption)
   if (job?.id) {
     const jobDir = path.join(JOBS_DIR, job.id);
-    const metaPath = path.join(jobDir, "meta.json");
     try {
-      const meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+      const meta = JSON.parse(fs.readFileSync(path.join(jobDir, "meta.json"), "utf-8"));
       meta.status = "failed";
       meta.error = err.message;
       meta.completedAt = new Date().toISOString();
-      fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+      writeMeta(jobDir, meta);
     } catch {}
   }
 });
