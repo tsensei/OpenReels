@@ -1,9 +1,9 @@
-import { z } from "zod";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { LLMProvider, LLMUsage } from "../schema/providers.js";
-import type { DirectorScore } from "../schema/director-score.js";
+import { z } from "zod";
 import { loadPlaybookSections } from "../config/playbook.js";
+import type { DirectorScore } from "../schema/director-score.js";
+import type { LLMProvider, LLMUsage } from "../schema/providers.js";
 
 const SYSTEM_PROMPT_PATH = path.join(process.cwd(), "prompts", "critic.md");
 
@@ -27,7 +27,8 @@ export async function evaluate(
   score: DirectorScore,
   topic: string,
 ): Promise<CritiqueOutput> {
-  let systemPrompt = "You are a video quality critic. Evaluate the DirectorScore for hook strength, visual variety, pacing, script quality, and overall coherence. Score 1-10. If below 7, provide specific revision instructions targeting the weakest scene.";
+  let systemPrompt =
+    "You are a video quality critic. Evaluate the DirectorScore for hook strength, visual variety, pacing, script quality, and overall coherence. Score 1-10. If below 7, provide specific revision instructions targeting the weakest scene.";
 
   try {
     systemPrompt = fs.readFileSync(SYSTEM_PROMPT_PATH, "utf-8");

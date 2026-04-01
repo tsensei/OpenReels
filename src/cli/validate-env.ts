@@ -1,4 +1,4 @@
-import type { LLMProviderKey, TTSProviderKey, ImageProviderKey } from "../schema/providers.js";
+import type { ImageProviderKey, LLMProviderKey, TTSProviderKey } from "../schema/providers.js";
 
 interface EnvRequirement {
   key: string;
@@ -53,8 +53,8 @@ export function validateEnv(opts: {
   if (!hasStockKey) {
     console.warn(
       "\nWarning: No stock media API key found (PEXELS_API_KEY or PIXABAY_API_KEY).\n" +
-      "Scenes using stock_image or stock_video will render as blank frames.\n" +
-      "Get a free key: https://www.pexels.com/api/ or https://pixabay.com/api/docs/\n",
+        "Scenes using stock_image or stock_video will render as blank frames.\n" +
+        "Get a free key: https://www.pexels.com/api/ or https://pixabay.com/api/docs/\n",
     );
   }
 

@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { getWordChunk } from "./caption-utils";
+import { describe, expect, it } from "vitest";
 import type { WordTimestamp } from "../../schema/providers";
+import { getWordChunk } from "./caption-utils";
 
 const words: WordTimestamp[] = [
   { word: "Hello", start: 1.0, end: 1.5 },

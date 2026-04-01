@@ -15,11 +15,5 @@
   "culturalMarkers": "Everyday settings and moments appropriate to the topic — morning routines, family gatherings, neighborhood life, market scenes, workplace moments. Authentic attire and settings that feel lived-in, not staged or stylized.",
   "mood": "Warm, relatable, trustworthy, human.",
   "antiArtifactGuidance": "Natural skin tones with clean detail. Realistic fabric textures and draping. Well-defined facial features without smoothing. Clear background elements that look like real places. Proper hand and finger proportions.",
-  "visualColorPalette": [
-    "warm sand",
-    "soft coral",
-    "muted olive",
-    "cream white",
-    "honey gold"
-  ]
+  "visualColorPalette": ["warm sand", "soft coral", "muted olive", "cream white", "honey gold"]
 }

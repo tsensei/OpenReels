@@ -1,4 +1,5 @@
-import React, { useMemo } from "react";
+import type React from "react";
+import { useMemo } from "react";
 import { Audio, useVideoConfig } from "remotion";
 import type { WordTimestamp } from "../../schema/providers";
 

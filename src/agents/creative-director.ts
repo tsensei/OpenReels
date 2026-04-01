@@ -1,10 +1,10 @@
-import { z } from "zod";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { LLMProvider, LLMUsage } from "../schema/providers.js";
-import { DirectorScore, VisualType, Motion, TransitionType } from "../schema/director-score.js";
+import { z } from "zod";
 import { listArchetypes } from "../config/archetype-registry.js";
 import { loadPlaybook } from "../config/playbook.js";
+import { DirectorScore, Motion, TransitionType, VisualType } from "../schema/director-score.js";
+import type { LLMProvider, LLMUsage } from "../schema/providers.js";
 import type { ResearchResult } from "./research.js";
 
 const SYSTEM_PROMPT_PATH = path.join(process.cwd(), "prompts", "creative-director.md");
@@ -83,9 +83,10 @@ PACING CONSTRAINT: Total script must be 110-140 words for stories, 90-110 for qu
     try {
       const result = await llm.generate({
         systemPrompt,
-        userMessage: attempt > 0
-          ? `${userMessage}\n\nPREVIOUS ATTEMPT FAILED: ${lastError?.message}. Fix the issue.`
-          : userMessage,
+        userMessage:
+          attempt > 0
+            ? `${userMessage}\n\nPREVIOUS ATTEMPT FAILED: ${lastError?.message}. Fix the issue.`
+            : userMessage,
         schema: DirectorScoreRaw,
       });
 

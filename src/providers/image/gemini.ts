@@ -5,8 +5,8 @@ export class GeminiImage implements ImageProvider {
   private client: GoogleGenAI;
   private model: string;
 
-  constructor(model: string = "gemini-3.1-flash-image-preview") {
-    const key = process.env["GOOGLE_API_KEY"];
+  constructor(model: string = "gemini-3.1-flash-image-preview", apiKey?: string) {
+    const key = apiKey ?? process.env["GOOGLE_API_KEY"];
     if (!key) throw new Error("GOOGLE_API_KEY environment variable is required");
     this.client = new GoogleGenAI({ apiKey: key });
     this.model = model;

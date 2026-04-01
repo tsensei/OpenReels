@@ -3,6 +3,7 @@ import type { z } from "zod";
 export type LLMProviderKey = "anthropic" | "openai";
 export type TTSProviderKey = "elevenlabs" | "inworld";
 export type ImageProviderKey = "gemini" | "openai";
+export type StockProviderKey = "pexels" | "pixabay";
 
 export interface LLMUsage {
   inputTokens: number;

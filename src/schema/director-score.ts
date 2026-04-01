@@ -7,12 +7,12 @@ export const Motion = z.enum(["zoom_in", "zoom_out", "pan_right", "pan_left", "s
 export type Motion = z.infer<typeof Motion>;
 
 export const TransitionType = z.enum([
-  "none",        // hard cut (default via mapper cascade)
-  "crossfade",   // smooth opacity blend
-  "slide_left",  // slide new scene in from right
+  "none", // hard cut (default via mapper cascade)
+  "crossfade", // smooth opacity blend
+  "slide_left", // slide new scene in from right
   "slide_right", // slide new scene in from left
-  "wipe",        // horizontal wipe
-  "flip",        // 3D card flip
+  "wipe", // horizontal wipe
+  "flip", // 3D card flip
 ]);
 export type TransitionType = z.infer<typeof TransitionType>;
 
@@ -48,6 +48,5 @@ export const DirectorScore = z
       return true;
     },
     { message: "Golden rule violation: no more than 2 consecutive scenes of the same visual_type" },
-  )
-;
+  );
 export type DirectorScore = z.infer<typeof DirectorScore>;

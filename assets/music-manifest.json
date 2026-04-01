@@ -1,13 +1,61 @@
 {
   "tracks": [
-    { "id": "epic-01", "mood": "epic_cinematic", "pixabayId": 0, "filename": "epic-cinematic-01.mp3", "attribution": "Pixabay License" },
-    { "id": "epic-02", "mood": "epic_cinematic", "pixabayId": 0, "filename": "epic-cinematic-02.mp3", "attribution": "Pixabay License" },
-    { "id": "lofi-01", "mood": "chill_lofi", "pixabayId": 0, "filename": "chill-lofi-01.mp3", "attribution": "Pixabay License" },
-    { "id": "lofi-02", "mood": "chill_lofi", "pixabayId": 0, "filename": "chill-lofi-02.mp3", "attribution": "Pixabay License" },
-    { "id": "tense-01", "mood": "tense_electronic", "pixabayId": 0, "filename": "tense-electronic-01.mp3", "attribution": "Pixabay License" },
-    { "id": "tense-02", "mood": "tense_electronic", "pixabayId": 0, "filename": "tense-electronic-02.mp3", "attribution": "Pixabay License" },
-    { "id": "uplifting-01", "mood": "uplifting_pop", "pixabayId": 0, "filename": "uplifting-pop-01.mp3", "attribution": "Pixabay License" },
-    { "id": "ambient-01", "mood": "mysterious_ambient", "pixabayId": 0, "filename": "mysterious-ambient-01.mp3", "attribution": "Pixabay License" }
+    {
+      "id": "epic-01",
+      "mood": "epic_cinematic",
+      "pixabayId": 0,
+      "filename": "epic-cinematic-01.mp3",
+      "attribution": "Pixabay License"
+    },
+    {
+      "id": "epic-02",
+      "mood": "epic_cinematic",
+      "pixabayId": 0,
+      "filename": "epic-cinematic-02.mp3",
+      "attribution": "Pixabay License"
+    },
+    {
+      "id": "lofi-01",
+      "mood": "chill_lofi",
+      "pixabayId": 0,
+      "filename": "chill-lofi-01.mp3",
+      "attribution": "Pixabay License"
+    },
+    {
+      "id": "lofi-02",
+      "mood": "chill_lofi",
+      "pixabayId": 0,
+      "filename": "chill-lofi-02.mp3",
+      "attribution": "Pixabay License"
+    },
+    {
+      "id": "tense-01",
+      "mood": "tense_electronic",
+      "pixabayId": 0,
+      "filename": "tense-electronic-01.mp3",
+      "attribution": "Pixabay License"
+    },
+    {
+      "id": "tense-02",
+      "mood": "tense_electronic",
+      "pixabayId": 0,
+      "filename": "tense-electronic-02.mp3",
+      "attribution": "Pixabay License"
+    },
+    {
+      "id": "uplifting-01",
+      "mood": "uplifting_pop",
+      "pixabayId": 0,
+      "filename": "uplifting-pop-01.mp3",
+      "attribution": "Pixabay License"
+    },
+    {
+      "id": "ambient-01",
+      "mood": "mysterious_ambient",
+      "pixabayId": 0,
+      "filename": "mysterious-ambient-01.mp3",
+      "attribution": "Pixabay License"
+    }
   ],
   "_note": "pixabayId values are placeholders. Replace with actual Pixabay track IDs and run 'openreels setup-music' to download."
 }

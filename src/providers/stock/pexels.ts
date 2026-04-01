@@ -1,8 +1,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
-import type { StockProvider, StockAsset } from "../../schema/providers.js";
+import { pipeline } from "node:stream/promises";
+import type { StockAsset, StockProvider } from "../../schema/providers.js";
 
 const PEXELS_BASE = "https://api.pexels.com";
 
@@ -10,14 +10,9 @@ export class PexelsStock implements StockProvider {
   private apiKey: string | null;
   private cacheDir: string;
 
-  constructor() {
-    this.apiKey = process.env["PEXELS_API_KEY"] ?? null;
-    this.cacheDir = path.join(
-      process.env["HOME"] ?? "/tmp",
-      ".openreels",
-      "cache",
-      "stock",
-    );
+  constructor(apiKey?: string) {
+    this.apiKey = apiKey ?? process.env["PEXELS_API_KEY"] ?? null;
+    this.cacheDir = path.join(process.env["HOME"] ?? "/tmp", ".openreels", "cache", "stock");
     fs.mkdirSync(this.cacheDir, { recursive: true });
   }
 
@@ -47,11 +42,12 @@ export class PexelsStock implements StockProvider {
     if (!video) return null;
 
     // Pick a video file: at least 720p but no larger than 1080p to avoid 500MB+ downloads
-    const videoFile = video.video_files
-      .filter((f) => (f.width ?? 0) >= 720 && (f.width ?? 0) <= 1920)
-      .sort((a, b) => (b.width ?? 0) - (a.width ?? 0))[0]
+    const videoFile =
+      video.video_files
+        .filter((f) => (f.width ?? 0) >= 720 && (f.width ?? 0) <= 1920)
+        .sort((a, b) => (b.width ?? 0) - (a.width ?? 0))[0] ??
       // Fallback: if nothing in the 720-1080 range, take the smallest >= 720
-      ?? video.video_files
+      video.video_files
         .filter((f) => (f.width ?? 0) >= 720)
         .sort((a, b) => (a.width ?? 0) - (b.width ?? 0))[0];
 
@@ -82,10 +78,11 @@ export class PexelsStock implements StockProvider {
     const video = data.videos[0];
     if (!video) return null;
 
-    const videoFile = video.video_files
-      .filter((f) => (f.width ?? 0) >= 720 && (f.width ?? 0) <= 1920)
-      .sort((a, b) => (b.width ?? 0) - (a.width ?? 0))[0]
-      ?? video.video_files
+    const videoFile =
+      video.video_files
+        .filter((f) => (f.width ?? 0) >= 720 && (f.width ?? 0) <= 1920)
+        .sort((a, b) => (b.width ?? 0) - (a.width ?? 0))[0] ??
+      video.video_files
         .filter((f) => (f.width ?? 0) >= 720)
         .sort((a, b) => (a.width ?? 0) - (b.width ?? 0))[0];
 

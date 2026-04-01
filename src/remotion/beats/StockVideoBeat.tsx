@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { AbsoluteFill, Loop, OffthreadVideo, useVideoConfig } from "remotion";
 import type { SceneProps } from "../lib/score-to-props";
 
@@ -8,10 +8,10 @@ export const StockVideoBeat: React.FC<SceneProps> = ({ assetSrc, sourceDurationI
 
   // If we know the source video duration and it's shorter than the scene, loop it.
   // Otherwise, play once with trim (endAt handles videos longer than the scene).
-  const needsLoop = sourceDurationInSeconds != null && sourceDurationInSeconds < sceneDurationSeconds;
-  const loopDurationInFrames = sourceDurationInSeconds != null
-    ? Math.floor(sourceDurationInSeconds * fps)
-    : durationInFrames;
+  const needsLoop =
+    sourceDurationInSeconds != null && sourceDurationInSeconds < sceneDurationSeconds;
+  const loopDurationInFrames =
+    sourceDurationInSeconds != null ? Math.floor(sourceDurationInSeconds * fps) : durationInFrames;
 
   const video = assetSrc ? (
     <OffthreadVideo
@@ -27,9 +27,7 @@ export const StockVideoBeat: React.FC<SceneProps> = ({ assetSrc, sourceDurationI
 
   return (
     <AbsoluteFill>
-      {video && (needsLoop ? (
-        <Loop durationInFrames={loopDurationInFrames}>{video}</Loop>
-      ) : video)}
+      {video && (needsLoop ? <Loop durationInFrames={loopDurationInFrames}>{video}</Loop> : video)}
     </AbsoluteFill>
   );
 };

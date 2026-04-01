@@ -1,7 +1,7 @@
-import type { DirectorScore, TransitionType } from "../../schema/director-score";
-import type { ArchetypeConfig } from "../../schema/archetype";
-import type { WordTimestamp } from "../../schema/providers";
 import { getArchetype } from "../../config/archetype-registry.js";
+import type { ArchetypeConfig } from "../../schema/archetype";
+import type { DirectorScore, TransitionType } from "../../schema/director-score";
+import type { WordTimestamp } from "../../schema/providers";
 
 export interface SceneProps {
   visualType: string;

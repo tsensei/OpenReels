@@ -10,9 +10,7 @@ export function loadPlaybook(): string {
   try {
     return fs.readFileSync(PLAYBOOK_PATH, "utf-8");
   } catch {
-    throw new Error(
-      `Playbook not found at ${PLAYBOOK_PATH}. Ensure prompts/playbook.md exists.`,
-    );
+    throw new Error(`Playbook not found at ${PLAYBOOK_PATH}. Ensure prompts/playbook.md exists.`);
   }
 }
 
@@ -33,9 +31,7 @@ export function loadPlaybookSections(names: string[]): string {
     const section = sections[name];
     if (!section) {
       const available = Object.keys(sections).join(", ");
-      throw new Error(
-        `Playbook section '${name}' not found. Available: ${available}`,
-      );
+      throw new Error(`Playbook section '${name}' not found. Available: ${available}`);
     }
     parts.push(section);
   }

@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
-import { mapScoreToProps, getTotalDurationInFrames } from "./score-to-props.js";
-import type { ResolvedAssets } from "./score-to-props.js";
-import type { DirectorScore } from "../../schema/director-score.js";
+import { describe, expect, it, vi } from "vitest";
 import type { ArchetypeConfig } from "../../schema/archetype.js";
+import type { DirectorScore } from "../../schema/director-score.js";
+import type { ResolvedAssets } from "./score-to-props.js";
+import { getTotalDurationInFrames, mapScoreToProps } from "./score-to-props.js";
 
 const makeWords = (start: number, end: number) => [
   { word: "hello", start, end: start + (end - start) / 2 },
@@ -14,9 +14,24 @@ const baseScore: DirectorScore = {
   archetype: "editorial_caricature",
   music_mood: "epic_cinematic",
   scenes: [
-    { visual_type: "text_card", visual_prompt: "Title", motion: "static", script_line: "Scene one." },
-    { visual_type: "ai_image", visual_prompt: "Image", motion: "zoom_in", script_line: "Scene two." },
-    { visual_type: "stock_video", visual_prompt: "Video", motion: "static", script_line: "Scene three." },
+    {
+      visual_type: "text_card",
+      visual_prompt: "Title",
+      motion: "static",
+      script_line: "Scene one.",
+    },
+    {
+      visual_type: "ai_image",
+      visual_prompt: "Image",
+      motion: "zoom_in",
+      script_line: "Scene two.",
+    },
+    {
+      visual_type: "stock_video",
+      visual_prompt: "Video",
+      motion: "static",
+      script_line: "Scene three.",
+    },
   ],
 };
 
@@ -76,7 +91,7 @@ describe("mapScoreToProps", () => {
       ...baseScore,
       scenes: baseScore.scenes.map((s, i) => ({
         ...s,
-        transition: i === 0 ? "crossfade" as const : i === 1 ? "wipe" as const : undefined,
+        transition: i === 0 ? ("crossfade" as const) : i === 1 ? ("wipe" as const) : undefined,
       })),
     };
     const props = mapScoreToProps(score, baseAssets);
@@ -100,8 +115,12 @@ describe("mapScoreToProps", () => {
       colorPalette: { background: "#000", accent: "#fff", text: "#fff" },
       textCardFont: "Inter",
       motionIntensity: 1.0,
-      artStyle: "test", lighting: "test", compositionRules: "test",
-      culturalMarkers: "test", mood: "test", antiArtifactGuidance: "test",
+      artStyle: "test",
+      lighting: "test",
+      compositionRules: "test",
+      culturalMarkers: "test",
+      mood: "test",
+      antiArtifactGuidance: "test",
       visualColorPalette: ["white"],
     };
     vi.spyOn(archetypeRegistry, "getArchetype").mockReturnValue(noTransitionConfig);
@@ -124,7 +143,9 @@ describe("mapScoreToProps", () => {
 describe("getTotalDurationInFrames", () => {
   it("returns sum of scene durations when no transitions", () => {
     const props = mapScoreToProps(baseScore, baseAssets, 30);
-    props.scenes.forEach(s => { s.transition = "none"; });
+    props.scenes.forEach((s) => {
+      s.transition = "none";
+    });
     const total = getTotalDurationInFrames(props, 30);
     const sum = props.scenes.reduce((acc, s) => acc + s.durationInFrames, 0);
     expect(total).toBe(sum);
@@ -161,12 +182,18 @@ describe("getTotalDurationInFrames", () => {
   });
 
   it("handles empty words array without clamping", () => {
-    const props = mapScoreToProps(baseScore, {
-      ...baseAssets,
-      allWords: [],
-      sceneWords: [[], [], []],
-    }, 30);
-    props.scenes.forEach(s => { s.transition = "none"; });
+    const props = mapScoreToProps(
+      baseScore,
+      {
+        ...baseAssets,
+        allWords: [],
+        sceneWords: [[], [], []],
+      },
+      30,
+    );
+    props.scenes.forEach((s) => {
+      s.transition = "none";
+    });
     props.scenes[0]!.transition = "crossfade";
     props.scenes[0]!.transitionDurationFrames = 15;
 

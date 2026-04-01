@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InworldTTS } from "./inworld.js";
 
 const VALID_RESPONSE = {
@@ -41,7 +41,9 @@ describe("InworldTTS", () => {
   describe("constructor", () => {
     it("throws when INWORLD_TTS_API_KEY is not set", () => {
       delete process.env["INWORLD_TTS_API_KEY"];
-      expect(() => new InworldTTS()).toThrow("INWORLD_TTS_API_KEY environment variable is required");
+      expect(() => new InworldTTS()).toThrow(
+        "INWORLD_TTS_API_KEY environment variable is required",
+      );
     });
 
     it("uses default voiceId and modelId when none provided", () => {
@@ -160,7 +162,9 @@ describe("InworldTTS", () => {
       const tts = new InworldTTS();
       const longText = "a".repeat(2001);
 
-      await expect(tts.generate(longText)).rejects.toThrow("Inworld TTS limit exceeded: script is 2001 chars, max 2000");
+      await expect(tts.generate(longText)).rejects.toThrow(
+        "Inworld TTS limit exceeded: script is 2001 chars, max 2000",
+      );
     });
 
     it("throws on non-200 API response", async () => {
@@ -175,7 +179,9 @@ describe("InworldTTS", () => {
       vi.stubGlobal("fetch", mockFetchResponse(noAudio));
       const tts = new InworldTTS();
 
-      await expect(tts.generate("Hello")).rejects.toThrow("Inworld TTS response missing audioContent");
+      await expect(tts.generate("Hello")).rejects.toThrow(
+        "Inworld TTS response missing audioContent",
+      );
     });
 
     it("throws when response is missing timestampInfo", async () => {
@@ -183,7 +189,9 @@ describe("InworldTTS", () => {
       vi.stubGlobal("fetch", mockFetchResponse(noTimestamps));
       const tts = new InworldTTS();
 
-      await expect(tts.generate("Hello")).rejects.toThrow("Inworld TTS response missing timestamp info");
+      await expect(tts.generate("Hello")).rejects.toThrow(
+        "Inworld TTS response missing timestamp info",
+      );
     });
 
     it("throws when response has missing wordAlignment", async () => {
@@ -191,7 +199,9 @@ describe("InworldTTS", () => {
       vi.stubGlobal("fetch", mockFetchResponse(noAlignment));
       const tts = new InworldTTS();
 
-      await expect(tts.generate("Hello")).rejects.toThrow("Inworld TTS response missing timestamp info");
+      await expect(tts.generate("Hello")).rejects.toThrow(
+        "Inworld TTS response missing timestamp info",
+      );
     });
 
     it("throws when timestamp arrays have mismatched lengths", async () => {

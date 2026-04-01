@@ -1,9 +1,13 @@
-import React from "react";
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, spring } from "remotion";
-import type { SceneProps } from "../lib/score-to-props";
+import type React from "react";
+import { AbsoluteFill, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { TEXT_CARD_FONTS } from "../lib/fonts";
+import type { SceneProps } from "../lib/score-to-props";
 
-export const TextCardBeat: React.FC<SceneProps> = ({ visualPrompt, colorPalette, textCardFont }) => {
+export const TextCardBeat: React.FC<SceneProps> = ({
+  visualPrompt,
+  colorPalette,
+  textCardFont,
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 

@@ -5,8 +5,8 @@ export class OpenAIImage implements ImageProvider {
   private client: OpenAI;
   private model: string;
 
-  constructor(model: string = "gpt-image-1.5") {
-    const key = process.env["OPENAI_API_KEY"];
+  constructor(model: string = "gpt-image-1.5", apiKey?: string) {
+    const key = apiKey ?? process.env["OPENAI_API_KEY"];
     if (!key) throw new Error("OPENAI_API_KEY environment variable is required");
     this.client = new OpenAI({ apiKey: key });
     this.model = model;

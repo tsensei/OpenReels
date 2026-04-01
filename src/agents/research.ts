@@ -1,7 +1,7 @@
-import { z } from "zod";
-import type { LLMProvider, LLMUsage } from "../schema/providers.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { z } from "zod";
+import type { LLMProvider, LLMUsage } from "../schema/providers.js";
 
 const SYSTEM_PROMPT_PATH = path.join(process.cwd(), "prompts", "researcher.md");
 
@@ -18,11 +18,9 @@ export interface ResearchOutput {
   usage: LLMUsage;
 }
 
-export async function research(
-  llm: LLMProvider,
-  topic: string,
-): Promise<ResearchOutput> {
-  let systemPrompt = "You are a research assistant. Given a topic, search the web for current information and produce a structured research summary with key facts, mood/tone, and sources.";
+export async function research(llm: LLMProvider, topic: string): Promise<ResearchOutput> {
+  let systemPrompt =
+    "You are a research assistant. Given a topic, search the web for current information and produce a structured research summary with key facts, mood/tone, and sources.";
 
   try {
     systemPrompt = fs.readFileSync(SYSTEM_PROMPT_PATH, "utf-8");

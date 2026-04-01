@@ -15,11 +15,5 @@
   "culturalMarkers": "Real-world settings and details matching the topic exactly as they would appear in a professional photograph. Authentic contemporary or period-accurate environments. No stylization, pure reality.",
   "mood": "Aspirational, polished, authoritative, real.",
   "antiArtifactGuidance": "Perfect skin texture with visible pores at close range. Natural subsurface scattering on skin. Realistic eye detail with proper iris texture. Fabric with correct weave pattern and drape physics. Metal with accurate reflections. No plastic skin, no uncanny smoothing, no AI tells.",
-  "visualColorPalette": [
-    "neutral gray",
-    "warm gold",
-    "deep black",
-    "clean white",
-    "rich brown"
-  ]
+  "visualColorPalette": ["neutral gray", "warm gold", "deep black", "clean white", "rich brown"]
 }

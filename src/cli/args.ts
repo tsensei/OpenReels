@@ -1,6 +1,6 @@
 import { createRequire } from "node:module";
 import { Command, Option } from "commander";
-import type { LLMProviderKey, TTSProviderKey, ImageProviderKey } from "../schema/providers.js";
+import type { ImageProviderKey, LLMProviderKey, TTSProviderKey } from "../schema/providers.js";
 
 const require = createRequire(import.meta.url);
 const { version } = require("../../package.json") as { version: string };
@@ -26,9 +26,21 @@ export function parseArgs(): CLIOptions {
     .description("AI pipeline that turns any topic into a YouTube Short")
     .version(version)
     .argument("<topic>", "The topic for your video")
-    .addOption(new Option("-p, --provider <provider>", "LLM provider").choices(["anthropic", "openai"]).default("anthropic"))
-    .addOption(new Option("-i, --image-provider <provider>", "Image generation provider").choices(["gemini", "openai"]).default("gemini"))
-    .addOption(new Option("--tts-provider <provider>", "TTS provider").choices(["elevenlabs", "inworld"]).default("elevenlabs"))
+    .addOption(
+      new Option("-p, --provider <provider>", "LLM provider")
+        .choices(["anthropic", "openai"])
+        .default("anthropic"),
+    )
+    .addOption(
+      new Option("-i, --image-provider <provider>", "Image generation provider")
+        .choices(["gemini", "openai"])
+        .default("gemini"),
+    )
+    .addOption(
+      new Option("--tts-provider <provider>", "TTS provider")
+        .choices(["elevenlabs", "inworld"])
+        .default("elevenlabs"),
+    )
     .option("-a, --archetype <archetype>", "Visual archetype override")
     .option("--platform <platform>", "Target platform (youtube, tiktok, instagram)", "youtube")
     .option("--dry-run", "Output DirectorScore JSON without generating assets", false)

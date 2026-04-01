@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { DirectorScore } from "./director-score.js";
 
 const validScene = (type: string) => ({
@@ -100,16 +100,11 @@ describe("DirectorScore schema", () => {
   it("accepts scenes without transition field (optional, undefined)", () => {
     const result = DirectorScore.safeParse({
       ...baseScore,
-      scenes: [
-        validScene("text_card"),
-        validScene("ai_image"),
-        validScene("stock_video"),
-      ],
+      scenes: [validScene("text_card"), validScene("ai_image"), validScene("stock_video")],
     });
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.scenes[0]!.transition).toBeUndefined();
     }
   });
-
 });

@@ -8,8 +8,12 @@ export class InworldTTS implements TTSProvider {
   private voiceId: string;
   private modelId: string;
 
-  constructor(voiceId: string = "Dennis", modelId: string = "inworld-tts-1.5-max") {
-    const key = process.env["INWORLD_TTS_API_KEY"];
+  constructor(
+    voiceId: string = "Dennis",
+    modelId: string = "inworld-tts-1.5-max",
+    apiKey?: string,
+  ) {
+    const key = apiKey ?? process.env["INWORLD_TTS_API_KEY"];
     if (!key) throw new Error("INWORLD_TTS_API_KEY environment variable is required");
     this.apiKey = key;
     this.voiceId = voiceId;
@@ -64,7 +68,10 @@ export class InworldTTS implements TTSProvider {
 
     const { words, wordStartTimeSeconds, wordEndTimeSeconds } = data.timestampInfo.wordAlignment;
 
-    if (words.length !== wordStartTimeSeconds.length || words.length !== wordEndTimeSeconds.length) {
+    if (
+      words.length !== wordStartTimeSeconds.length ||
+      words.length !== wordEndTimeSeconds.length
+    ) {
       throw new Error(
         `Inworld TTS timestamp array length mismatch: words=${words.length}, starts=${wordStartTimeSeconds.length}, ends=${wordEndTimeSeconds.length}`,
       );

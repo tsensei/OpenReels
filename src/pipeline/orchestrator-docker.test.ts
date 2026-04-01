@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { shouldAutoConfirm, shouldSkipPreview } from "./orchestrator.js";
 
 describe("non-interactive mode", () => {

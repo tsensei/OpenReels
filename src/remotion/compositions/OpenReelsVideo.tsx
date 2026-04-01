@@ -1,23 +1,23 @@
-import React from "react";
-import { AbsoluteFill, Composition, Audio, staticFile } from "remotion";
-import { TransitionSeries, linearTiming } from "@remotion/transitions";
+import { linearTiming, TransitionSeries } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
+import { flip } from "@remotion/transitions/flip";
 import { slide } from "@remotion/transitions/slide";
 import { wipe } from "@remotion/transitions/wipe";
-import { flip } from "@remotion/transitions/flip";
+import React from "react";
+import { AbsoluteFill, Audio, Composition, staticFile } from "remotion";
 import type { TransitionType } from "../../schema/director-score";
-import type { CompositionProps, SceneProps } from "../lib/score-to-props";
+import { MusicTrack } from "../audio/MusicTrack";
 import { AIImageBeat } from "../beats/AIImageBeat";
 import { StockImageBeat } from "../beats/StockImageBeat";
 import { StockVideoBeat } from "../beats/StockVideoBeat";
 import { TextCardBeat } from "../beats/TextCardBeat";
-import { MusicTrack } from "../audio/MusicTrack";
-import { BoldOutline } from "../captions/BoldOutline";
-import { ColorHighlight } from "../captions/ColorHighlight";
-import { Clean } from "../captions/Clean";
-import { KaraokeSweep } from "../captions/KaraokeSweep";
-import { GradientRise } from "../captions/GradientRise";
 import { BlockImpact } from "../captions/BlockImpact";
+import { BoldOutline } from "../captions/BoldOutline";
+import { Clean } from "../captions/Clean";
+import { ColorHighlight } from "../captions/ColorHighlight";
+import { GradientRise } from "../captions/GradientRise";
+import { KaraokeSweep } from "../captions/KaraokeSweep";
+import type { CompositionProps, SceneProps } from "../lib/score-to-props";
 
 const BEAT_COMPONENTS: Record<string, React.FC<SceneProps>> = {
   ai_image: AIImageBeat,
@@ -42,20 +42,36 @@ const resolveAsset = (relativePath: string | null): string | null => {
 
 // Returns { presentation, timing } for a given transition type.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getTransition(type: TransitionType, durationInFrames: number): { presentation: any; timing: any } | null {
+function getTransition(
+  type: TransitionType,
+  durationInFrames: number,
+): { presentation: any; timing: any } | null {
   const linear = linearTiming({ durationInFrames });
   switch (type) {
-    case "crossfade": return { presentation: fade(), timing: linear };
-    case "slide_left": return { presentation: slide({ direction: "from-right" }), timing: linear };
-    case "slide_right": return { presentation: slide({ direction: "from-left" }), timing: linear };
-    case "wipe": return { presentation: wipe({ direction: "from-left" }), timing: linear };
-    case "flip": return { presentation: flip(), timing: linear };
-    case "none": return null;
-    default: return null;
+    case "crossfade":
+      return { presentation: fade(), timing: linear };
+    case "slide_left":
+      return { presentation: slide({ direction: "from-right" }), timing: linear };
+    case "slide_right":
+      return { presentation: slide({ direction: "from-left" }), timing: linear };
+    case "wipe":
+      return { presentation: wipe({ direction: "from-left" }), timing: linear };
+    case "flip":
+      return { presentation: flip(), timing: linear };
+    case "none":
+      return null;
+    default:
+      return null;
   }
 }
 
-const Main: React.FC<CompositionProps> = ({ scenes, captionStyle, voiceoverSrc, musicSrc, allWords }) => {
+const Main: React.FC<CompositionProps> = ({
+  scenes,
+  captionStyle,
+  voiceoverSrc,
+  musicSrc,
+  allWords,
+}) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       {/* Scene beats with transitions — TransitionSeries handles timing and overlaps */}
@@ -90,18 +106,18 @@ const Main: React.FC<CompositionProps> = ({ scenes, captionStyle, voiceoverSrc, 
         which matches the absolute word timestamps from ElevenLabs.
         This is how ReelMistri keeps captions in sync.
       */}
-      {allWords && allWords.length > 0 && (() => {
-        const CaptionComponent = CAPTION_COMPONENTS[captionStyle] ?? Clean;
-        return <CaptionComponent words={allWords} />;
-      })()}
+      {allWords &&
+        allWords.length > 0 &&
+        (() => {
+          const CaptionComponent = CAPTION_COMPONENTS[captionStyle] ?? Clean;
+          return <CaptionComponent words={allWords} />;
+        })()}
 
       {/* Voiceover — single continuous audio track */}
       {voiceoverSrc && <Audio src={resolveAsset(voiceoverSrc)!} />}
 
       {/* Background music with ducking (computed inside MusicTrack from word timestamps) */}
-      {musicSrc && (
-        <MusicTrack src={resolveAsset(musicSrc)!} words={allWords ?? []} />
-      )}
+      {musicSrc && <MusicTrack src={resolveAsset(musicSrc)!} words={allWords ?? []} />}
     </AbsoluteFill>
   );
 };
@@ -116,13 +132,15 @@ export const OpenReelsVideo: React.FC = () => {
         fps={30}
         width={1080}
         height={1920}
-        defaultProps={{
-          scenes: [],
-          captionStyle: "clean",
-          voiceoverSrc: null,
-          musicSrc: null,
-          allWords: [],
-        } as unknown as Record<string, unknown>}
+        defaultProps={
+          {
+            scenes: [],
+            captionStyle: "clean",
+            voiceoverSrc: null,
+            musicSrc: null,
+            allWords: [],
+          } as unknown as Record<string, unknown>
+        }
       />
     </>
   );

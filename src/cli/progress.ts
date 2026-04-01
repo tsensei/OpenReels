@@ -7,7 +7,18 @@ interface StageInfo {
   detail?: string;
 }
 
-const SPINNER_FRAMES = ["\u280b", "\u2819", "\u2839", "\u2838", "\u283c", "\u2834", "\u2826", "\u2827", "\u2807", "\u280f"];
+const SPINNER_FRAMES = [
+  "\u280b",
+  "\u2819",
+  "\u2839",
+  "\u2838",
+  "\u283c",
+  "\u2834",
+  "\u2826",
+  "\u2827",
+  "\u2807",
+  "\u280f",
+];
 
 export class ProgressDisplay {
   private stages: StageInfo[] = [];
@@ -118,7 +129,9 @@ export class ProgressDisplay {
     const elapsed = ((Date.now() - this.startTime) / 1000).toFixed(1);
     const done = this.stages.filter((s) => s.status === "done").length;
     const failed = this.stages.filter((s) => s.status === "failed").length;
-    console.log(`\nCompleted ${done}/${this.stages.length} stages in ${elapsed}s${failed > 0 ? ` (${failed} failed)` : ""}`);
+    console.log(
+      `\nCompleted ${done}/${this.stages.length} stages in ${elapsed}s${failed > 0 ? ` (${failed} failed)` : ""}`,
+    );
   }
 }
 

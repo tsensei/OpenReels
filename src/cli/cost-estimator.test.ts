@@ -1,7 +1,12 @@
-import { describe, it, expect } from "vitest";
-import { estimateCost, formatCostEstimate, computeActualLLMCost, formatActualCost } from "./cost-estimator.js";
+import { describe, expect, it } from "vitest";
 import type { DirectorScore } from "../schema/director-score.js";
 import type { LLMUsage } from "../schema/providers.js";
+import {
+  computeActualLLMCost,
+  estimateCost,
+  formatActualCost,
+  formatCostEstimate,
+} from "./cost-estimator.js";
 
 const makeScore = (scenes: Array<{ visual_type: string; script_line: string }>): DirectorScore =>
   ({
@@ -49,9 +54,7 @@ describe("estimateCost", () => {
   });
 
   it("uses Inworld pricing when ttsProvider is inworld", () => {
-    const score = makeScore([
-      { visual_type: "text_card", script_line: "Hello world" },
-    ]);
+    const score = makeScore([{ visual_type: "text_card", script_line: "Hello world" }]);
     const elevenlabs = estimateCost(score, "gemini", "elevenlabs");
     const inworld = estimateCost(score, "gemini", "inworld");
     // Inworld per-char is cheaper than ElevenLabs
@@ -108,8 +111,20 @@ describe("computeActualLLMCost", () => {
 
   it("uses Inworld TTS pricing when specified", () => {
     const usages: LLMUsage[] = [{ inputTokens: 1000, outputTokens: 500 }];
-    const elevenlabs = computeActualLLMCost(usages, { aiImages: 0, ttsCharacters: 1000 }, "anthropic", "gemini", "elevenlabs");
-    const inworld = computeActualLLMCost(usages, { aiImages: 0, ttsCharacters: 1000 }, "anthropic", "gemini", "inworld");
+    const elevenlabs = computeActualLLMCost(
+      usages,
+      { aiImages: 0, ttsCharacters: 1000 },
+      "anthropic",
+      "gemini",
+      "elevenlabs",
+    );
+    const inworld = computeActualLLMCost(
+      usages,
+      { aiImages: 0, ttsCharacters: 1000 },
+      "anthropic",
+      "gemini",
+      "inworld",
+    );
     expect(inworld.ttsCost).toBeLessThan(elevenlabs.ttsCost);
     expect(inworld.ttsCost).toBeGreaterThan(0);
   });
@@ -117,10 +132,10 @@ describe("computeActualLLMCost", () => {
 
 describe("formatActualCost", () => {
   it("includes token counts and all categories", () => {
-    const result = computeActualLLMCost(
-      [{ inputTokens: 5000, outputTokens: 2000 }],
-      { aiImages: 2, ttsCharacters: 500 },
-    );
+    const result = computeActualLLMCost([{ inputTokens: 5000, outputTokens: 2000 }], {
+      aiImages: 2,
+      ttsCharacters: 500,
+    });
     const formatted = formatActualCost(result);
     expect(formatted).toContain("Actual cost:");
     expect(formatted).toContain("LLM:");

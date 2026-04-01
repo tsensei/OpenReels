@@ -15,11 +15,5 @@
   "culturalMarkers": "Context-appropriate settings rendered in anime style. Modern and historical environments with anime-level environmental detail. Topic-relevant props and settings with stylistic flair.",
   "mood": "Intense, dynamic, dramatic, electrifying.",
   "antiArtifactGuidance": "Sharp clean linework with consistent weight. Cel-shaded coloring with crisp shadow boundaries. Detailed expressive eyes with highlight reflections. Hair rendered as flowing distinct strands. Clean fabric folds following body form. No muddy colors or blurred edges.",
-  "visualColorPalette": [
-    "hot pink",
-    "electric blue",
-    "jet black",
-    "vivid orange",
-    "deep violet"
-  ]
+  "visualColorPalette": ["hot pink", "electric blue", "jet black", "vivid orange", "deep violet"]
 }

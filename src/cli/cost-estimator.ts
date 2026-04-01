@@ -1,7 +1,12 @@
 import type { DirectorScore } from "../schema/director-score.js";
-import type { LLMUsage, LLMProviderKey, TTSProviderKey, ImageProviderKey } from "../schema/providers.js";
+import type {
+  ImageProviderKey,
+  LLMProviderKey,
+  LLMUsage,
+  TTSProviderKey,
+} from "../schema/providers.js";
 
-interface CostBreakdown {
+export interface CostBreakdown {
   llmCost: number;
   ttsCost: number;
   imageCost: number;
@@ -13,7 +18,7 @@ interface CostBreakdown {
   };
 }
 
-interface ActualCostBreakdown {
+export interface ActualCostBreakdown {
   llmCost: number;
   ttsCost: number;
   imageCost: number;
@@ -35,19 +40,19 @@ interface ActualCostBreakdown {
 const PRICING = {
   // Using Anthropic as default (higher of the two, conservative estimate)
   anthropic: {
-    perInputToken: 3 / 1_000_000,    // $3 per 1M input tokens
-    perOutputToken: 15 / 1_000_000,  // $15 per 1M output tokens
+    perInputToken: 3 / 1_000_000, // $3 per 1M input tokens
+    perOutputToken: 15 / 1_000_000, // $15 per 1M output tokens
   },
   openai: {
-    perInputToken: 2 / 1_000_000,    // $2 per 1M input tokens
-    perOutputToken: 8 / 1_000_000,   // $8 per 1M output tokens
+    perInputToken: 2 / 1_000_000, // $2 per 1M input tokens
+    perOutputToken: 8 / 1_000_000, // $8 per 1M output tokens
   },
-  elevenLabsPerChar: 0.00018,        // $0.18 per 1K chars (avg of Creator $0.20 and Pro $0.17, Multilingual v2)
-  inworldPerChar: 0.00001,           // $0.01 per 1K chars (Inworld TTS-1.5 Max: $10/1M chars)
+  elevenLabsPerChar: 0.00018, // $0.18 per 1K chars (avg of Creator $0.20 and Pro $0.17, Multilingual v2)
+  inworldPerChar: 0.00001, // $0.01 per 1K chars (Inworld TTS-1.5 Max: $10/1M chars)
   // Gemini 3.1 Flash Image Preview: $60/M output tokens
   // 1080x1920 (>1024px, <=2048px) = 1680 tokens = $0.101/image
   // Plus input tokens at $0.50/M for the prompt text (~200 tokens avg = ~$0.0001)
-  geminiPerImage: 0.101,             // $0.101 per image at 2K resolution (1080x1920)
+  geminiPerImage: 0.101, // $0.101 per image at 2K resolution (1080x1920)
   // GPT Image 1.5 (high quality, 1024x1536): $0.167/image
   // Source: platform.openai.com/docs/pricing — high quality portrait
   openaiPerImage: 0.167,
@@ -128,7 +133,12 @@ export function computeActualLLMCost(
     ttsCost,
     imageCost,
     totalCost,
-    details: { totalInputTokens, totalOutputTokens, ttsCharacters: nonLlm.ttsCharacters, aiImages: nonLlm.aiImages },
+    details: {
+      totalInputTokens,
+      totalOutputTokens,
+      ttsCharacters: nonLlm.ttsCharacters,
+      aiImages: nonLlm.aiImages,
+    },
   };
 }
 

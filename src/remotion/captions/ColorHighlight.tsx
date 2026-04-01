@@ -1,8 +1,8 @@
-import React from "react";
+import type React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import type { WordTimestamp } from "../../schema/providers";
-import { getWordChunk } from "./caption-utils";
 import { CAPTION_FONTS } from "../lib/fonts";
+import { getWordChunk } from "./caption-utils";
 
 interface CaptionProps {
   words: WordTimestamp[];
@@ -23,7 +23,15 @@ export const ColorHighlight: React.FC<CaptionProps> = ({ words }) => {
         paddingBottom: "18%",
       }}
     >
-      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, padding: "0 40px" }}>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          gap: 8,
+          padding: "0 40px",
+        }}
+      >
         {chunk.map((w, i) => {
           const isSpoken = currentTime >= w.start;
           const globalIndex = chunkStart + i;

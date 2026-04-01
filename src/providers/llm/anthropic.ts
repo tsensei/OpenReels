@@ -7,8 +7,8 @@ export class AnthropicLLM implements LLMProvider {
   private client: Anthropic;
   private model: string;
 
-  constructor(model: string = "claude-sonnet-4-6") {
-    this.client = new Anthropic();
+  constructor(model: string = "claude-sonnet-4-6", apiKey?: string) {
+    this.client = apiKey ? new Anthropic({ apiKey }) : new Anthropic();
     this.model = model;
   }
 
@@ -33,7 +33,7 @@ export class AnthropicLLM implements LLMProvider {
     userMessage: string;
     schema: T;
   }): Promise<LLMResult<z.infer<T>>> {
-    let totalUsage: LLMUsage = { inputTokens: 0, outputTokens: 0 };
+    const totalUsage: LLMUsage = { inputTokens: 0, outputTokens: 0 };
 
     // Pass 1: Let the model use web search freely
     const searchResponse = await this.client.messages.create({
@@ -69,7 +69,8 @@ export class AnthropicLLM implements LLMProvider {
     const structuredResponse = await this.client.messages.create({
       model: this.model,
       max_tokens: 4096,
-      system: "You are a data extraction assistant. Structure the following research into the exact format requested. Use only the information provided.",
+      system:
+        "You are a data extraction assistant. Structure the following research into the exact format requested. Use only the information provided.",
       tools: [
         {
           name: "structured_output",

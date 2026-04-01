@@ -1,8 +1,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { pipeline } from "node:stream/promises";
 import { Readable } from "node:stream";
-import type { StockProvider, StockAsset } from "../../schema/providers.js";
+import { pipeline } from "node:stream/promises";
+import type { StockAsset, StockProvider } from "../../schema/providers.js";
 
 const PIXABAY_BASE = "https://pixabay.com/api";
 
@@ -10,14 +10,9 @@ export class PixabayStock implements StockProvider {
   private apiKey: string | null;
   private cacheDir: string;
 
-  constructor() {
-    this.apiKey = process.env["PIXABAY_API_KEY"] ?? null;
-    this.cacheDir = path.join(
-      process.env["HOME"] ?? "/tmp",
-      ".openreels",
-      "cache",
-      "stock",
-    );
+  constructor(apiKey?: string) {
+    this.apiKey = apiKey ?? process.env["PIXABAY_API_KEY"] ?? null;
+    this.cacheDir = path.join(process.env["HOME"] ?? "/tmp", ".openreels", "cache", "stock");
     fs.mkdirSync(this.cacheDir, { recursive: true });
   }
 

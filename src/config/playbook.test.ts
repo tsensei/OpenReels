@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { parseSections, loadPlaybookSections } from "./playbook.js";
+import { describe, expect, it } from "vitest";
+import { loadPlaybookSections, parseSections } from "./playbook.js";
 
 describe("parseSections", () => {
   it("parses multiple ## sections correctly", () => {
@@ -74,9 +74,7 @@ describe("loadPlaybookSections", () => {
   });
 
   it("throws on missing section with available sections list", () => {
-    expect(() => loadPlaybookSections(["Nonexistent Section"]))
-      .toThrowError(/not found/);
-    expect(() => loadPlaybookSections(["Nonexistent Section"]))
-      .toThrowError(/Available/);
+    expect(() => loadPlaybookSections(["Nonexistent Section"])).toThrowError(/not found/);
+    expect(() => loadPlaybookSections(["Nonexistent Section"])).toThrowError(/Available/);
   });
 });

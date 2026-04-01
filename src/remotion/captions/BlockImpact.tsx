@@ -1,8 +1,8 @@
-import React from "react";
+import type React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import type { WordTimestamp } from "../../schema/providers";
-import { getWordChunk } from "./caption-utils";
 import { CAPTION_FONTS } from "../lib/fonts";
+import { getWordChunk } from "./caption-utils";
 
 interface CaptionProps {
   words: WordTimestamp[];

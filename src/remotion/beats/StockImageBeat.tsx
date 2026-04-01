@@ -1,8 +1,12 @@
-import React from "react";
-import { AbsoluteFill, Img, useCurrentFrame, useVideoConfig, interpolate } from "remotion";
+import type React from "react";
+import { AbsoluteFill, Img, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import type { SceneProps } from "../lib/score-to-props";
 
-export const StockImageBeat: React.FC<SceneProps> = ({ assetSrc, motion, motionIntensity = 1.2 }) => {
+export const StockImageBeat: React.FC<SceneProps> = ({
+  assetSrc,
+  motion,
+  motionIntensity = 1.2,
+}) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   const progress = frame / durationInFrames;
