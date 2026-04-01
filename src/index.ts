@@ -2,15 +2,8 @@
 
 import { parseArgs } from "./cli/args.js";
 import { validateEnv } from "./cli/validate-env.js";
-import { runPipeline } from "./pipeline/orchestrator.js";
-import { AnthropicLLM } from "./providers/llm/anthropic.js";
-import { OpenAILLM } from "./providers/llm/openai.js";
-import { ElevenLabsTTS } from "./providers/tts/elevenlabs.js";
-import { InworldTTS } from "./providers/tts/inworld.js";
-import { GeminiImage } from "./providers/image/gemini.js";
-import { OpenAIImage } from "./providers/image/openai.js";
-import { PexelsStock } from "./providers/stock/pexels.js";
-import type { LLMProvider } from "./schema/providers.js";
+import { createCliCallbacks, runPipeline } from "./pipeline/orchestrator.js";
+import { createProviders } from "./providers/factory.js";
 
 async function main(): Promise<void> {
   const opts = parseArgs();
@@ -22,30 +15,37 @@ async function main(): Promise<void> {
     imageProvider: opts.imageProvider,
   });
 
-  // Initialize providers
-  const llm: LLMProvider =
-    opts.provider === "openai" ? new OpenAILLM() : new AnthropicLLM();
-
-  const tts = opts.ttsProvider === "inworld" ? new InworldTTS() : new ElevenLabsTTS();
-  const imageGen = opts.imageProvider === "openai" ? new OpenAIImage() : new GeminiImage();
-  const stock = new PexelsStock();
-
-  // Run pipeline
-  const result = await runPipeline({
-    topic: opts.topic,
-    llm,
-    tts,
-    ttsProvider: opts.ttsProvider,
-    imageGen,
-    imageProvider: opts.imageProvider,
-    stock,
-    archetype: opts.archetype,
-    platform: opts.platform,
-    dryRun: opts.dryRun,
-    preview: opts.preview,
-    outputDir: opts.output,
-    yes: opts.yes,
+  // Initialize providers via factory
+  const { llm, tts, imageGen, stock } = createProviders({
+    llm: opts.provider,
+    tts: opts.ttsProvider,
+    image: opts.imageProvider,
   });
+
+  // Create CLI callbacks for terminal progress display
+  const { callbacks, progress } = createCliCallbacks(opts.yes);
+
+  // Run pipeline with CLI callbacks
+  const result = await runPipeline(
+    {
+      topic: opts.topic,
+      llm,
+      tts,
+      ttsProvider: opts.ttsProvider,
+      imageGen,
+      imageProvider: opts.imageProvider,
+      stock,
+      archetype: opts.archetype,
+      platform: opts.platform,
+      dryRun: opts.dryRun,
+      preview: opts.preview,
+      outputDir: opts.output,
+      yes: opts.yes,
+    },
+    callbacks,
+  );
+
+  progress.summary();
 
   if (result.videoPath) {
     console.log(`\nDone! Video saved to: ${result.videoPath}`);
