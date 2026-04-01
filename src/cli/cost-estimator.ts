@@ -43,7 +43,7 @@ const PRICING = {
     perOutputToken: 8 / 1_000_000,   // $8 per 1M output tokens
   },
   elevenLabsPerChar: 0.00018,        // $0.18 per 1K chars (avg of Creator $0.20 and Pro $0.17, Multilingual v2)
-  inworldPerChar: 0.00015,           // $0.15 per 1K chars (Inworld TTS 1.5, estimated from pricing page)
+  inworldPerChar: 0.00001,           // $0.01 per 1K chars (Inworld TTS-1.5 Max: $10/1M chars)
   // Gemini 3.1 Flash Image Preview: $60/M output tokens
   // 1080x1920 (>1024px, <=2048px) = 1680 tokens = $0.101/image
   // Plus input tokens at $0.50/M for the prompt text (~200 tokens avg = ~$0.0001)
