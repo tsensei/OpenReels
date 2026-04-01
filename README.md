@@ -11,7 +11,7 @@ Give it a topic. It handles everything else:
 3. **Voiceover** — generates TTS audio with word-level timestamps
 4. **Visuals** — creates AI images matched to each scene
 5. **Captions** — renders styled, animated captions with proper Unicode/CJK/RTL support
-6. **Assembly** — composites everything into a vertical MP4 via Remotion
+6. **Assembly** — composites everything into a vertical MP4 via Remotion, with scene transitions (crossfade, slide, wipe, flip)
 7. **Critique** — an AI critic scores the output and re-runs the pipeline if quality is below threshold
 
 ```
@@ -90,7 +90,7 @@ The rewrite moves from Python to TypeScript for native [Remotion](https://www.re
 
 ## Status
 
-v0.1.1 shipped. The core pipeline works end-to-end. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
+v0.2.0 shipped. The core pipeline works end-to-end. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
 
 ## License
 

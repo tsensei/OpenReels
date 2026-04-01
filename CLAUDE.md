@@ -35,7 +35,7 @@ fixtures/               # sample DirectorScore JSONs
 ```bash
 pnpm install          # install dependencies
 pnpm start "topic"    # run full pipeline
-pnpm test             # run vitest suite (38 tests)
+pnpm test             # run vitest suite (68 tests)
 ```
 
 ## Testing
