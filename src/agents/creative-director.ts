@@ -111,7 +111,7 @@ You must output a DirectorScore with:
 - emotional_arc: A journey descriptor (e.g., "curiosity-to-wisdom", "shock-to-understanding")
 - archetype: Visual style that drives transitions, colors, and captions
 - music_mood: Tag for background music selection (e.g., "epic_cinematic", "chill_lofi", "tense_electronic")
-- scenes: Array of 4-7 scenes, each with visual_type, visual_prompt, motion, and script_line
+- scenes: Array of 4-7 scenes, each with visual_type, visual_prompt, motion, script_line, and an optional transition (crossfade, slide_left, slide_right, wipe, flip, or omit for archetype default)
 
 GOLDEN RULE: Never use the same visual_type more than 2 times consecutively. Mix ai_image, stock_image, stock_video, and text_card for variety.
 

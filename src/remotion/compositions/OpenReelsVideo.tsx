@@ -1,10 +1,11 @@
 import React from "react";
 import { AbsoluteFill, Composition, Audio, staticFile } from "remotion";
-import { TransitionSeries, linearTiming } from "@remotion/transitions";
+import { TransitionSeries, linearTiming, springTiming } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import { slide } from "@remotion/transitions/slide";
 import { wipe } from "@remotion/transitions/wipe";
 import { flip } from "@remotion/transitions/flip";
+import type { TransitionType } from "../../schema/director-score";
 import type { CompositionProps, SceneProps } from "../lib/score-to-props";
 import { AIImageBeat } from "../beats/AIImageBeat";
 import { StockImageBeat } from "../beats/StockImageBeat";
@@ -39,14 +40,16 @@ const resolveAsset = (relativePath: string | null): string | null => {
   return staticFile(relativePath);
 };
 
+// Returns { presentation, timing } for a given transition type.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getTransitionPresentation(type: string): any {
+function getTransition(type: TransitionType, durationInFrames: number): { presentation: any; timing: any } | null {
+  const linear = linearTiming({ durationInFrames });
   switch (type) {
-    case "crossfade": return fade();
-    case "slide_left": return slide({ direction: "from-right" });
-    case "slide_right": return slide({ direction: "from-left" });
-    case "wipe": return wipe();
-    case "flip": return flip();
+    case "crossfade": return { presentation: fade(), timing: linear };
+    case "slide_left": return { presentation: slide({ direction: "from-right" }), timing: linear };
+    case "slide_right": return { presentation: slide({ direction: "from-left" }), timing: linear };
+    case "wipe": return { presentation: wipe({ direction: "from-top-left" }), timing: linear };
+    case "flip": return { presentation: flip(), timing: springTiming({ durationInFrames }) };
     case "none": return null;
     default: return null;
   }
@@ -60,16 +63,16 @@ const Main: React.FC<CompositionProps> = ({ scenes, captionStyle, voiceoverSrc, 
         {scenes.map((scene, i) => {
           const BeatComponent = BEAT_COMPONENTS[scene.visualType] ?? TextCardBeat;
           const prevScene = i > 0 ? scenes[i - 1] : undefined;
-          const presentation = prevScene
-            ? getTransitionPresentation(prevScene.transition)
+          const trans = prevScene
+            ? getTransition(prevScene.transition as TransitionType, prevScene.transitionDurationFrames)
             : null;
 
           return (
             <React.Fragment key={i}>
-              {presentation && prevScene && (
+              {trans && (
                 <TransitionSeries.Transition
-                  presentation={presentation}
-                  timing={linearTiming({ durationInFrames: prevScene.transitionDurationFrames })}
+                  presentation={trans.presentation}
+                  timing={trans.timing}
                 />
               )}
               <TransitionSeries.Sequence durationInFrames={scene.durationInFrames}>

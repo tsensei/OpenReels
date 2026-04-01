@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { mapScoreToProps, getTotalDurationInFrames } from "./score-to-props.js";
 import type { ResolvedAssets } from "./score-to-props.js";
 import type { DirectorScore } from "../../schema/director-score.js";
+import type { ArchetypeConfig } from "../../schema/archetype.js";
 
 const makeWords = (start: number, end: number) => [
   { word: "hello", start, end: start + (end - start) / 2 },
@@ -90,10 +91,27 @@ describe("mapScoreToProps", () => {
     expect(props.scenes[1]!.transition).toBe("slide_left");
   });
 
-  it("falls back to 'none' when archetype has no default transition", () => {
-    const props = mapScoreToProps(baseScore, baseAssets);
-    // editorial_caricature has defaultTransition: "slide_left", so we verify it's used
-    expect(props.scenes[0]!.transition).toBe("slide_left");
+  it("falls back to 'none' when archetype has no default transition", async () => {
+    const archetypeRegistry = await import("../../config/archetype-registry.js");
+    const originalGetArchetype = archetypeRegistry.getArchetype;
+    // Temporarily mock getArchetype to return a config without defaultTransition
+    const noTransitionConfig: ArchetypeConfig = {
+      captionStyle: "clean",
+      colorPalette: { background: "#000", accent: "#fff", text: "#fff" },
+      textCardFont: "Inter",
+      motionIntensity: 1.0,
+      artStyle: "test", lighting: "test", compositionRules: "test",
+      culturalMarkers: "test", mood: "test", antiArtifactGuidance: "test",
+      visualColorPalette: ["white"],
+    };
+    vi.spyOn(archetypeRegistry, "getArchetype").mockReturnValue(noTransitionConfig);
+    try {
+      const props = mapScoreToProps(baseScore, baseAssets);
+      // No scene.transition set, no archetype.defaultTransition -> falls to "none"
+      expect(props.scenes[0]!.transition).toBe("none");
+    } finally {
+      vi.spyOn(archetypeRegistry, "getArchetype").mockImplementation(originalGetArchetype);
+    }
   });
 
   it("uses archetype transitionDurationFrames", () => {
