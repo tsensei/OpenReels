@@ -30,6 +30,7 @@ export interface PipelineOptions {
   dryRun: boolean;
   preview: boolean;
   outputDir: string;
+  yes: boolean;
 }
 
 export interface PipelineResult {
@@ -147,7 +148,8 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
   console.log(`\n${formatCostEstimate(costBreakdown, opts.imageProvider)}`);
   log.totalCost = { estimated: costBreakdown.totalCost };
 
-  const proceed = await confirm("Proceed with generation?");
+  const autoConfirm = opts.yes || !process.stdin.isTTY;
+  const proceed = autoConfirm || await confirm("Proceed with generation?");
   if (!proceed) {
     return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
   }
@@ -295,11 +297,15 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
 
     // Preview
     if (opts.preview) {
-      console.log("\nOpening Remotion Studio preview...");
-      try {
-        execFileSync("npx", ["remotion", "studio"], { stdio: "inherit" });
-      } catch {
-        console.warn("Preview closed or failed to open.");
+      if (!process.stdin.isTTY) {
+        console.warn("\n--preview requires an interactive terminal (skipped in Docker/CI).");
+      } else {
+        console.log("\nOpening Remotion Studio preview...");
+        try {
+          execFileSync("npx", ["remotion", "studio"], { stdio: "inherit" });
+        } catch {
+          console.warn("Preview closed or failed to open.");
+        }
       }
     }
 

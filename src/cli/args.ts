@@ -15,6 +15,7 @@ export interface CLIOptions {
   dryRun: boolean;
   preview: boolean;
   output: string;
+  yes: boolean;
 }
 
 export function parseArgs(): CLIOptions {
@@ -33,6 +34,7 @@ export function parseArgs(): CLIOptions {
     .option("--dry-run", "Output DirectorScore JSON without generating assets", false)
     .option("--preview", "Open Remotion Studio preview after rendering", false)
     .option("-o, --output <dir>", "Output directory", "./output")
+    .option("-y, --yes", "Auto-confirm cost estimation prompt (non-interactive mode)", false)
     .parse();
 
   const topic = program.args[0] ?? "";
@@ -52,5 +54,6 @@ export function parseArgs(): CLIOptions {
     dryRun: opts["dryRun"] as boolean,
     preview: opts["preview"] as boolean,
     output: opts["output"] as string,
+    yes: opts["yes"] as boolean,
   };
 }

@@ -1,0 +1,104 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { validateEnv } from "./validate-env.js";
+
+// biome-ignore lint: test spies
+let exitSpy: any;
+// biome-ignore lint: test spies
+let errorSpy: any;
+
+beforeEach(() => {
+  exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as any);
+  errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe("validateEnv", () => {
+  it("passes when all default provider keys are set", () => {
+    process.env["ANTHROPIC_API_KEY"] = "test";
+    process.env["ELEVENLABS_API_KEY"] = "test";
+    process.env["GOOGLE_API_KEY"] = "test";
+
+    validateEnv({ provider: "anthropic", ttsProvider: "elevenlabs", imageProvider: "gemini" });
+
+    expect(exitSpy).not.toHaveBeenCalled();
+
+    delete process.env["ANTHROPIC_API_KEY"];
+    delete process.env["ELEVENLABS_API_KEY"];
+    delete process.env["GOOGLE_API_KEY"];
+  });
+
+  it("exits when ANTHROPIC_API_KEY is missing for default provider", () => {
+    delete process.env["ANTHROPIC_API_KEY"];
+    process.env["ELEVENLABS_API_KEY"] = "test";
+    process.env["GOOGLE_API_KEY"] = "test";
+
+    validateEnv({ provider: "anthropic", ttsProvider: "elevenlabs", imageProvider: "gemini" });
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+
+    delete process.env["ELEVENLABS_API_KEY"];
+    delete process.env["GOOGLE_API_KEY"];
+  });
+
+  it("requires OPENAI_API_KEY when --provider openai", () => {
+    delete process.env["OPENAI_API_KEY"];
+    process.env["ELEVENLABS_API_KEY"] = "test";
+    process.env["GOOGLE_API_KEY"] = "test";
+
+    validateEnv({ provider: "openai", ttsProvider: "elevenlabs", imageProvider: "gemini" });
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const output = errorSpy.mock.calls.flat().join("");
+    expect(output).toContain("OPENAI_API_KEY");
+
+    delete process.env["ELEVENLABS_API_KEY"];
+    delete process.env["GOOGLE_API_KEY"];
+  });
+
+  it("requires OPENAI_API_KEY when --image-provider openai", () => {
+    process.env["ANTHROPIC_API_KEY"] = "test";
+    process.env["ELEVENLABS_API_KEY"] = "test";
+    delete process.env["OPENAI_API_KEY"];
+
+    validateEnv({ provider: "anthropic", ttsProvider: "elevenlabs", imageProvider: "openai" });
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+
+    delete process.env["ANTHROPIC_API_KEY"];
+    delete process.env["ELEVENLABS_API_KEY"];
+  });
+
+  it("requires INWORLD_TTS_API_KEY when --tts-provider inworld", () => {
+    process.env["ANTHROPIC_API_KEY"] = "test";
+    process.env["GOOGLE_API_KEY"] = "test";
+    delete process.env["INWORLD_TTS_API_KEY"];
+
+    validateEnv({ provider: "anthropic", ttsProvider: "inworld", imageProvider: "gemini" });
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const output = errorSpy.mock.calls.flat().join("");
+    expect(output).toContain("INWORLD_TTS_API_KEY");
+
+    delete process.env["ANTHROPIC_API_KEY"];
+    delete process.env["GOOGLE_API_KEY"];
+  });
+
+  it("does not require optional PEXELS_API_KEY or PIXABAY_API_KEY", () => {
+    process.env["ANTHROPIC_API_KEY"] = "test";
+    process.env["ELEVENLABS_API_KEY"] = "test";
+    process.env["GOOGLE_API_KEY"] = "test";
+    delete process.env["PEXELS_API_KEY"];
+    delete process.env["PIXABAY_API_KEY"];
+
+    validateEnv({ provider: "anthropic", ttsProvider: "elevenlabs", imageProvider: "gemini" });
+
+    expect(exitSpy).not.toHaveBeenCalled();
+
+    delete process.env["ANTHROPIC_API_KEY"];
+    delete process.env["ELEVENLABS_API_KEY"];
+    delete process.env["GOOGLE_API_KEY"];
+  });
+});

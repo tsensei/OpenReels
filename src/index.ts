@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { parseArgs } from "./cli/args.js";
+import { validateEnv } from "./cli/validate-env.js";
 import { runPipeline } from "./pipeline/orchestrator.js";
 import { AnthropicLLM } from "./providers/llm/anthropic.js";
 import { OpenAILLM } from "./providers/llm/openai.js";
@@ -13,6 +14,13 @@ import type { LLMProvider } from "./schema/providers.js";
 
 async function main(): Promise<void> {
   const opts = parseArgs();
+
+  // Validate required API keys before constructing providers
+  validateEnv({
+    provider: opts.provider,
+    ttsProvider: opts.ttsProvider,
+    imageProvider: opts.imageProvider,
+  });
 
   // Initialize providers
   const llm: LLMProvider =
@@ -36,6 +44,7 @@ async function main(): Promise<void> {
     dryRun: opts.dryRun,
     preview: opts.preview,
     outputDir: opts.output,
+    yes: opts.yes,
   });
 
   if (result.videoPath) {
