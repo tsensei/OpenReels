@@ -234,11 +234,41 @@ While ElevenLabs supports multilingual TTS, the archetype system, prompts, and p
 
 ---
 
+## Adjacent Ecosystem: AI Video Generation Models
+
+These are not direct competitors (they don't offer end-to-end topic-to-video pipelines) but represent the broader AI video generation ecosystem. They are relevant as **potential integration points** for OpenReels.
+
+### Raw Video Generation Models
+
+| Project | Stars | What it does | Relevance to OpenReels |
+|---|---|---|---|
+| **Open-Sora** (hpcaitech) | ~28,800 | Text/image-to-video generation (11B params, on par with HunyuanVideo) | Could replace stock footage with fully AI-generated video clips |
+| **Stable Video Diffusion** (Stability AI) | ~27,100 | Image-to-video diffusion models + Stable Video 4D | Image-to-video could animate AI-generated scene images |
+| **SadTalker** (OpenTalker) | ~13,700 | Audio-driven talking head from a single portrait image (CVPR 2023) | Could power a new "AI avatar" beat type |
+| **Wav2Lip** (Rudrabha) | ~12,900 | Lip-sync any video to any speech with high accuracy | Could add talking-head visuals synced to voiceover |
+| **CogVideoX** (THUDM) | ~12,600 | Text/image-to-video, multiple model sizes (2B, 5B), runs on consumer GPUs | Accessible video generation for OpenReels integration |
+| **AnimateDiff** (guoyww) | ~12,100 | Adds motion/animation to Stable Diffusion images | Could animate OpenReels' AI-generated scene images |
+| **Moore-AnimateAnyone** | ~3,500 | Pose-driven character animation from a single image | Character animation for educational/storytelling content |
+
+### Niche Generators
+
+| Project | Stars | What it does | Differentiation |
+|---|---|---|---|
+| **brainrot.js** | ~950 | "Brainrot" style videos with AI celebrity voices over gameplay backgrounds | Niche meme aesthetic, celebrity voice gimmick |
+| **AI-Faceless-Video-Generator** | ~500+ | Talking face videos from a topic using GPT + gTTS + SadTalker | Simpler pipeline with avatar approach |
+
+### Integration Opportunities
+- **Short-term:** SadTalker or Wav2Lip could be integrated as a new `AvatarBeat` visual type, enabling talking-head scenes without stock footage
+- **Medium-term:** AnimateDiff could animate OpenReels' AI-generated scene images, adding motion to static visuals
+- **Long-term:** Open-Sora or CogVideoX could replace the entire visual pipeline with fully AI-generated video clips, making stock footage unnecessary
+
+---
+
 ## Threats
 
 1. **MoneyPrinterTurbo's network effects** -- At 54K stars, it benefits from massive community momentum, documentation, and contributions. Hard to compete on community alone.
 2. **Commercial tools** -- Platforms like Opus Clip, Vizard, and Submagic offer polished SaaS experiences. Open-source tools compete on customization and cost, not UX.
-3. **Native AI video models** -- As text-to-video models (Sora, Veo, Kling) improve, the "assemble stock footage" approach may become obsolete. OpenReels' AI image generation is a hedge against this.
+3. **Native AI video models** -- Open-Sora (28.8K stars), CogVideoX (12.6K stars), and HunyuanVideo (11.9K stars) are rapidly maturing. As text-to-video models improve, the "assemble stock footage" approach may become obsolete. OpenReels' AI image generation is a hedge, but integrating these models proactively would be a stronger position.
 4. **short-video-maker convergence** -- Same tech stack (TS + Remotion), growing fast, and already has MCP/API. Could adopt archetype-like features.
 
 ---
