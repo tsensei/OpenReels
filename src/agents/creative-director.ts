@@ -2,7 +2,7 @@ import { z } from "zod";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { LLMProvider, LLMUsage } from "../schema/providers.js";
-import { DirectorScore, VisualType, Motion } from "../schema/director-score.js";
+import { DirectorScore, VisualType, Motion, TransitionType } from "../schema/director-score.js";
 import { listArchetypes } from "../config/archetype-registry.js";
 import { loadPlaybook } from "../config/playbook.js";
 import type { ResearchResult } from "./research.js";
@@ -20,6 +20,7 @@ const DirectorScoreRaw = z.object({
       visual_prompt: z.string(),
       motion: Motion,
       script_line: z.string(),
+      transition: TransitionType.optional(),
     }),
   ),
 });

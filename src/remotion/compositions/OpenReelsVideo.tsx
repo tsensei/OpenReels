@@ -1,5 +1,10 @@
 import React from "react";
-import { AbsoluteFill, Composition, Sequence, Audio, staticFile } from "remotion";
+import { AbsoluteFill, Composition, Audio, staticFile } from "remotion";
+import { TransitionSeries, linearTiming } from "@remotion/transitions";
+import { fade } from "@remotion/transitions/fade";
+import { slide } from "@remotion/transitions/slide";
+import { wipe } from "@remotion/transitions/wipe";
+import { flip } from "@remotion/transitions/flip";
 import type { CompositionProps, SceneProps } from "../lib/score-to-props";
 import { AIImageBeat } from "../beats/AIImageBeat";
 import { StockImageBeat } from "../beats/StockImageBeat";
@@ -34,23 +39,44 @@ const resolveAsset = (relativePath: string | null): string | null => {
   return staticFile(relativePath);
 };
 
-const Main: React.FC<CompositionProps> = ({ scenes, captionStyle, voiceoverSrc, musicSrc, allWords }) => {
-  let frameOffset = 0;
+function getTransitionPresentation(type: string) {
+  switch (type) {
+    case "crossfade": return fade();
+    case "slide_left": return slide({ direction: "from-right" });
+    case "slide_right": return slide({ direction: "from-left" });
+    case "wipe": return wipe();
+    case "flip": return flip();
+    case "none": return null;
+    default: return null;
+  }
+}
 
+const Main: React.FC<CompositionProps> = ({ scenes, captionStyle, voiceoverSrc, musicSrc, allWords }) => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      {/* Scene beats — each in its own Sequence (resets frame for visuals) */}
-      {scenes.map((scene, i) => {
-        const BeatComponent = BEAT_COMPONENTS[scene.visualType] ?? TextCardBeat;
-        const startFrame = frameOffset;
-        frameOffset += scene.durationInFrames;
+      {/* Scene beats with transitions — TransitionSeries handles timing and overlaps */}
+      <TransitionSeries>
+        {scenes.map((scene, i) => {
+          const BeatComponent = BEAT_COMPONENTS[scene.visualType] ?? TextCardBeat;
+          const presentation = i > 0
+            ? getTransitionPresentation(scenes[i - 1].transition)
+            : null;
 
-        return (
-          <Sequence key={i} from={startFrame} durationInFrames={scene.durationInFrames}>
-            <BeatComponent {...scene} assetSrc={resolveAsset(scene.assetSrc)} />
-          </Sequence>
-        );
-      })}
+          return (
+            <React.Fragment key={i}>
+              {presentation && (
+                <TransitionSeries.Transition
+                  presentation={presentation}
+                  timing={linearTiming({ durationInFrames: scenes[i - 1].transitionDurationFrames })}
+                />
+              )}
+              <TransitionSeries.Sequence durationInFrames={scene.durationInFrames}>
+                <BeatComponent {...scene} assetSrc={resolveAsset(scene.assetSrc)} />
+              </TransitionSeries.Sequence>
+            </React.Fragment>
+          );
+        })}
+      </TransitionSeries>
 
       {/*
         Captions — ONE component at top level, NOT inside per-scene Sequences.
