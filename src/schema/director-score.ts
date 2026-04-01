@@ -6,11 +6,24 @@ export type VisualType = z.infer<typeof VisualType>;
 export const Motion = z.enum(["zoom_in", "zoom_out", "pan_right", "pan_left", "static"]);
 export type Motion = z.infer<typeof Motion>;
 
+export const TransitionType = z.enum([
+  "none",        // hard cut (default via mapper cascade)
+  "crossfade",   // smooth opacity blend
+  "slide_left",  // slide new scene in from right
+  "slide_right", // slide new scene in from left
+  "wipe",        // horizontal wipe
+  "flip",        // 3D card flip
+]);
+export type TransitionType = z.infer<typeof TransitionType>;
+
 export const Scene = z.object({
   visual_type: VisualType,
   visual_prompt: z.string().min(1),
   motion: Motion,
   script_line: z.string().min(1),
+  // Controls how THIS scene transitions into the NEXT scene.
+  // Optional — mapper cascade resolves: scene value → archetype default → "none".
+  transition: TransitionType.optional(),
 });
 export type Scene = z.infer<typeof Scene>;
 

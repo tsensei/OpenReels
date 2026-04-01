@@ -73,4 +73,43 @@ describe("DirectorScore schema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("accepts a scene with a valid transition", () => {
+    const result = DirectorScore.safeParse({
+      ...baseScore,
+      scenes: [
+        { ...validScene("text_card"), transition: "crossfade" },
+        { ...validScene("ai_image"), transition: "slide_left" },
+        { ...validScene("stock_video"), transition: "flip" },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a scene with an invalid transition value", () => {
+    const result = DirectorScore.safeParse({
+      ...baseScore,
+      scenes: [
+        { ...validScene("text_card"), transition: "dissolve" },
+        validScene("ai_image"),
+        validScene("stock_video"),
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts scenes without transition field (optional, undefined)", () => {
+    const result = DirectorScore.safeParse({
+      ...baseScore,
+      scenes: [
+        validScene("text_card"),
+        validScene("ai_image"),
+        validScene("stock_video"),
+      ],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.scenes[0].transition).toBeUndefined();
+    }
+  });
+
 });

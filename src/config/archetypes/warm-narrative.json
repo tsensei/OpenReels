@@ -1,4 +1,6 @@
 {
+  "defaultTransition": "crossfade",
+  "transitionDurationFrames": 20,
   "captionStyle": "karaoke_sweep",
   "colorPalette": {
     "background": "#2d1b00",

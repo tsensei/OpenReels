@@ -1,4 +1,6 @@
 {
+  "defaultTransition": "wipe",
+  "transitionDurationFrames": 15,
   "captionStyle": "karaoke_sweep",
   "colorPalette": {
     "background": "#0a1628",

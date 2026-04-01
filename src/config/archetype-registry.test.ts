@@ -36,6 +36,16 @@ describe("getArchetype", () => {
     expect(config.visualColorPalette.length).toBe(5);
   });
 
+  it("has valid transition defaults for all archetypes", () => {
+    const validTransitions = ["none", "crossfade", "slide_left", "slide_right", "wipe", "flip"];
+    for (const name of listArchetypes()) {
+      const config = getArchetype(name);
+      expect(validTransitions).toContain(config.defaultTransition);
+      expect(config.transitionDurationFrames).toBeGreaterThanOrEqual(5);
+      expect(config.transitionDurationFrames).toBeLessThanOrEqual(30);
+    }
+  });
+
   it("throws for an unknown archetype", () => {
     expect(() => getArchetype("nonexistent")).toThrowError(/Unknown archetype/);
     expect(() => getArchetype("nonexistent")).toThrowError(/Available/);

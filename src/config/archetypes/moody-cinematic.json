@@ -1,4 +1,6 @@
 {
+  "defaultTransition": "crossfade",
+  "transitionDurationFrames": 18,
   "captionStyle": "block_impact",
   "colorPalette": {
     "background": "#0a0a0f",

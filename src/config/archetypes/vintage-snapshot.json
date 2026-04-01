@@ -1,4 +1,6 @@
 {
+  "defaultTransition": "flip",
+  "transitionDurationFrames": 12,
   "captionStyle": "clean",
   "colorPalette": {
     "background": "#f5f0e8",

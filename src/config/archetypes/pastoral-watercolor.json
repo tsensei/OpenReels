@@ -1,4 +1,6 @@
 {
+  "defaultTransition": "crossfade",
+  "transitionDurationFrames": 20,
   "captionStyle": "gradient_rise",
   "colorPalette": {
     "background": "#2a3a2a",

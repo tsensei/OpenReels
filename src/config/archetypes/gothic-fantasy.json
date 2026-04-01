@@ -1,4 +1,6 @@
 {
+  "defaultTransition": "wipe",
+  "transitionDurationFrames": 15,
   "captionStyle": "block_impact",
   "colorPalette": {
     "background": "#0d0d14",

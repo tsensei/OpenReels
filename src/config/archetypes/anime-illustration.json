@@ -1,4 +1,6 @@
 {
+  "defaultTransition": "flip",
+  "transitionDurationFrames": 12,
   "captionStyle": "bold_outline",
   "colorPalette": {
     "background": "#0f0f1a",

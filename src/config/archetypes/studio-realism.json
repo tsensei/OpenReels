@@ -1,4 +1,6 @@
 {
+  "defaultTransition": "slide_left",
+  "transitionDurationFrames": 10,
   "captionStyle": "clean",
   "colorPalette": {
     "background": "#0a0a0a",
