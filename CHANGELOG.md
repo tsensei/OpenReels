@@ -13,8 +13,7 @@ All notable changes to OpenReels will be documented in this file.
 - docker-compose.yml with pre-configured shared memory, output volume, and stock asset cache.
 
 ### Changed
-- `.env.example` now includes provider signup URLs and Docker usage instructions.
-- TODOS.md updated with Docker-related future work (HTTP API server mode, Remotion pre-bundling optimization).
+- `.env.example` now includes provider signup URLs and Docker usage instructions, so you know exactly where to get each key.
 
 ## [0.2.0] - 2026-04-01
 

@@ -22,6 +22,27 @@ Topic in, MP4 out. No editing.
 
 ## Quickstart
 
+### Docker (recommended)
+
+No Node.js, Chrome, or ffmpeg setup required. Just Docker.
+
+```bash
+cp .env.example .env   # fill in your API keys
+
+docker run --env-file .env --shm-size=2gb -v ./output:/output ghcr.io/tsensei/openreels "5 stoic lessons that changed my life"
+```
+
+Or with docker-compose:
+
+```bash
+git clone https://github.com/tsensei/OpenReels.git
+cd OpenReels
+cp .env.example .env   # fill in your API keys
+docker compose run openreels "5 stoic lessons that changed my life"
+```
+
+### Local development
+
 **Prerequisites:** Node.js 22+, pnpm, ffprobe (for stock video duration detection)
 
 ```bash
@@ -30,13 +51,6 @@ cd OpenReels
 pnpm install
 cp .env.example .env   # fill in your API keys
 ```
-
-**Required API keys** (at minimum):
-- `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` (LLM provider)
-- `ELEVENLABS_API_KEY` or `INWORLD_TTS_API_KEY` (text-to-speech)
-- `GOOGLE_API_KEY` (Gemini image generation)
-
-**Optional:** `PEXELS_API_KEY`, `PIXABAY_API_KEY` (stock footage, free registration)
 
 ```bash
 # Full pipeline run
@@ -49,6 +63,15 @@ pnpm start "your topic" --dry-run
 pnpm start "your topic" --archetype anime_illustration --provider openai
 ```
 
+### API keys
+
+**Required** (at minimum):
+- `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` — [Anthropic](https://console.anthropic.com/) / [OpenAI](https://platform.openai.com/api-keys)
+- `ELEVENLABS_API_KEY` or `INWORLD_TTS_API_KEY` — [ElevenLabs](https://elevenlabs.io/) / [Inworld](https://inworld.ai/)
+- `GOOGLE_API_KEY` — [Google AI Studio](https://aistudio.google.com/apikey) (Gemini image generation)
+
+**Optional:** `PEXELS_API_KEY` ([Pexels](https://www.pexels.com/api/)), `PIXABAY_API_KEY` ([Pixabay](https://pixabay.com/api/docs/)) for stock footage (free registration)
+
 ### CLI flags
 
 | Flag | Description | Default |
@@ -60,6 +83,7 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 | `--dry-run` | Output DirectorScore JSON without generating assets | off |
 | `--preview` | Open Remotion Studio after rendering | off |
 | `-o, --output <dir>` | Output directory | `./output` |
+| `-y, --yes` | Auto-confirm cost estimation (for Docker/CI) | off |
 
 ## Archetypes
 
@@ -90,7 +114,7 @@ The rewrite moves from Python to TypeScript for native [Remotion](https://www.re
 
 ## Status
 
-v0.2.0 shipped. The core pipeline works end-to-end. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
+v0.3.0 shipped. The core pipeline works end-to-end with Docker support for one-command usage on any platform. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
 
 ## License
 
