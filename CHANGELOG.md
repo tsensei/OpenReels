@@ -2,6 +2,18 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.2.0] - 2026-04-01
+
+### Added
+- Scene transitions between beats. Videos now use crossfade, slide, wipe, and flip transitions instead of hard cuts. The Creative Director selects transitions per scene based on emotional content, with each archetype providing sensible defaults.
+- Remotion `TransitionSeries` replaces raw `Sequence` assembly, with overlap-aware duration calculation that prevents voiceover truncation.
+- Full test suite for the score-to-props mapper (12 new tests covering transition cascade, duration calculation, and voiceover clamp).
+
+### Changed
+- `DirectorScore` schema extended with optional `transition` field per scene (backward-compatible).
+- All 14 archetype configs now include `defaultTransition` and `transitionDurationFrames`.
+- `getTotalDurationInFrames` accounts for transition overlaps and extends the last scene to prevent black frames.
+
 ## [0.1.1] - 2026-04-01
 
 ### Added

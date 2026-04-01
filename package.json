@@ -46,6 +46,7 @@
     "@anthropic-ai/sdk": "^0.80.0",
     "@google/genai": "^1.47.0",
     "@remotion/google-fonts": "4.0.441",
+    "@remotion/transitions": "4.0.441",
     "commander": "^14.0.3",
     "openai": "^6.33.0",
     "zod": "^4.3.6"

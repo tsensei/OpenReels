@@ -17,6 +17,9 @@ importers:
       '@remotion/google-fonts':
         specifier: 4.0.441
         version: 4.0.441(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@remotion/transitions':
+        specifier: 4.0.441
+        version: 4.0.441(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       commander:
         specifier: ^14.0.3
         version: 14.0.3
@@ -635,6 +638,9 @@ packages:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
+  '@remotion/paths@4.0.441':
+    resolution: {integrity: sha512-xXi/DEijBUvo1kGm2s/4l92gnbcPU7R9WfBNOsKbyFdtigDHd7fJ3k0Bb4vWGbmTpl29nsKNO/JVAHf2hi1e1w==}
+
   '@remotion/player@4.0.441':
     resolution: {integrity: sha512-5u9rjMrC5Tkrjlii+5CvH98SIj5uiol3zrhJzjHdfcoF4ew3ejy0ieXKwaVE16Uj0iN0XQR/UF+Xe/Sps2mj5g==}
     peerDependencies:
@@ -643,6 +649,12 @@ packages:
 
   '@remotion/renderer@4.0.441':
     resolution: {integrity: sha512-NcauF41tDR294eDGC+NzAo8135F0rIpRVcrFkxKTn+Qoyd5qy3y2uBBC92lcL+tAj8ECjXTRlBE3VJ0E40klaQ==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
+  '@remotion/shapes@4.0.441':
+    resolution: {integrity: sha512-I5FjQpilrIlK8RLxhAgoK0+/52ckx0E7+HiG7bxv96ohWo9q82iHxzQrdLK6sWWAlgVVXTDryjlqiFxRP5OQQQ==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
@@ -658,6 +670,12 @@ packages:
 
   '@remotion/studio@4.0.441':
     resolution: {integrity: sha512-E8a7PuIR5khuu2BnPz8M2gwMYz7ufBOKmQdSLXEXkD4EcsyImz+FENna/FIQSHyqL7P9DIQOFF3AgFVUbGUDkw==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
+  '@remotion/transitions@4.0.441':
+    resolution: {integrity: sha512-XJ5uhd/Kf3o7SBcO2hu/51ZMHTHTX1pFEDkhVkJMd2Te7hUbCmsmq4XyfNAS6gtVrU0iL4DePKBvFc4h9xlP/w==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
@@ -2321,8 +2339,8 @@ snapshots:
       react-refresh: 0.18.0
       remotion: 4.0.441(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       source-map: 0.7.3
-      style-loader: 4.0.0(webpack@5.105.0(esbuild@0.25.0))
-      webpack: 5.105.0(esbuild@0.27.4)
+      style-loader: 4.0.0(webpack@5.105.0(esbuild@0.27.4))
+      webpack: 5.105.0(esbuild@0.25.0)
     transitivePeerDependencies:
       - '@swc/core'
       - '@swc/helpers'
@@ -2397,6 +2415,8 @@ snapshots:
       react-dom: 19.2.4(react@19.2.4)
       remotion: 4.0.441(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
 
+  '@remotion/paths@4.0.441': {}
+
   '@remotion/player@4.0.441(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
       react: 19.2.4
@@ -2426,6 +2446,12 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  '@remotion/shapes@4.0.441(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      '@remotion/paths': 4.0.441
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
 
   '@remotion/streaming@4.0.441': {}
 
@@ -2482,6 +2508,14 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  '@remotion/transitions@4.0.441(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      '@remotion/paths': 4.0.441
+      '@remotion/shapes': 4.0.441(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+      remotion: 4.0.441(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
 
   '@remotion/web-renderer@4.0.441(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
@@ -3482,7 +3516,7 @@ snapshots:
     dependencies:
       js-tokens: 9.0.1
 
-  style-loader@4.0.0(webpack@5.105.0(esbuild@0.25.0)):
+  style-loader@4.0.0(webpack@5.105.0(esbuild@0.27.4)):
     dependencies:
       webpack: 5.105.0(esbuild@0.27.4)
 
@@ -3502,7 +3536,7 @@ snapshots:
 
   tapable@2.3.2: {}
 
-  terser-webpack-plugin@5.4.0(esbuild@0.25.0)(webpack@5.105.0(esbuild@0.25.0)):
+  terser-webpack-plugin@5.4.0(esbuild@0.25.0)(webpack@5.105.0(esbuild@0.27.4)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
@@ -3511,6 +3545,16 @@ snapshots:
       webpack: 5.105.0(esbuild@0.27.4)
     optionalDependencies:
       esbuild: 0.25.0
+
+  terser-webpack-plugin@5.4.0(esbuild@0.27.4)(webpack@5.105.0(esbuild@0.27.4)):
+    dependencies:
+      '@jridgewell/trace-mapping': 0.3.31
+      jest-worker: 27.5.1
+      schema-utils: 4.3.3
+      terser: 5.46.1
+      webpack: 5.105.0(esbuild@0.27.4)
+    optionalDependencies:
+      esbuild: 0.27.4
 
   terser@5.46.1:
     dependencies:
@@ -3690,6 +3734,38 @@ snapshots:
 
   webpack-sources@3.3.4: {}
 
+  webpack@5.105.0(esbuild@0.25.0):
+    dependencies:
+      '@types/eslint-scope': 3.7.7
+      '@types/estree': 1.0.8
+      '@types/json-schema': 7.0.15
+      '@webassemblyjs/ast': 1.14.1
+      '@webassemblyjs/wasm-edit': 1.14.1
+      '@webassemblyjs/wasm-parser': 1.14.1
+      acorn: 8.16.0
+      acorn-import-phases: 1.0.4(acorn@8.16.0)
+      browserslist: 4.28.1
+      chrome-trace-event: 1.0.4
+      enhanced-resolve: 5.20.1
+      es-module-lexer: 2.0.0
+      eslint-scope: 5.1.1
+      events: 3.3.0
+      glob-to-regexp: 0.4.1
+      graceful-fs: 4.2.11
+      json-parse-even-better-errors: 2.3.1
+      loader-runner: 4.3.1
+      mime-types: 2.1.35
+      neo-async: 2.6.2
+      schema-utils: 4.3.3
+      tapable: 2.3.2
+      terser-webpack-plugin: 5.4.0(esbuild@0.25.0)(webpack@5.105.0(esbuild@0.27.4))
+      watchpack: 2.5.1
+      webpack-sources: 3.3.4
+    transitivePeerDependencies:
+      - '@swc/core'
+      - esbuild
+      - uglify-js
+
   webpack@5.105.0(esbuild@0.27.4):
     dependencies:
       '@types/eslint-scope': 3.7.7
@@ -3714,7 +3790,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.2
-      terser-webpack-plugin: 5.4.0(esbuild@0.25.0)(webpack@5.105.0(esbuild@0.25.0))
+      terser-webpack-plugin: 5.4.0(esbuild@0.27.4)(webpack@5.105.0(esbuild@0.27.4))
       watchpack: 2.5.1
       webpack-sources: 3.3.4
     transitivePeerDependencies:
