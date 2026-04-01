@@ -4,7 +4,7 @@ import * as path from "node:path";
 import * as readline from "node:readline";
 import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
-import type { LLMProvider, TTSProvider, ImageProvider, StockProvider, WordTimestamp, LLMUsage } from "../schema/providers.js";
+import type { LLMProvider, TTSProvider, ImageProvider, StockProvider, WordTimestamp, LLMUsage, TTSProviderKey, ImageProviderKey } from "../schema/providers.js";
 import type { ArchetypeConfig } from "../schema/archetype.js";
 import type { DirectorScore } from "../schema/director-score.js";
 import { research } from "../agents/research.js";
@@ -21,8 +21,9 @@ export interface PipelineOptions {
   topic: string;
   llm: LLMProvider;
   tts: TTSProvider;
+  ttsProvider: TTSProviderKey;
   imageGen: ImageProvider;
-  imageProvider: "gemini" | "openai";
+  imageProvider: ImageProviderKey;
   stock: StockProvider;
   archetype?: string;
   platform: string;
@@ -142,7 +143,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
   }
 
   // Cost estimation
-  const costBreakdown = estimateCost(directorScore, opts.imageProvider);
+  const costBreakdown = estimateCost(directorScore, opts.imageProvider, opts.ttsProvider);
   console.log(`\n${formatCostEstimate(costBreakdown, opts.imageProvider)}`);
   log.totalCost = { estimated: costBreakdown.totalCost };
 
@@ -288,7 +289,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
     // Compute and report actual cost
     const aiImages = directorScore.scenes.filter((s) => s.visual_type === "ai_image").length;
     const ttsCharacters = directorScore.scenes.reduce((sum, s) => sum + s.script_line.length, 0);
-    const actualCost = computeActualLLMCost(llmUsages, { aiImages, ttsCharacters }, opts.llm.id, opts.imageProvider);
+    const actualCost = computeActualLLMCost(llmUsages, { aiImages, ttsCharacters }, opts.llm.id, opts.imageProvider, opts.ttsProvider);
     log.totalCost = { estimated: costBreakdown.totalCost, actual: actualCost.totalCost };
     console.log(`\n${formatActualCost(actualCost)}`);
 

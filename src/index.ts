@@ -5,6 +5,7 @@ import { runPipeline } from "./pipeline/orchestrator.js";
 import { AnthropicLLM } from "./providers/llm/anthropic.js";
 import { OpenAILLM } from "./providers/llm/openai.js";
 import { ElevenLabsTTS } from "./providers/tts/elevenlabs.js";
+import { InworldTTS } from "./providers/tts/inworld.js";
 import { GeminiImage } from "./providers/image/gemini.js";
 import { OpenAIImage } from "./providers/image/openai.js";
 import { PexelsStock } from "./providers/stock/pexels.js";
@@ -17,7 +18,7 @@ async function main(): Promise<void> {
   const llm: LLMProvider =
     opts.provider === "openai" ? new OpenAILLM() : new AnthropicLLM();
 
-  const tts = new ElevenLabsTTS();
+  const tts = opts.ttsProvider === "inworld" ? new InworldTTS() : new ElevenLabsTTS();
   const imageGen = opts.imageProvider === "openai" ? new OpenAIImage() : new GeminiImage();
   const stock = new PexelsStock();
 
@@ -26,6 +27,7 @@ async function main(): Promise<void> {
     topic: opts.topic,
     llm,
     tts,
+    ttsProvider: opts.ttsProvider,
     imageGen,
     imageProvider: opts.imageProvider,
     stock,

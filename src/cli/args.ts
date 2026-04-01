@@ -1,13 +1,15 @@
 import { createRequire } from "node:module";
 import { Command, Option } from "commander";
+import type { LLMProviderKey, TTSProviderKey, ImageProviderKey } from "../schema/providers.js";
 
 const require = createRequire(import.meta.url);
 const { version } = require("../../package.json") as { version: string };
 
 export interface CLIOptions {
   topic: string;
-  provider: "anthropic" | "openai";
-  imageProvider: "gemini" | "openai";
+  provider: LLMProviderKey;
+  imageProvider: ImageProviderKey;
+  ttsProvider: TTSProviderKey;
   archetype?: string;
   platform: string;
   dryRun: boolean;
@@ -25,6 +27,7 @@ export function parseArgs(): CLIOptions {
     .argument("<topic>", "The topic for your video")
     .addOption(new Option("-p, --provider <provider>", "LLM provider").choices(["anthropic", "openai"]).default("anthropic"))
     .addOption(new Option("-i, --image-provider <provider>", "Image generation provider").choices(["gemini", "openai"]).default("gemini"))
+    .addOption(new Option("--tts-provider <provider>", "TTS provider").choices(["elevenlabs", "inworld"]).default("elevenlabs"))
     .option("-a, --archetype <archetype>", "Visual archetype override")
     .option("--platform <platform>", "Target platform (youtube, tiktok, instagram)", "youtube")
     .option("--dry-run", "Output DirectorScore JSON without generating assets", false)
@@ -41,8 +44,9 @@ export function parseArgs(): CLIOptions {
 
   return {
     topic,
-    provider: opts["provider"] as "anthropic" | "openai",
-    imageProvider: opts["imageProvider"] as "gemini" | "openai",
+    provider: opts["provider"] as LLMProviderKey,
+    imageProvider: opts["imageProvider"] as ImageProviderKey,
+    ttsProvider: opts["ttsProvider"] as TTSProviderKey,
     archetype: opts["archetype"] as string | undefined,
     platform: opts["platform"] as string,
     dryRun: opts["dryRun"] as boolean,

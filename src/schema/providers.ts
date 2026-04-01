@@ -1,5 +1,9 @@
 import type { z } from "zod";
 
+export type LLMProviderKey = "anthropic" | "openai";
+export type TTSProviderKey = "elevenlabs" | "inworld";
+export type ImageProviderKey = "gemini" | "openai";
+
 export interface LLMUsage {
   inputTokens: number;
   outputTokens: number;
@@ -11,7 +15,7 @@ export interface LLMResult<T> {
 }
 
 export interface LLMProvider {
-  readonly id: "anthropic" | "openai";
+  readonly id: LLMProviderKey;
   generate<T extends z.ZodType>(opts: {
     systemPrompt: string;
     userMessage: string;

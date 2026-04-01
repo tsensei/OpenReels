@@ -1,5 +1,5 @@
 import type { DirectorScore } from "../schema/director-score.js";
-import type { LLMUsage } from "../schema/providers.js";
+import type { LLMUsage, LLMProviderKey, TTSProviderKey, ImageProviderKey } from "../schema/providers.js";
 
 interface CostBreakdown {
   llmCost: number;
@@ -43,6 +43,7 @@ const PRICING = {
     perOutputToken: 8 / 1_000_000,   // $8 per 1M output tokens
   },
   elevenLabsPerChar: 0.00018,        // $0.18 per 1K chars (avg of Creator $0.20 and Pro $0.17, Multilingual v2)
+  inworldPerChar: 0.00015,           // $0.15 per 1K chars (Inworld TTS 1.5, estimated from pricing page)
   // Gemini 3.1 Flash Image Preview: $60/M output tokens
   // 1080x1920 (>1024px, <=2048px) = 1680 tokens = $0.101/image
   // Plus input tokens at $0.50/M for the prompt text (~200 tokens avg = ~$0.0001)
@@ -62,7 +63,8 @@ const TOKEN_ESTIMATES = {
 
 export function estimateCost(
   score: DirectorScore,
-  imageProvider: "gemini" | "openai" = "gemini",
+  imageProvider: ImageProviderKey = "gemini",
+  ttsProvider: TTSProviderKey = "elevenlabs",
 ): CostBreakdown {
   const aiImages = score.scenes.filter((s) => s.visual_type === "ai_image").length;
   const ttsCharacters = score.scenes.reduce((sum, s) => sum + s.script_line.length, 0);
@@ -77,7 +79,8 @@ export function estimateCost(
     callCost(TOKEN_ESTIMATES.creativeDirector) +
     callCost(TOKEN_ESTIMATES.critic) +
     aiImages * callCost(TOKEN_ESTIMATES.imagePrompter);
-  const ttsCost = ttsCharacters * PRICING.elevenLabsPerChar;
+  const ttsPerChar = ttsProvider === "inworld" ? PRICING.inworldPerChar : PRICING.elevenLabsPerChar;
+  const ttsCost = ttsCharacters * ttsPerChar;
   const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
   const imageCost = aiImages * perImage;
   const totalCost = llmCost + ttsCost + imageCost;
@@ -87,7 +90,7 @@ export function estimateCost(
 
 export function formatCostEstimate(
   breakdown: CostBreakdown,
-  imageProvider: "gemini" | "openai" = "gemini",
+  imageProvider: ImageProviderKey = "gemini",
 ): string {
   const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
   return [
@@ -105,15 +108,17 @@ export function formatCostEstimate(
 export function computeActualLLMCost(
   usages: LLMUsage[],
   nonLlm: { aiImages: number; ttsCharacters: number },
-  provider: "anthropic" | "openai" = "anthropic",
-  imageProvider: "gemini" | "openai" = "gemini",
+  provider: LLMProviderKey = "anthropic",
+  imageProvider: ImageProviderKey = "gemini",
+  ttsProvider: TTSProviderKey = "elevenlabs",
 ): ActualCostBreakdown {
   const p = PRICING[provider];
   const totalInputTokens = usages.reduce((sum, u) => sum + u.inputTokens, 0);
   const totalOutputTokens = usages.reduce((sum, u) => sum + u.outputTokens, 0);
 
   const llmCost = totalInputTokens * p.perInputToken + totalOutputTokens * p.perOutputToken;
-  const ttsCost = nonLlm.ttsCharacters * PRICING.elevenLabsPerChar;
+  const ttsPerChar = ttsProvider === "inworld" ? PRICING.inworldPerChar : PRICING.elevenLabsPerChar;
+  const ttsCost = nonLlm.ttsCharacters * ttsPerChar;
   const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
   const imageCost = nonLlm.aiImages * perImage;
   const totalCost = llmCost + ttsCost + imageCost;

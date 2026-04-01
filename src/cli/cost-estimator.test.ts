@@ -48,6 +48,17 @@ describe("estimateCost", () => {
     expect(result.details.aiImages).toBe(0);
   });
 
+  it("uses Inworld pricing when ttsProvider is inworld", () => {
+    const score = makeScore([
+      { visual_type: "text_card", script_line: "Hello world" },
+    ]);
+    const elevenlabs = estimateCost(score, "gemini", "elevenlabs");
+    const inworld = estimateCost(score, "gemini", "inworld");
+    // Inworld per-char is cheaper than ElevenLabs
+    expect(inworld.ttsCost).toBeLessThan(elevenlabs.ttsCost);
+    expect(inworld.ttsCost).toBeGreaterThan(0);
+  });
+
   it("total equals sum of components", () => {
     const score = makeScore([
       { visual_type: "ai_image", script_line: "Test" },
@@ -93,6 +104,14 @@ describe("computeActualLLMCost", () => {
     const anthropic = computeActualLLMCost(usages, { aiImages: 0, ttsCharacters: 0 }, "anthropic");
     const openai = computeActualLLMCost(usages, { aiImages: 0, ttsCharacters: 0 }, "openai");
     expect(anthropic.llmCost).toBeGreaterThan(openai.llmCost);
+  });
+
+  it("uses Inworld TTS pricing when specified", () => {
+    const usages: LLMUsage[] = [{ inputTokens: 1000, outputTokens: 500 }];
+    const elevenlabs = computeActualLLMCost(usages, { aiImages: 0, ttsCharacters: 1000 }, "anthropic", "gemini", "elevenlabs");
+    const inworld = computeActualLLMCost(usages, { aiImages: 0, ttsCharacters: 1000 }, "anthropic", "gemini", "inworld");
+    expect(inworld.ttsCost).toBeLessThan(elevenlabs.ttsCost);
+    expect(inworld.ttsCost).toBeGreaterThan(0);
   });
 });
 
