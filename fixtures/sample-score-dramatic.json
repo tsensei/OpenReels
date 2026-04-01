@@ -7,25 +7,29 @@
       "visual_type": "text_card",
       "visual_prompt": "5 Stoic Lessons That Changed My Life",
       "motion": "static",
-      "script_line": "Marcus Aurelius ruled the Roman Empire for nearly two decades, and he left behind a journal that was never meant to be published."
+      "script_line": "Marcus Aurelius ruled the Roman Empire for nearly two decades, and he left behind a journal that was never meant to be published.",
+      "transition": "crossfade"
     },
     {
       "visual_type": "ai_image",
       "visual_prompt": "Marcus Aurelius sitting alone in a dimly lit Roman tent, writing in a leather journal by candlelight, dramatic chiaroscuro lighting, oil painting style",
       "motion": "zoom_in",
-      "script_line": "His private meditations became one of the most influential philosophy books ever written."
+      "script_line": "His private meditations became one of the most influential philosophy books ever written.",
+      "transition": "slide_left"
     },
     {
       "visual_type": "stock_video",
       "visual_prompt": "sunrise over ancient Roman ruins columns",
       "motion": "static",
-      "script_line": "Lesson one. You have power over your mind, not outside events. Realize this, and you will find strength."
+      "script_line": "Lesson one. You have power over your mind, not outside events. Realize this, and you will find strength.",
+      "transition": "wipe"
     },
     {
       "visual_type": "ai_image",
       "visual_prompt": "A stoic philosopher standing calm amid a raging storm, dramatic lighting, bold illustration style with deep shadows",
       "motion": "pan_right",
-      "script_line": "Most of what we suffer is not from the event itself, but from our judgment about it."
+      "script_line": "Most of what we suffer is not from the event itself, but from our judgment about it.",
+      "transition": "crossfade"
     },
     {
       "visual_type": "stock_image",

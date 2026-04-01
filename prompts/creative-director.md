@@ -13,8 +13,16 @@ Output a JSON object with:
 Each scene has:
 - **visual_type**: One of "ai_image", "stock_image", "stock_video", "text_card"
 - **visual_prompt**: For ai_image: describe the desired scene (subject, setting, action, emotional tone). A downstream prompt optimizer will expand this into a detailed image generation prompt using the archetype's style bible. Focus on WHAT to show, not HOW to prompt an image generator. For stock_image/stock_video: a 3-5 word search query. For text_card: the display text.
-- **motion**: Camera motion — "zoom_in", "zoom_out", "pan_right", "pan_left", or "static". Ignored for stock_video.
+- **motion**: Camera motion - "zoom_in", "zoom_out", "pan_right", "pan_left", or "static". Ignored for stock_video.
 - **script_line**: The voiceover narration for this scene. REQUIRED for every scene.
+- **transition** (optional): Controls how THIS scene flows into the NEXT scene. Options:
+  - "crossfade" - smooth blend. Use for reflective moments, emotional transitions, story continuity.
+  - "slide_left" - new scene slides in from right. Forward progression, building momentum.
+  - "slide_right" - slides from left. Contrast, flashback, "but actually" moments.
+  - "wipe" - horizontal sweep. Clean topic changes, new chapter energy.
+  - "flip" - 3D card flip. Use sparingly for dramatic reveals only.
+  - Omit the field to use the archetype's default transition.
+  The last scene's transition is ignored. Vary transitions, don't repeat the same one. Match the transition to the emotional shift BETWEEN scenes. Set "none" explicitly for a hard cut. Don't over-transition.
 
 ## Visual Type Selection
 
