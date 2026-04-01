@@ -35,7 +35,15 @@ fixtures/               # sample DirectorScore JSONs
 ```bash
 pnpm install          # install dependencies
 pnpm start "topic"    # run full pipeline
-pnpm test             # run vitest suite (68 tests)
+pnpm test             # run vitest suite (81 tests)
+```
+
+### Docker
+
+```bash
+docker build -t openreels .
+docker run --env-file .env --shm-size=2gb -v ./output:/output openreels "topic"
+docker compose run openreels "topic"
 ```
 
 ## Testing
