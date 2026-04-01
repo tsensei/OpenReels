@@ -1,19 +1,22 @@
 # OpenReels
 
-Open-source AI pipeline that turns any topic into a fully rendered YouTube Short.
+Open-source AI pipeline that turns any topic into a fully rendered YouTube Short. Includes a web UI with live pipeline visualization, REST API, and CLI.
 
 ## Project structure
 
 ```
 src/
   index.ts              # CLI entry point
+  server.ts             # Fastify REST API server
+  worker.ts             # BullMQ job worker
   cli/                  # args parser, progress display, cost estimator
   agents/               # creative-director, critic, image-prompter, research
-  pipeline/             # orchestrator (6-stage pipeline)
+  pipeline/             # orchestrator (6-stage pipeline with PipelineCallbacks)
   providers/
+    factory.ts          # provider factory with BYOK support
     llm/                # anthropic.ts, openai.ts
     tts/                # elevenlabs.ts, inworld.ts
-    image/              # gemini.ts
+    image/              # gemini.ts, openai.ts
     stock/              # pexels.ts, pixabay.ts
   config/
     archetypes/         # 14 archetype JSON configs
@@ -26,6 +29,11 @@ src/
     captions/           # 6 caption styles + timing utils
     audio/              # MusicTrack (ducking), VoiceoverTrack
     lib/                # score-to-props mapper, font loading
+web/                    # React + Tailwind SPA (Vite)
+  src/
+    pages/              # HomePage, JobPage, GalleryPage, SettingsPage
+    hooks/              # useApi, useSSE
+    components/         # Layout, StageCard, shadcn/ui
 prompts/                # system prompts for each agent + playbook
 fixtures/               # sample DirectorScore JSONs
 ```
@@ -34,16 +42,23 @@ fixtures/               # sample DirectorScore JSONs
 
 ```bash
 pnpm install          # install dependencies
-pnpm start "topic"    # run full pipeline
-pnpm test             # run vitest suite (81 tests)
+pnpm start "topic"    # run full pipeline (CLI)
+pnpm test             # run vitest suite (93 tests)
 ```
 
-### Docker
+### Web UI (Docker Compose)
+
+```bash
+docker compose up     # starts Redis + API + Worker
+# Open http://localhost:3000
+```
+
+### CLI (Docker)
 
 ```bash
 docker build -t openreels .
 docker run --env-file .env --shm-size=2gb -v ./output:/output openreels "topic"
-docker compose run openreels "topic"
+docker compose run worker npx tsx src/index.ts --yes "topic"
 ```
 
 ## Testing
