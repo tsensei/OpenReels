@@ -33,7 +33,7 @@ cp .env.example .env   # fill in your API keys
 
 **Required API keys** (at minimum):
 - `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` (LLM provider)
-- `ELEVENLABS_API_KEY` (text-to-speech)
+- `ELEVENLABS_API_KEY` or `INWORLD_TTS_API_KEY` (text-to-speech)
 - `GOOGLE_API_KEY` (Gemini image generation)
 
 **Optional:** `PEXELS_API_KEY`, `PIXABAY_API_KEY` (stock footage, free registration)
@@ -55,6 +55,7 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 |------|-------------|---------|
 | `--archetype <name>` | Override visual archetype | LLM chooses |
 | `--provider <name>` | LLM provider (`anthropic` or `openai`) | `anthropic` |
+| `--tts-provider <name>` | TTS provider (`elevenlabs` or `inworld`) | `elevenlabs` |
 | `--platform <name>` | Target platform (`youtube`, `tiktok`, `instagram`) | `youtube` |
 | `--dry-run` | Output DirectorScore JSON without generating assets | off |
 | `--preview` | Open Remotion Studio after rendering | off |
@@ -89,7 +90,7 @@ The rewrite moves from Python to TypeScript for native [Remotion](https://www.re
 
 ## Status
 
-v0.1.0 shipped. The core pipeline works end-to-end. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
+v0.1.1 shipped. The core pipeline works end-to-end. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
 
 ## License
 

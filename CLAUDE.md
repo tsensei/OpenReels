@@ -12,7 +12,7 @@ src/
   pipeline/             # orchestrator (6-stage pipeline)
   providers/
     llm/                # anthropic.ts, openai.ts
-    tts/                # elevenlabs.ts
+    tts/                # elevenlabs.ts, inworld.ts
     image/              # gemini.ts
     stock/              # pexels.ts, pixabay.ts
   config/
