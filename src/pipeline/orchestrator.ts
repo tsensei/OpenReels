@@ -4,18 +4,57 @@ import * as path from "node:path";
 import * as readline from "node:readline";
 import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
-import type { LLMProvider, TTSProvider, ImageProvider, StockProvider, WordTimestamp, LLMUsage, TTSProviderKey, ImageProviderKey } from "../schema/providers.js";
-import type { ArchetypeConfig } from "../schema/archetype.js";
-import type { DirectorScore } from "../schema/director-score.js";
-import { research } from "../agents/research.js";
 import { generateDirectorScore } from "../agents/creative-director.js";
 import { evaluate } from "../agents/critic.js";
 import { optimizeImagePrompt } from "../agents/image-prompter.js";
-import { getArchetype } from "../config/archetype-registry.js";
-import { mapScoreToProps, getTotalDurationInFrames } from "../remotion/lib/score-to-props.js";
-import { estimateCost, formatCostEstimate, computeActualLLMCost, formatActualCost } from "../cli/cost-estimator.js";
-import { getPlatformConfig } from "../config/platforms.js";
+import { research } from "../agents/research.js";
+import type { ActualCostBreakdown, CostBreakdown } from "../cli/cost-estimator.js";
+import {
+  computeActualLLMCost,
+  estimateCost,
+  formatActualCost,
+  formatCostEstimate,
+} from "../cli/cost-estimator.js";
 import { ProgressDisplay } from "../cli/progress.js";
+import { getArchetype } from "../config/archetype-registry.js";
+import { getPlatformConfig } from "../config/platforms.js";
+import { getTotalDurationInFrames, mapScoreToProps } from "../remotion/lib/score-to-props.js";
+import type { ArchetypeConfig } from "../schema/archetype.js";
+import type { DirectorScore } from "../schema/director-score.js";
+import type {
+  ImageProvider,
+  ImageProviderKey,
+  LLMProvider,
+  LLMUsage,
+  StockProvider,
+  TTSProvider,
+  TTSProviderKey,
+  WordTimestamp,
+} from "../schema/providers.js";
+
+// Stage names matching the pipeline execution order
+export const STAGE_NAMES = [
+  "research",
+  "director",
+  "tts",
+  "visuals",
+  "assembly",
+  "critic",
+] as const;
+export type StageName = (typeof STAGE_NAMES)[number];
+
+export interface PipelineCallbacks {
+  onStageStart?(stage: StageName): void;
+  onStageComplete?(stage: StageName, detail: string, durationSec: number): void;
+  onStageSkip?(stage: StageName, reason: string): void;
+  onStageError?(stage: StageName, error: string): void;
+  onProgress?(stage: StageName, data: Record<string, unknown>): void;
+  onCostEstimate?(estimate: CostBreakdown, imageProvider: ImageProviderKey): Promise<boolean>;
+  onActualCost?(cost: ActualCostBreakdown): void;
+  onLog?(message: string): void;
+  /** Called when pipeline is cancelled between stages. Return true if cancelled. */
+  isCancelled?(): boolean;
+}
 
 export function shouldAutoConfirm(yes: boolean): boolean {
   return yes || !process.stdin.isTTY;
@@ -23,6 +62,49 @@ export function shouldAutoConfirm(yes: boolean): boolean {
 
 export function shouldSkipPreview(): boolean {
   return !process.stdin.isTTY;
+}
+
+/** Create CLI callbacks that wrap ProgressDisplay for terminal output */
+export function createCliCallbacks(yes: boolean): {
+  callbacks: PipelineCallbacks;
+  progress: ProgressDisplay;
+} {
+  const progress = new ProgressDisplay();
+  const stageIndices = new Map<StageName, number>();
+  for (const name of STAGE_NAMES) {
+    stageIndices.set(name, progress.addStage(name.charAt(0).toUpperCase() + name.slice(1)));
+  }
+
+  const idx = (stage: StageName) => stageIndices.get(stage) ?? 0;
+
+  const callbacks: PipelineCallbacks = {
+    onStageStart(stage) {
+      progress.start(idx(stage));
+    },
+    onStageComplete(stage, detail) {
+      progress.complete(idx(stage), detail);
+    },
+    onStageSkip(stage, reason) {
+      progress.skip(idx(stage), reason);
+    },
+    onStageError(stage, error) {
+      progress.fail(idx(stage), error);
+    },
+    async onCostEstimate(estimate, imageProvider) {
+      console.log(`\n${formatCostEstimate(estimate, imageProvider)}`);
+      const autoConfirm = shouldAutoConfirm(yes);
+      if (autoConfirm) return true;
+      return confirm("Proceed with generation?");
+    },
+    onActualCost(cost) {
+      console.log(`\n${formatActualCost(cost)}`);
+    },
+    onLog(message) {
+      console.log(message);
+    },
+  };
+
+  return { callbacks, progress };
 }
 
 export interface PipelineOptions {
@@ -56,7 +138,11 @@ interface RunLog {
   totalCost?: { estimated: number; actual?: number };
 }
 
-export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult> {
+export async function runPipeline(
+  opts: PipelineOptions,
+  callbacks?: PipelineCallbacks,
+): Promise<PipelineResult> {
+  const cb = callbacks ?? {};
   const log: RunLog = {
     topic: opts.topic,
     startedAt: new Date().toISOString(),
@@ -78,92 +164,93 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
   fs.mkdirSync(assetsDir, { recursive: true });
 
   const logPath = path.join(runDir, "log.json");
-  let scorePath = path.join(runDir, "score.json");
+  const scorePath = path.join(runDir, "score.json");
   let videoPath: string | null = null;
-
-  const progress = new ProgressDisplay();
-  const researchIdx = progress.addStage("Research");
-  const directorIdx = progress.addStage("Director");
-  const ttsIdx = progress.addStage("TTS");
-  const visualsIdx = progress.addStage("Visuals");
-  const assemblyIdx = progress.addStage("Assembly");
-  const criticIdx = progress.addStage("Critic");
 
   // Track all LLM token usage for actual cost reporting
   const llmUsages: LLMUsage[] = [];
 
   try {
-  // Stage 1: Research
-  progress.start(researchIdx);
-  let researchResult;
-  const researchStart = Date.now();
-  try {
-    const researchOutput = await research(opts.llm, opts.topic);
-    researchResult = researchOutput.data;
-    llmUsages.push(researchOutput.usage);
-    const dur = (Date.now() - researchStart) / 1000;
-    progress.complete(researchIdx, `${researchResult.key_facts.length} facts`);
-    log.stages.push({ name: "research", duration: dur, status: "done" });
-  } catch (err) {
-    const dur = (Date.now() - researchStart) / 1000;
-    progress.complete(researchIdx, "skipped (web search failed)");
-    log.stages.push({ name: "research", duration: dur, status: "skipped", error: String(err) });
-    researchResult = {
-      summary: `Topic: ${opts.topic}`,
-      key_facts: [],
-      mood: "informative",
-      sources: [],
-    };
-  }
+    // Stage 1: Research
+    cb.onStageStart?.("research");
+    let researchResult;
+    const researchStart = Date.now();
+    try {
+      const researchOutput = await research(opts.llm, opts.topic);
+      researchResult = researchOutput.data;
+      llmUsages.push(researchOutput.usage);
+      const dur = (Date.now() - researchStart) / 1000;
+      cb.onStageComplete?.("research", `${researchResult.key_facts.length} facts`, dur);
+      log.stages.push({ name: "research", duration: dur, status: "done" });
+    } catch (err) {
+      const dur = (Date.now() - researchStart) / 1000;
+      cb.onStageSkip?.("research", "web search failed");
+      log.stages.push({ name: "research", duration: dur, status: "skipped", error: String(err) });
+      researchResult = {
+        summary: `Topic: ${opts.topic}`,
+        key_facts: [],
+        mood: "informative",
+        sources: [],
+      };
+    }
 
-  // Stage 2: Creative Director
-  progress.start(directorIdx);
-  const cdStart = Date.now();
-  const cdOutput = await generateDirectorScore(
-    opts.llm,
-    opts.topic,
-    researchResult,
-    { archetype: opts.archetype },
-  );
-  const directorScore = cdOutput.data;
-  llmUsages.push(cdOutput.usage);
-  const cdDur = (Date.now() - cdStart) / 1000;
-  progress.complete(directorIdx, `${directorScore.scenes.length} scenes, ${directorScore.archetype}`);
-  log.stages.push({ name: "creative-director", duration: cdDur, status: "done" });
+    // Check cancellation between stages
+    if (cb.isCancelled?.()) {
+      return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
+    }
 
-  // Resolve archetype config for image prompt optimization
-  const archetypeConfig = getArchetype(directorScore.archetype);
+    // Stage 2: Creative Director
+    cb.onStageStart?.("director");
+    const cdStart = Date.now();
+    const cdOutput = await generateDirectorScore(opts.llm, opts.topic, researchResult, {
+      archetype: opts.archetype,
+    });
+    const directorScore = cdOutput.data;
+    llmUsages.push(cdOutput.usage);
+    const cdDur = (Date.now() - cdStart) / 1000;
+    cb.onStageComplete?.(
+      "director",
+      `${directorScore.scenes.length} scenes, ${directorScore.archetype}`,
+      cdDur,
+    );
+    log.stages.push({ name: "creative-director", duration: cdDur, status: "done" });
 
-  // Save DirectorScore
-  fs.writeFileSync(scorePath, JSON.stringify(directorScore, null, 2));
+    // Resolve archetype config for image prompt optimization
+    const archetypeConfig = getArchetype(directorScore.archetype);
 
-  // Dry run exit
-  if (opts.dryRun) {
-    progress.skip(ttsIdx, "dry run");
-    progress.skip(visualsIdx, "dry run");
-    progress.skip(assemblyIdx, "dry run");
-    progress.skip(criticIdx, "dry run");
-    progress.summary();
+    // Save DirectorScore
+    fs.writeFileSync(scorePath, JSON.stringify(directorScore, null, 2));
 
-    console.log("\n--- DirectorScore ---");
-    console.log(JSON.stringify(directorScore, null, 2));
+    // Dry run exit
+    if (opts.dryRun) {
+      cb.onStageSkip?.("tts", "dry run");
+      cb.onStageSkip?.("visuals", "dry run");
+      cb.onStageSkip?.("assembly", "dry run");
+      cb.onStageSkip?.("critic", "dry run");
 
-    return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
-  }
+      cb.onLog?.("\n--- DirectorScore ---");
+      cb.onLog?.(JSON.stringify(directorScore, null, 2));
 
-  // Cost estimation
-  const costBreakdown = estimateCost(directorScore, opts.imageProvider, opts.ttsProvider);
-  console.log(`\n${formatCostEstimate(costBreakdown, opts.imageProvider)}`);
-  log.totalCost = { estimated: costBreakdown.totalCost };
+      return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
+    }
 
-  const autoConfirm = shouldAutoConfirm(opts.yes);
-  const proceed = autoConfirm || await confirm("Proceed with generation?");
-  if (!proceed) {
-    return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
-  }
+    // Cost estimation
+    const costBreakdown = estimateCost(directorScore, opts.imageProvider, opts.ttsProvider);
+    log.totalCost = { estimated: costBreakdown.totalCost };
+
+    if (cb.onCostEstimate) {
+      const proceed = await cb.onCostEstimate(costBreakdown, opts.imageProvider);
+      if (!proceed) {
+        return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
+      }
+    }
+
+    if (cb.isCancelled?.()) {
+      return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
+    }
 
     // Stage 3: TTS
-    progress.start(ttsIdx);
+    cb.onStageStart?.("tts");
     const ttsStart = Date.now();
     const fullScript = directorScore.scenes.map((s) => s.script_line).join(" ");
     const ttsResult = await opts.tts.generate(fullScript);
@@ -175,11 +262,15 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
 
     // Split word timestamps into per-scene groups
     const sceneWords = splitWordsIntoScenes(directorScore, ttsResult.words);
-    progress.complete(ttsIdx, `${ttsResult.words.length} words`);
+    cb.onStageComplete?.("tts", `${ttsResult.words.length} words`, ttsDur);
     log.stages.push({ name: "tts", duration: ttsDur, status: "done" });
 
+    if (cb.isCancelled?.()) {
+      return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
+    }
+
     // Stage 4: Visual Assets (parallel)
-    progress.start(visualsIdx);
+    cb.onStageStart?.("visuals");
     const visualStart = Date.now();
     const totalScenes = directorScore.scenes.length;
     const sceneResults = await Promise.all(
@@ -187,8 +278,12 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
         try {
           return await resolveVisualAsset(scene, i, totalScenes, assetsDir, opts, archetypeConfig);
         } catch (err) {
-          console.warn(`[visuals] Scene ${i} asset failed: ${err}. Using fallback.`);
-          return { path: null as string | null, usage: null as LLMUsage | null, durationSeconds: null };
+          cb.onProgress?.("visuals", { type: "asset_failed", scene: i, error: String(err) });
+          return {
+            path: null as string | null,
+            usage: null as LLMUsage | null,
+            durationSeconds: null,
+          };
         }
       }),
     );
@@ -199,29 +294,35 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
     }
     const visualDur = (Date.now() - visualStart) / 1000;
     const assetCount = sceneAssets.filter(Boolean).length;
-    progress.complete(visualsIdx, `${assetCount}/${directorScore.scenes.length} assets`);
+    cb.onStageComplete?.(
+      "visuals",
+      `${assetCount}/${directorScore.scenes.length} assets`,
+      visualDur,
+    );
     log.stages.push({ name: "visuals", duration: visualDur, status: "done" });
 
+    if (cb.isCancelled?.()) {
+      return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
+    }
+
     // Stage 5: Remotion Assembly
-    progress.start(assemblyIdx);
+    cb.onStageStart?.("assembly");
     const assemblyStart = Date.now();
     const platformConfig = getPlatformConfig(opts.platform);
 
     // Symlink assets into a temp public dir for Remotion to serve via staticFile()
-    // (same approach as ReelMistri's remotion_bridge.py)
     const publicDir = path.join(runDir, "_remotion_public");
     fs.mkdirSync(publicDir, { recursive: true });
     const assetsLink = path.join(publicDir, "assets");
     if (fs.existsSync(assetsLink)) fs.rmSync(assetsLink, { recursive: true });
     fs.symlinkSync(path.resolve(assetsDir), assetsLink);
 
-    // Voiceover also needs to be accessible — symlink it into public
+    // Voiceover also needs to be accessible
     fs.copyFileSync(voiceoverPath, path.join(publicDir, "voiceover.mp3"));
 
     const compositionProps = mapScoreToProps(
       directorScore,
       {
-        // staticFile() paths — served by Remotion's bundler from publicDir
         sceneAssets: sceneAssets.map((a) => {
           if (!a) return null;
           const filename = path.basename(a);
@@ -230,7 +331,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
         voiceoverPath: "voiceover.mp3",
         musicPath: null,
         sceneWords,
-        allWords: ttsResult.words, // absolute timestamps for timeline-centric captions
+        allWords: ttsResult.words,
         sceneSourceDurations,
       },
       platformConfig.fps,
@@ -238,13 +339,16 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
 
     const totalFrames = getTotalDurationInFrames(compositionProps, platformConfig.fps);
 
-    // Bundle Remotion compositions with our assets as the public directory
+    cb.onProgress?.("assembly", { type: "bundling" });
+
     const remotionEntry = path.join(process.cwd(), "src", "remotion", "index.ts");
     const bundled = await bundle({
       entryPoint: remotionEntry,
       webpackOverride: (config: object) => config,
       publicDir,
     });
+
+    cb.onProgress?.("assembly", { type: "rendering", totalFrames });
 
     const composition = await selectComposition({
       serveUrl: bundled,
@@ -268,11 +372,19 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
     });
 
     const assemblyDur = (Date.now() - assemblyStart) / 1000;
-    progress.complete(assemblyIdx, `${(totalFrames / platformConfig.fps).toFixed(1)}s video`);
+    cb.onStageComplete?.(
+      "assembly",
+      `${(totalFrames / platformConfig.fps).toFixed(1)}s video`,
+      assemblyDur,
+    );
     log.stages.push({ name: "assembly", duration: assemblyDur, status: "done" });
 
+    if (cb.isCancelled?.()) {
+      return { outputDir: runDir, videoPath, thumbnailPath: null, scorePath, logPath };
+    }
+
     // Stage 6: Critic
-    progress.start(criticIdx);
+    cb.onStageStart?.("critic");
     const criticStart = Date.now();
     try {
       const critiqueOutput = await evaluate(opts.llm, directorScore, opts.topic);
@@ -281,48 +393,57 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
       const criticDur = (Date.now() - criticStart) / 1000;
 
       if (critique.revision_needed && critique.score < 7) {
-        progress.complete(criticIdx, `score ${critique.score}/10, revision needed`);
-        console.log(`\nCritic score: ${critique.score}/10 — ${critique.weaknesses.join(", ")}`);
-        console.log("Revision support coming in Phase 4. Using current version.");
+        cb.onStageComplete?.("critic", `score ${critique.score}/10, revision needed`, criticDur);
+        cb.onLog?.(`\nCritic score: ${critique.score}/10 — ${critique.weaknesses.join(", ")}`);
+        cb.onLog?.("Revision support coming in a future release. Using current version.");
       } else {
-        progress.complete(criticIdx, `score ${critique.score}/10`);
+        cb.onStageComplete?.("critic", `score ${critique.score}/10`, criticDur);
       }
       log.stages.push({ name: "critic", duration: criticDur, status: "done" });
     } catch (err) {
       const criticDur = (Date.now() - criticStart) / 1000;
-      progress.complete(criticIdx, "skipped");
-      log.stages.push({ name: "critic", duration: criticDur, status: "skipped", error: String(err) });
+      cb.onStageSkip?.("critic", "evaluation failed");
+      log.stages.push({
+        name: "critic",
+        duration: criticDur,
+        status: "skipped",
+        error: String(err),
+      });
     }
-
-    progress.summary();
 
     // Compute and report actual cost
     const aiImages = directorScore.scenes.filter((s) => s.visual_type === "ai_image").length;
     const ttsCharacters = directorScore.scenes.reduce((sum, s) => sum + s.script_line.length, 0);
-    const actualCost = computeActualLLMCost(llmUsages, { aiImages, ttsCharacters }, opts.llm.id, opts.imageProvider, opts.ttsProvider);
+    const actualCost = computeActualLLMCost(
+      llmUsages,
+      { aiImages, ttsCharacters },
+      opts.llm.id,
+      opts.imageProvider,
+      opts.ttsProvider,
+    );
     log.totalCost = { estimated: costBreakdown.totalCost, actual: actualCost.totalCost };
-    console.log(`\n${formatActualCost(actualCost)}`);
+    cb.onActualCost?.(actualCost);
 
-    // Preview
+    // Preview (CLI only — uses terminal)
     if (opts.preview) {
       if (shouldSkipPreview()) {
-        console.warn("\n--preview requires an interactive terminal (skipped in Docker/CI).");
+        cb.onLog?.("\n--preview requires an interactive terminal (skipped in Docker/CI).");
       } else {
-        console.log("\nOpening Remotion Studio preview...");
+        cb.onLog?.("\nOpening Remotion Studio preview...");
         try {
           execFileSync("npx", ["remotion", "studio"], { stdio: "inherit" });
         } catch {
-          console.warn("Preview closed or failed to open.");
+          cb.onLog?.("Preview closed or failed to open.");
         }
       }
     }
 
-    console.log(`\nOutput: ${runDir}`);
-    console.log(`  Video:     ${videoPath}`);
-    console.log(`  Score:     ${scorePath}`);
-    console.log(`  Log:       ${logPath}`);
+    cb.onLog?.(`\nOutput: ${runDir}`);
+    cb.onLog?.(`  Video:     ${videoPath}`);
+    cb.onLog?.(`  Score:     ${scorePath}`);
+    cb.onLog?.(`  Log:       ${logPath}`);
 
-  return { outputDir: runDir, videoPath, thumbnailPath: null, scorePath, logPath };
+    return { outputDir: runDir, videoPath, thumbnailPath: null, scorePath, logPath };
   } finally {
     fs.writeFileSync(logPath, JSON.stringify(log, null, 2));
   }
@@ -349,8 +470,12 @@ async function resolveVisualAsset(
       let usage: LLMUsage | null = null;
       try {
         const optimized = await optimizeImagePrompt(
-          opts.llm, scene.visual_prompt, scene.script_line,
-          index, totalScenes, archetype,
+          opts.llm,
+          scene.visual_prompt,
+          scene.script_line,
+          index,
+          totalScenes,
+          archetype,
         );
         prompt = optimized.prompt;
         usage = optimized.usage;
@@ -385,10 +510,7 @@ async function resolveVisualAsset(
   }
 }
 
-function splitWordsIntoScenes(
-  score: DirectorScore,
-  allWords: WordTimestamp[],
-): WordTimestamp[][] {
+function splitWordsIntoScenes(score: DirectorScore, allWords: WordTimestamp[]): WordTimestamp[][] {
   // Split word timestamps into per-scene groups for duration calculation.
   // Uses ReelMistri's proportional scaling approach to handle ElevenLabs
   // text normalization (numbers/abbreviations expand into different word counts).
@@ -401,9 +523,7 @@ function splitWordsIntoScenes(
   }
 
   // Count expected words per scene from script text
-  const wordsPerScene = score.scenes.map(
-    (s) => s.script_line.split(/\s+/).filter(Boolean).length,
-  );
+  const wordsPerScene = score.scenes.map((s) => s.script_line.split(/\s+/).filter(Boolean).length);
   const totalExpected = wordsPerScene.reduce((sum, n) => sum + n, 0);
   const totalActual = allWords.length;
 
@@ -417,7 +537,7 @@ function splitWordsIntoScenes(
     // (ReelMistri: tts.py lines 179-182)
     let wordsToConsume = expectedCount;
     if (totalExpected !== totalActual && totalExpected > 0) {
-      wordsToConsume = Math.round(expectedCount * totalActual / totalExpected);
+      wordsToConsume = Math.round((expectedCount * totalActual) / totalExpected);
       wordsToConsume = Math.max(1, wordsToConsume);
     }
 
