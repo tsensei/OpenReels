@@ -1,17 +1,16 @@
 import { describe, it, expect, vi } from "vitest";
+import { shouldAutoConfirm, shouldSkipPreview } from "./orchestrator.js";
 
 describe("non-interactive mode", () => {
-  it("auto-confirms when opts.yes is true", () => {
-    const autoConfirm = true || !process.stdin.isTTY;
-    expect(autoConfirm).toBe(true);
+  it("auto-confirms when yes is true", () => {
+    expect(shouldAutoConfirm(true)).toBe(true);
   });
 
   it("auto-confirms when stdin is not a TTY", () => {
     const originalIsTTY = process.stdin.isTTY;
     Object.defineProperty(process.stdin, "isTTY", { value: undefined, configurable: true });
 
-    const autoConfirm = false || !process.stdin.isTTY;
-    expect(autoConfirm).toBe(true);
+    expect(shouldAutoConfirm(false)).toBe(true);
 
     Object.defineProperty(process.stdin, "isTTY", { value: originalIsTTY, configurable: true });
   });
@@ -20,29 +19,26 @@ describe("non-interactive mode", () => {
     const originalIsTTY = process.stdin.isTTY;
     Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true });
 
-    const autoConfirm = false || !process.stdin.isTTY;
-    expect(autoConfirm).toBe(false);
+    expect(shouldAutoConfirm(false)).toBe(false);
 
     Object.defineProperty(process.stdin, "isTTY", { value: originalIsTTY, configurable: true });
   });
 
-  it("warns and skips preview in non-TTY environment", () => {
+  it("skips preview in non-TTY environment", () => {
     const originalIsTTY = process.stdin.isTTY;
     Object.defineProperty(process.stdin, "isTTY", { value: undefined, configurable: true });
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    const preview = true;
-    if (preview) {
-      if (!process.stdin.isTTY) {
-        console.warn("--preview requires an interactive terminal (skipped in Docker/CI).");
-      }
-    }
-
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("--preview requires an interactive terminal"),
-    );
+    expect(shouldSkipPreview()).toBe(true);
 
     Object.defineProperty(process.stdin, "isTTY", { value: originalIsTTY, configurable: true });
-    warnSpy.mockRestore();
+  });
+
+  it("does not skip preview in TTY environment", () => {
+    const originalIsTTY = process.stdin.isTTY;
+    Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true });
+
+    expect(shouldSkipPreview()).toBe(false);
+
+    Object.defineProperty(process.stdin, "isTTY", { value: originalIsTTY, configurable: true });
   });
 });

@@ -57,7 +57,7 @@ export function validateEnv(opts: {
     console.error(`  ${key}MISSING   ${r.signupUrl}`);
   }
   console.error(
-    "\nSet these in your .env file or pass via --env-file / -e flags.\n",
+    "\nSet these in your .env file (or pass with `docker run --env-file .env` when using Docker).\n",
   );
   process.exit(1);
 }

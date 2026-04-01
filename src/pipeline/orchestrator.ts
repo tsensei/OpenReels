@@ -17,6 +17,14 @@ import { estimateCost, formatCostEstimate, computeActualLLMCost, formatActualCos
 import { getPlatformConfig } from "../config/platforms.js";
 import { ProgressDisplay } from "../cli/progress.js";
 
+export function shouldAutoConfirm(yes: boolean): boolean {
+  return yes || !process.stdin.isTTY;
+}
+
+export function shouldSkipPreview(): boolean {
+  return !process.stdin.isTTY;
+}
+
 export interface PipelineOptions {
   topic: string;
   llm: LLMProvider;
@@ -148,7 +156,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
   console.log(`\n${formatCostEstimate(costBreakdown, opts.imageProvider)}`);
   log.totalCost = { estimated: costBreakdown.totalCost };
 
-  const autoConfirm = opts.yes || !process.stdin.isTTY;
+  const autoConfirm = shouldAutoConfirm(opts.yes);
   const proceed = autoConfirm || await confirm("Proceed with generation?");
   if (!proceed) {
     return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
@@ -297,7 +305,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineResult
 
     // Preview
     if (opts.preview) {
-      if (!process.stdin.isTTY) {
+      if (shouldSkipPreview()) {
         console.warn("\n--preview requires an interactive terminal (skipped in Docker/CI).");
       } else {
         console.log("\nOpening Remotion Studio preview...");
