@@ -47,6 +47,10 @@ interface JobMeta {
   costEstimate?: unknown;
   actualCost?: unknown;
   videoPath?: string;
+  runDir?: string;
+  researchData?: { summary: string; key_facts: string[]; mood: string };
+  score?: unknown; // DirectorScore
+  criticReview?: { score: number; strengths: string[]; weaknesses: string[] };
   error?: string;
 }
 
@@ -115,6 +119,17 @@ const worker = new Worker<JobData>(
       },
 
       onProgress(stage: StageName, data: Record<string, unknown>) {
+        // Store rich data in meta for SSE reconnection support
+        if (data.type === "results") {
+          meta.researchData = { summary: data.summary as string, key_facts: data.key_facts as string[], mood: data.mood as string };
+          writeMeta(jobDir, meta);
+        } else if (data.type === "score") {
+          meta.score = data.score;
+          writeMeta(jobDir, meta);
+        } else if (data.type === "review") {
+          meta.criticReview = { score: data.score as number, strengths: data.strengths as string[], weaknesses: data.weaknesses as string[] };
+          writeMeta(jobDir, meta);
+        }
         job.updateProgress({ stage, ...data });
       },
 
@@ -172,6 +187,8 @@ const worker = new Worker<JobData>(
     meta.completedAt = new Date().toISOString();
     if (result.videoPath) {
       meta.videoPath = path.relative(jobDir, result.videoPath);
+      // Store runDir explicitly for frontend artifact fetching
+      meta.runDir = path.relative(jobDir, result.outputDir);
     }
     writeMeta(jobDir, meta);
 
@@ -229,6 +246,14 @@ worker.on("failed", (job, err) => {
       meta.status = "failed";
       meta.error = err.message;
       meta.completedAt = new Date().toISOString();
+      // Mark whatever stage was "running" as "error" so the UI can identify it
+      if (meta.stages) {
+        for (const stage of Object.keys(meta.stages)) {
+          if (meta.stages[stage].status === "running") {
+            meta.stages[stage] = { status: "error", detail: err.message };
+          }
+        }
+      }
       writeMeta(jobDir, meta);
     } catch {}
   }

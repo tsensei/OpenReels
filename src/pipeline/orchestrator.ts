@@ -181,6 +181,7 @@ export async function runPipeline(
       llmUsages.push(researchOutput.usage);
       const dur = (Date.now() - researchStart) / 1000;
       cb.onStageComplete?.("research", `${researchResult.key_facts.length} facts`, dur);
+      cb.onProgress?.("research", { type: "results", summary: researchResult.summary, key_facts: researchResult.key_facts, mood: researchResult.mood });
       log.stages.push({ name: "research", duration: dur, status: "done" });
     } catch (err) {
       const dur = (Date.now() - researchStart) / 1000;
@@ -220,6 +221,7 @@ export async function runPipeline(
 
     // Save DirectorScore
     fs.writeFileSync(scorePath, JSON.stringify(directorScore, null, 2));
+    cb.onProgress?.("director", { type: "score", score: directorScore });
 
     // Dry run exit
     if (opts.dryRun) {
@@ -399,6 +401,7 @@ export async function runPipeline(
       } else {
         cb.onStageComplete?.("critic", `score ${critique.score}/10`, criticDur);
       }
+      cb.onProgress?.("critic", { type: "review", score: critique.score, strengths: critique.strengths, weaknesses: critique.weaknesses });
       log.stages.push({ name: "critic", duration: criticDur, status: "done" });
     } catch (err) {
       const criticDur = (Date.now() - criticStart) / 1000;
