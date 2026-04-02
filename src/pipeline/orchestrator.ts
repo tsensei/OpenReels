@@ -350,7 +350,12 @@ export async function runPipeline(
 
     // Copy music track to publicDir if selected
     if (musicFilePath) {
-      fs.copyFileSync(musicFilePath, path.join(publicDir, "music.mp3"));
+      try {
+        fs.copyFileSync(musicFilePath, path.join(publicDir, "music.mp3"));
+      } catch (err) {
+        console.warn(`[orchestrator] Failed to copy music file, proceeding without music: ${err}`);
+        musicFilePath = null;
+      }
     }
 
     const compositionProps = mapScoreToProps(

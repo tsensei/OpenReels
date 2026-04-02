@@ -5,6 +5,7 @@ import IORedis from "ioredis";
 import type { PipelineCallbacks, StageName } from "./pipeline/orchestrator.js";
 import { runPipeline } from "./pipeline/orchestrator.js";
 import { createProviders } from "./providers/factory.js";
+import { validateManifest } from "./providers/music/bundled.js";
 import type {
   ImageProviderKey,
   LLMProviderKey,
@@ -22,7 +23,6 @@ const redis = new IORedis(REDIS_URL, { maxRetriesPerRequest: null });
 
 // Validate music manifest at startup — warn but don't crash
 try {
-  const { validateManifest } = await import("./providers/music/bundled.js");
   const { valid, missing } = validateManifest();
   if (!valid) {
     console.warn(`[worker] Music manifest warning: ${missing.length} tracks missing: ${missing.join(", ")}`);
