@@ -55,6 +55,14 @@
   **Priority:** P3
   Deferred from plan: tsensei-main-design-20260401-202558.md
 
+- [ ] **Retry from failed stage** — Add POST /api/v1/jobs/:id/retry endpoint and pipeline resume capability. Requires: orchestrator accepts "start from stage" parameter, worker loads prior stage artifacts from disk, new API endpoint creates a re-run job. UI shows retry button in failed state.
+  **Priority:** P2
+  Deferred from plan: Pipeline Page UI/UX Redesign (eng review: no backend support exists)
+
+- [ ] **Per-scene visual progress events** — Emit onProgress per scene success during visuals stage (currently only emits asset_failed). Enables running panel to show "3/7 assets done" progress bar during the longest pipeline wait.
+  **Priority:** P3
+  Deferred from plan: Pipeline Page UI/UX Redesign (eng review: nice-to-have, not blocking)
+
 - [ ] **Integration test suite** — Add Docker-based integration tests for server.ts and worker.ts using testcontainers or docker-compose test profile with Redis.
   **Priority:** P2
 
