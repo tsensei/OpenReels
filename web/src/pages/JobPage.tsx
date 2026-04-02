@@ -1,9 +1,12 @@
+import { AlertTriangle, Download, Loader2, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { StageCard, STAGE_LABELS } from "@/components/StageCard";
-import { RunningPanel } from "@/components/pipeline/RunningPanel";
 import { CompletedPanel } from "@/components/pipeline/CompletedPanel";
 import { FailedPanel } from "@/components/pipeline/FailedPanel";
+import { RunningPanel } from "@/components/pipeline/RunningPanel";
+import { STAGE_LABELS, StageCard } from "@/components/StageCard";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   api,
   type CostBreakdown,
@@ -13,14 +16,6 @@ import {
   type ResearchData,
 } from "@/hooks/useApi";
 import { useSSE } from "@/hooks/useSSE";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Download,
-  Plus,
-  Loader2,
-  AlertTriangle,
-} from "lucide-react";
 
 const STAGES = ["research", "director", "tts", "visuals", "assembly", "critic"] as const;
 
@@ -40,9 +35,7 @@ export function JobPage() {
     phase: string;
     totalFrames?: number;
   } | null>(null);
-  const [assetFailures, setAssetFailures] = useState<
-    Array<{ scene: number; error: string }>
-  >([]);
+  const [assetFailures, setAssetFailures] = useState<Array<{ scene: number; error: string }>>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -75,7 +68,11 @@ export function JobPage() {
       }
 
       if (event === "job:completed" || event === "job:failed") {
-        if (id) api.getJob(id).then(setJob).catch(() => {});
+        if (id)
+          api
+            .getJob(id)
+            .then(setJob)
+            .catch(() => {});
         return;
       }
 
@@ -148,7 +145,11 @@ export function JobPage() {
     setCancelling(true);
     try {
       await api.cancelJob(id);
-      if (id) api.getJob(id).then(setJob).catch(() => {});
+      if (id)
+        api
+          .getJob(id)
+          .then(setJob)
+          .catch(() => {});
     } catch (err) {
       setError(err instanceof Error ? err.message : "Cancel failed");
     }
@@ -179,20 +180,18 @@ export function JobPage() {
   const isCompleted = job.status === "completed";
   const isFailed = job.status === "failed";
   const isCancelled = job.status === "cancelled";
-  const videoUrl = job.videoPath
-    ? `/api/v1/jobs/${job.id}/artifacts/${job.videoPath}`
-    : null;
+  const videoUrl = job.videoPath ? `/api/v1/jobs/${job.id}/artifacts/${job.videoPath}` : null;
 
   // Find the failed stage for error display
   // Check "error" first, then fall back to "running" (stage that was mid-flight when job failed)
   const failedStage = isFailed
-    ? STAGES.find((s) => job.stages?.[s]?.status === "error")
-      ?? STAGES.find((s) => job.stages?.[s]?.status === "running")
-      ?? null
+    ? (STAGES.find((s) => job.stages?.[s]?.status === "error") ??
+      STAGES.find((s) => job.stages?.[s]?.status === "running") ??
+      null)
     : null;
   const failedDetail = failedStage
-    ? job.stages?.[failedStage]?.detail ?? job.error ?? null
-    : job.error ?? null;
+    ? (job.stages?.[failedStage]?.detail ?? job.error ?? null)
+    : (job.error ?? null);
 
   // Compute total duration
   const totalDuration = STAGES.reduce((sum, s) => {
@@ -234,8 +233,7 @@ export function JobPage() {
               <>
                 <span className="text-xs text-[#475569]">&middot;</span>
                 <span className="text-xs text-[#64748B]">
-                  ~${totalCost.toFixed(2)}{" "}
-                  {job.actualCost ? "total" : "estimated"}
+                  ~${totalCost.toFixed(2)} {job.actualCost ? "total" : "estimated"}
                 </span>
               </>
             )}
@@ -246,33 +244,25 @@ export function JobPage() {
           {isRunning && (
             <div className="flex items-center gap-1.5 rounded-lg border border-[#334155] bg-[#1E293B] px-3.5 py-1.5">
               <div className="size-2 rounded-full bg-[#22D3EE]" />
-              <span className="text-[13px] font-medium text-[#22D3EE]">
-                Generating...
-              </span>
+              <span className="text-[13px] font-medium text-[#22D3EE]">Generating...</span>
             </div>
           )}
           {isCompleted && (
             <div className="flex items-center gap-1.5 rounded-lg bg-[#22C55E20] px-3.5 py-1.5">
               <div className="size-2 rounded-full bg-[#22C55E]" />
-              <span className="text-[13px] font-medium text-[#22C55E]">
-                Complete
-              </span>
+              <span className="text-[13px] font-medium text-[#22C55E]">Complete</span>
             </div>
           )}
           {isFailed && (
             <div className="flex items-center gap-1.5 rounded-lg bg-[#EF444420] px-3.5 py-1.5">
               <div className="size-2 rounded-full bg-[#EF4444]" />
-              <span className="text-[13px] font-medium text-[#EF4444]">
-                Failed
-              </span>
+              <span className="text-[13px] font-medium text-[#EF4444]">Failed</span>
             </div>
           )}
           {isCancelled && (
             <div className="flex items-center gap-1.5 rounded-lg bg-[#F59E0B20] px-3.5 py-1.5">
               <div className="size-2 rounded-full bg-[#F59E0B]" />
-              <span className="text-[13px] font-medium text-[#F59E0B]">
-                Cancelled
-              </span>
+              <span className="text-[13px] font-medium text-[#F59E0B]">Cancelled</span>
             </div>
           )}
 
@@ -315,6 +305,16 @@ export function JobPage() {
         <ol className="w-full lg:w-[280px] lg:shrink-0 lg:sticky lg:top-6 lg:self-start list-none m-0 p-0">
           {STAGES.map((stage, i) => {
             const stageData = job.stages?.[stage];
+            const prevStageName = i > 0 ? STAGES[i - 1] : undefined;
+            const prevStatus = prevStageName
+              ? ((job.stages?.[prevStageName]?.status as
+                  | "pending"
+                  | "running"
+                  | "done"
+                  | "skipped"
+                  | "error") ?? "pending")
+              : undefined;
+
             return (
               <StageCard
                 key={stage}
@@ -322,7 +322,9 @@ export function JobPage() {
                 status={(stageData?.status as "pending") ?? "pending"}
                 detail={stageData?.detail}
                 durationSec={stageData?.durationSec}
+                isFirst={i === 0}
                 isLast={i === STAGES.length - 1}
+                prevStatus={prevStatus}
                 subStatus={stage === "assembly" ? assemblySubStatus : undefined}
               />
             );
@@ -336,7 +338,9 @@ export function JobPage() {
               failedStageName={
                 isCancelled
                   ? "Pipeline"
-                  : failedStage ? STAGE_LABELS[failedStage] ?? failedStage : "Unknown Stage"
+                  : failedStage
+                    ? (STAGE_LABELS[failedStage] ?? failedStage)
+                    : "Unknown Stage"
               }
               failedDetail={isCancelled ? "Job was cancelled by user" : failedDetail}
             />
