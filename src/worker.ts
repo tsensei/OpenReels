@@ -63,8 +63,8 @@ function writeMeta(jobDir: string, meta: JobMeta) {
 const worker = new Worker<JobData>(
   "openreels",
   async (job: Job<JobData>) => {
-    const { topic, archetype, platform, dryRun, providers, keys, jobsDir } = job.data;
-    const jobDir = path.join(jobsDir, job.id!);
+    const { topic, archetype, platform, dryRun, providers, keys } = job.data;
+    const jobDir = path.join(JOBS_DIR, job.id!);
     fs.mkdirSync(jobDir, { recursive: true });
 
     // Initialize meta

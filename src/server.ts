@@ -239,18 +239,22 @@ app.get<{ Params: { id: string } }>("/api/v1/jobs/:id/events", async (request, r
     return;
   }
 
+  // Guard against double-cleanup (client disconnect + job complete can race)
+  let cleaned = false;
+
   // Listen for progress updates
   const onProgress = ({ jobId: progressJobId, data }: { jobId: string; data: unknown }) => {
-    if (progressJobId === jobId) {
+    if (cleaned || progressJobId !== jobId) return;
+    try {
       const eventData = data as Record<string, unknown>;
       const stage = eventData.stage as string;
       reply.raw.write(`event: stage:${stage}\ndata: ${JSON.stringify(eventData)}\n\n`);
-    }
+    } catch {}
   };
 
   const onCompleted = ({ jobId: completedJobId }: { jobId: string }) => {
     if (completedJobId === jobId) {
-      reply.raw.write(`event: job:completed\ndata: {}\n\n`);
+      try { reply.raw.write(`event: job:completed\ndata: {}\n\n`); } catch {}
       cleanup();
     }
   };
@@ -263,16 +267,18 @@ app.get<{ Params: { id: string } }>("/api/v1/jobs/:id/events", async (request, r
     failedReason: string;
   }) => {
     if (failedJobId === jobId) {
-      reply.raw.write(`event: job:failed\ndata: ${JSON.stringify({ error: failedReason })}\n\n`);
+      try { reply.raw.write(`event: job:failed\ndata: ${JSON.stringify({ error: failedReason })}\n\n`); } catch {}
       cleanup();
     }
   };
 
   const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
     queueEvents.off("progress", onProgress);
     queueEvents.off("completed", onCompleted);
     queueEvents.off("failed", onFailed);
-    reply.raw.end();
+    try { reply.raw.end(); } catch {}
   };
 
   queueEvents.on("progress", onProgress);
