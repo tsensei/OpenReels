@@ -34,7 +34,11 @@ export async function generateDirectorScore(
   llm: LLMProvider,
   topic: string,
   researchContext: ResearchResult,
-  options?: { archetype?: string },
+  options?: {
+    archetype?: string;
+    /** Restrict which visual types the director may use. Defaults to all four. */
+    allowedVisualTypes?: VisualType[];
+  },
 ): Promise<DirectorScoreOutput> {
   let systemPrompt = buildDefaultPrompt();
 
@@ -57,6 +61,13 @@ export async function generateDirectorScore(
     ? `Use the "${options.archetype}" archetype.`
     : `Choose from: ${archetypes.join(", ")}`;
 
+  const allVisualTypes = VisualType.options;
+  const allowed: VisualType[] = options?.allowedVisualTypes ?? [...allVisualTypes];
+  const visualTypeConstraint = allowed.length === allVisualTypes.length
+    ? `Use all 4 visual types (ai_image, stock_image, stock_video, text_card).`
+    : `IMPORTANT: You may ONLY use these visual types: ${allowed.join(", ")}. ` +
+      `Do NOT use ${allVisualTypes.filter((t) => !allowed.includes(t)).join(" or ")} — those providers are not available.\n`
+
   const userMessage = `Topic: ${topic}
 
 Research context:
@@ -69,7 +80,7 @@ Mood: ${researchContext.mood}
 
 ${archetypeInstruction}
 
-Create a DirectorScore with 4-7 scenes. Use all 4 visual types (ai_image, stock_image, stock_video, text_card).
+Create a DirectorScore with 4-7 scenes. ${visualTypeConstraint}
 CRITICAL RULE: Never use the same visual_type more than 2 times in a row.
 Every scene MUST have a script_line (the voiceover text).
 The first scene should be a strong hook.

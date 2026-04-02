@@ -15,6 +15,9 @@ describe("CLIOptions type", () => {
       preview: false,
       output: "./output",
       yes: true,
+      ollamaModel: "llama3.2",
+      ollamaImageModel: "x/flux2-klein",
+      ollamaHost: "http://localhost:11434",
     };
     expect(opts.yes).toBe(true);
   });
@@ -30,6 +33,9 @@ describe("CLIOptions type", () => {
       preview: false,
       output: "./output",
       yes: false,
+      ollamaModel: "llama3.2",
+      ollamaImageModel: "x/flux2-klein",
+      ollamaHost: "http://localhost:11434",
     };
     expect(opts.yes).toBe(false);
   });

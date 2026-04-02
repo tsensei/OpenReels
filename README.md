@@ -70,7 +70,7 @@ docker compose run worker npx tsx src/index.ts --yes "5 stoic lessons that chang
 
 ### Local development
 
-**Prerequisites:** Node.js 22+, pnpm, ffprobe (for stock video duration detection)
+**Prerequisites:** Node.js 22+, pnpm, ffprobe (for stock video duration detection), Python 3.11 or 3.12 (only required for `--tts-provider chatterbox` — Python 3.13+ is not supported due to PyTorch/OpenMP issues)
 
 ```bash
 git clone https://github.com/tsensei/OpenReels.git
@@ -99,18 +99,110 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 
 **Optional:** `PEXELS_API_KEY` ([Pexels](https://www.pexels.com/api/)), `PIXABAY_API_KEY` ([Pixabay](https://pixabay.com/api/docs/)) for stock footage (free registration)
 
+### Zero-API-key local mode (Ollama + Chatterbox)
+
+Run the full pipeline with **no API keys** using local open-source models.
+
+#### One-time setup
+
+```bash
+# 1. Install and start Ollama (macOS)
+brew install ollama
+ollama serve   # keep running in a separate terminal
+
+# 2. Pull your preferred LLM model (one-time — pick one)
+ollama pull llama3.1:8b     # ~5 GB, fast and reliable
+ollama pull gemma3:9b       # ~6 GB, good quality
+ollama pull qwen2.5:7b      # ~5 GB, multilingual
+
+# 3. Pull an image generation model — macOS only (one-time — pick one)
+ollama pull x/flux2-klein:4b    # ~6 GB, fastest
+ollama pull x/flux2-klein:9b    # ~12 GB, higher quality
+ollama pull x/z-image-turbo:fp8     # ~13 GB, photorealistic
+```
+
+> **Interactive model selection:** When you run with `--provider ollama`, OpenReels will show you all pulled models and let you choose interactively. No need to memorise model names.
+
+> **Chatterbox is auto-installed:** OpenReels automatically creates an isolated Python venv at `~/.openreels/chatterbox-venv` and installs `chatterbox-tts` on first use. You only need Python 3.11 or 3.12 on your system (`brew install python@3.12` on macOS). Python 3.13+ is not supported.
+
+> **First run note:** Chatterbox Turbo downloads ~1.5 GB of model weights on first use. This is automatic and cached locally (`~/.cache/huggingface/`). Expect 2–5 minutes on a typical connection.
+
+> **GPU recommended:** Chatterbox is significantly faster on Apple Silicon (MPS) or a CUDA GPU. CPU generation works but is slow (10–30× slower than real-time).
+
+#### Running with no API keys
+
+```bash
+# Interactive — OpenReels will prompt you to choose a model and describe your topic
+pnpm start "your topic" \
+  --provider ollama \
+  --tts-provider chatterbox \
+  --image-provider ollama
+
+# Non-interactive — supply context via --brief and pin specific models
+pnpm start "your topic" \
+  --provider ollama \
+  --tts-provider chatterbox \
+  --image-provider ollama \
+  --ollama-model llama3.1:8b \
+  --ollama-image-model x/flux2-klein:4b \
+  --brief "Solar panels cost $10k upfront but save $50k over 20 years. Mood: informative."
+```
+
+> **Linux/Windows users:** Ollama image generation is currently macOS-only. Use `--image-provider gemini` (free tier available) or `--image-provider openai` instead, and provide the relevant API key.
+
+#### Mix and match — combine free and paid providers
+
+Each provider is independent. You can freely mix local and cloud options to get the best trade-off between cost, speed, and quality.
+
+```bash
+# Best quality script + free TTS + free images (macOS for now)
+# Requires: ANTHROPIC_API_KEY
+pnpm start "your topic" \
+  --provider anthropic \
+  --tts-provider chatterbox \
+  --image-provider ollama
+
+# Free script + paid TTS for higher quality voice + free images (macOS for now)
+# Requires: ELEVENLABS_API_KEY
+pnpm start "your topic" \
+  --provider ollama \
+  --tts-provider elevenlabs \
+  --image-provider ollama
+
+# Free everything on Linux/Windows (Ollama image gen is macOS-only, use Gemini instead)
+# Requires: GOOGLE_API_KEY
+pnpm start "your topic" \
+  --provider ollama \
+  --tts-provider chatterbox \
+  --image-provider gemini
+
+# Free script + free TTS + best image quality (OpenAI DALL-E)
+# Requires: OPENAI_API_KEY
+pnpm start "your topic" \
+  --provider ollama \
+  --tts-provider chatterbox \
+  --image-provider openai
+```
+
 ### CLI flags
 
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--archetype <name>` | Override visual archetype | LLM chooses |
-| `--provider <name>` | LLM provider (`anthropic` or `openai`) | `anthropic` |
-| `--tts-provider <name>` | TTS provider (`elevenlabs` or `inworld`) | `elevenlabs` |
+| `--provider <name>` | LLM provider (`anthropic`, `openai`, `ollama`) | `anthropic` |
+| `--tts-provider <name>` | TTS provider (`elevenlabs`, `inworld`, `chatterbox`) | `elevenlabs` |
+| `-i, --image-provider <name>` | Image provider (`gemini`, `openai`, `ollama`) | `gemini` |
 | `--platform <name>` | Target platform (`youtube`, `tiktok`, `instagram`) | `youtube` |
 | `--dry-run` | Output DirectorScore JSON without generating assets | off |
 | `--preview` | Open Remotion Studio after rendering | off |
 | `-o, --output <dir>` | Output directory | `./output` |
 | `-y, --yes` | Auto-confirm cost estimation (for Docker/CI) | off |
+| `--brief <text>` | Topic context for Ollama mode (skips interactive prompt) | — |
+| `--ollama-model <name>` | Ollama LLM model name | interactive selection |
+| `--ollama-image-model <name>` | Ollama image generation model name | interactive selection |
+| `--ollama-host <url>` | Ollama API host URL | `http://localhost:11434` |
+| `--chatterbox-device <device>` | PyTorch device for Chatterbox (`cpu`, `cuda`, `mps`) | auto-detected |
+| `--chatterbox-audio-prompt <path>` | Reference WAV for Chatterbox voice cloning (5–10s) | — |
 
 ## Archetypes
 

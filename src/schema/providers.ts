@@ -1,8 +1,8 @@
 import type { z } from "zod";
 
-export type LLMProviderKey = "anthropic" | "openai";
-export type TTSProviderKey = "elevenlabs" | "inworld";
-export type ImageProviderKey = "gemini" | "openai";
+export type LLMProviderKey = "anthropic" | "openai" | "ollama";
+export type TTSProviderKey = "elevenlabs" | "inworld" | "chatterbox";
+export type ImageProviderKey = "gemini" | "openai" | "ollama";
 export type StockProviderKey = "pexels" | "pixabay";
 
 export interface LLMUsage {

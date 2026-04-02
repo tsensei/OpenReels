@@ -1,4 +1,6 @@
 import type { ImageProviderKey, LLMProviderKey, TTSProviderKey } from "../schema/providers.js";
+import { checkOllamaReachable, selectOllamaModel, KNOWN_LLM_MODELS, KNOWN_IMAGE_MODELS } from "./ollama-setup.js";
+import { ensureChatterboxVenv } from "./chatterbox-setup.js";
 
 interface EnvRequirement {
   key: string;
@@ -7,11 +9,25 @@ interface EnvRequirement {
   required: boolean;
 }
 
-export function validateEnv(opts: {
+export interface ValidateEnvResult {
+  /** Resolved Ollama LLM model name (may differ from CLI flag if user selected interactively). */
+  ollamaModel?: string;
+  /** Resolved Ollama image model name (may differ from CLI flag if user selected interactively). */
+  ollamaImageModel?: string;
+  /** Path to the venv Python binary for Chatterbox. Undefined when chatterbox is not selected. */
+  chatterboxPythonBin?: string;
+}
+
+export async function validateEnv(opts: {
   provider: LLMProviderKey;
   ttsProvider: TTSProviderKey;
   imageProvider: ImageProviderKey;
-}): void {
+  ollamaHost?: string;
+  /** Explicitly passed --ollama-model. If set, skip interactive selection. */
+  ollamaModel?: string;
+  /** Explicitly passed --ollama-image-model. If set, skip interactive selection. */
+  ollamaImageModel?: string;
+}): Promise<ValidateEnvResult> {
   const requirements: EnvRequirement[] = [
     {
       key: "ANTHROPIC_API_KEY",
@@ -47,8 +63,8 @@ export function validateEnv(opts: {
 
   const missing = requirements.filter((r) => r.required && !process.env[r.key]);
 
-  // Stock keys are optional — the pipeline degrades gracefully (black frames) — but
-  // warn upfront so users aren't surprised by missing visuals on stock_image/stock_video scenes.
+  // Stock keys are optional — the pipeline degrades gracefully — but warn upfront
+  // so users aren't surprised by missing visuals on stock_image/stock_video scenes.
   const hasStockKey = process.env["PEXELS_API_KEY"] || process.env["PIXABAY_API_KEY"];
   if (!hasStockKey) {
     console.warn(
@@ -58,17 +74,43 @@ export function validateEnv(opts: {
     );
   }
 
-  if (missing.length === 0) return;
-
-  console.error("\nMissing required API keys:\n");
-  console.error("  Key                     Status    Get it at");
-  console.error("  " + "-".repeat(70));
-  for (const r of missing) {
-    const key = r.key.padEnd(24);
-    console.error(`  ${key}MISSING   ${r.signupUrl}`);
+  if (missing.length > 0) {
+    console.error("\nMissing required API keys:\n");
+    console.error("  Key                     Status    Get it at");
+    console.error("  " + "-".repeat(70));
+    for (const r of missing) {
+      const key = r.key.padEnd(24);
+      console.error(`  ${key}MISSING   ${r.signupUrl}`);
+    }
+    console.error(
+      "\nSet these in your .env file (or pass with `docker run --env-file .env` when using Docker).\n",
+    );
+    process.exit(1);
   }
-  console.error(
-    "\nSet these in your .env file (or pass with `docker run --env-file .env` when using Docker).\n",
-  );
-  process.exit(1);
+
+  // --- Local provider setup (no API keys needed, but tools must be available) ---
+  let ollamaModel: string | undefined;
+  let ollamaImageModel: string | undefined;
+
+  if (opts.provider === "ollama" || opts.imageProvider === "ollama") {
+    const host = opts.ollamaHost ?? "http://localhost:11434";
+    const pulledModels = await checkOllamaReachable(host);
+
+    if (opts.provider === "ollama") {
+      ollamaModel = opts.ollamaModel
+        ?? await selectOllamaModel(pulledModels, KNOWN_LLM_MODELS, "LLM");
+    }
+
+    if (opts.imageProvider === "ollama") {
+      ollamaImageModel = opts.ollamaImageModel
+        ?? await selectOllamaModel(pulledModels, KNOWN_IMAGE_MODELS, "image generation", true);
+    }
+  }
+
+  let chatterboxPythonBin: string | undefined;
+  if (opts.ttsProvider === "chatterbox") {
+    chatterboxPythonBin = await ensureChatterboxVenv();
+  }
+
+  return { ollamaModel, ollamaImageModel, chatterboxPythonBin };
 }

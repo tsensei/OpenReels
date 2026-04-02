@@ -20,7 +20,7 @@ import { getArchetype } from "../config/archetype-registry.js";
 import { getPlatformConfig } from "../config/platforms.js";
 import { getTotalDurationInFrames, mapScoreToProps } from "../remotion/lib/score-to-props.js";
 import type { ArchetypeConfig } from "../schema/archetype.js";
-import type { DirectorScore } from "../schema/director-score.js";
+import type { DirectorScore, VisualType } from "../schema/director-score.js";
 import type {
   ImageProvider,
   ImageProviderKey,
@@ -31,6 +31,7 @@ import type {
   TTSProviderKey,
   WordTimestamp,
 } from "../schema/providers.js";
+import type { ResearchResult } from "../agents/research.js";
 
 // Stage names matching the pipeline execution order
 export const STAGE_NAMES = [
@@ -121,6 +122,8 @@ export interface PipelineOptions {
   preview: boolean;
   outputDir: string;
   yes: boolean;
+  /** Pre-supplied research result (Ollama local mode). When set, the research agent LLM call is skipped. */
+  topicBrief?: ResearchResult;
 }
 
 export interface PipelineResult {
@@ -173,26 +176,36 @@ export async function runPipeline(
   try {
     // Stage 1: Research
     cb.onStageStart?.("research");
-    let researchResult;
+    let researchResult: ResearchResult;
     const researchStart = Date.now();
-    try {
-      const researchOutput = await research(opts.llm, opts.topic);
-      researchResult = researchOutput.data;
-      llmUsages.push(researchOutput.usage);
+
+    if (opts.topicBrief) {
+      // Ollama local mode: user-supplied brief, no LLM web-search call needed
+      researchResult = opts.topicBrief;
       const dur = (Date.now() - researchStart) / 1000;
-      cb.onStageComplete?.("research", `${researchResult.key_facts.length} facts`, dur);
+      cb.onStageComplete?.("research", `provided brief (${researchResult.key_facts.length} facts)`, dur);
       cb.onProgress?.("research", { type: "results", summary: researchResult.summary, key_facts: researchResult.key_facts, mood: researchResult.mood });
-      log.stages.push({ name: "research", duration: dur, status: "done" });
-    } catch (err) {
-      const dur = (Date.now() - researchStart) / 1000;
-      cb.onStageSkip?.("research", "web search failed");
-      log.stages.push({ name: "research", duration: dur, status: "skipped", error: String(err) });
-      researchResult = {
-        summary: `Topic: ${opts.topic}`,
-        key_facts: [],
-        mood: "informative",
-        sources: [],
-      };
+      log.stages.push({ name: "research", duration: dur, status: "brief" });
+    } else {
+      try {
+        const researchOutput = await research(opts.llm, opts.topic);
+        researchResult = researchOutput.data;
+        llmUsages.push(researchOutput.usage);
+        const dur = (Date.now() - researchStart) / 1000;
+        cb.onStageComplete?.("research", `${researchResult.key_facts.length} facts`, dur);
+        cb.onProgress?.("research", { type: "results", summary: researchResult.summary, key_facts: researchResult.key_facts, mood: researchResult.mood });
+        log.stages.push({ name: "research", duration: dur, status: "done" });
+      } catch (err) {
+        const dur = (Date.now() - researchStart) / 1000;
+        cb.onStageSkip?.("research", "web search failed");
+        log.stages.push({ name: "research", duration: dur, status: "skipped", error: String(err) });
+        researchResult = {
+          summary: `Topic: ${opts.topic}`,
+          key_facts: [],
+          mood: "informative",
+          sources: [],
+        };
+      }
     }
 
     // Check cancellation between stages
@@ -203,8 +216,19 @@ export async function runPipeline(
     // Stage 2: Creative Director
     cb.onStageStart?.("director");
     const cdStart = Date.now();
+
+    // Only allow visual types whose providers are actually configured.
+    // Stock types require a Pexels or Pixabay API key — without one they silently produce blank frames.
+    const stockAvailable = !!(process.env["PEXELS_API_KEY"] || process.env["PIXABAY_API_KEY"]);
+    const allowedVisualTypes: VisualType[] = [
+      "ai_image",
+      "text_card",
+      ...(stockAvailable ? (["stock_image", "stock_video"] as const) : []),
+    ];
+
     const cdOutput = await generateDirectorScore(opts.llm, opts.topic, researchResult, {
       archetype: opts.archetype,
+      allowedVisualTypes,
     });
     const directorScore = cdOutput.data;
     llmUsages.push(cdOutput.usage);
@@ -271,24 +295,47 @@ export async function runPipeline(
       return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
     }
 
-    // Stage 4: Visual Assets (parallel)
+    // Stage 4: Visual Assets
+    // Ollama image generation runs sequentially to avoid overwhelming a single-threaded local model.
+    // Cloud providers run in parallel for speed.
     cb.onStageStart?.("visuals");
     const visualStart = Date.now();
     const totalScenes = directorScore.scenes.length;
-    const sceneResults = await Promise.all(
-      directorScore.scenes.map(async (scene, i) => {
+    const sceneResults: Array<{ path: string | null; usage: LLMUsage | null; durationSeconds: number | null }> = [];
+
+    if (opts.imageProvider === "ollama") {
+      for (let i = 0; i < directorScore.scenes.length; i++) {
+        const scene = directorScore.scenes[i]!;
+        process.stderr.write(`\n[visuals] Scene ${i + 1}/${totalScenes}: generating image (${scene.visual_type})...\n`);
         try {
-          return await resolveVisualAsset(scene, i, totalScenes, assetsDir, opts, archetypeConfig);
+          const result = await resolveVisualAsset(scene, i, totalScenes, assetsDir, opts, archetypeConfig);
+          sceneResults.push(result);
+          process.stderr.write(`[visuals] Scene ${i + 1}/${totalScenes}: ✓ done\n`);
         } catch (err) {
-          cb.onProgress?.("visuals", { type: "asset_failed", scene: i, error: String(err) });
-          return {
-            path: null as string | null,
-            usage: null as LLMUsage | null,
-            durationSeconds: null,
-          };
+          const msg = err instanceof Error ? err.message : String(err);
+          process.stderr.write(`[visuals] Scene ${i + 1}/${totalScenes}: ✗ failed — ${msg}\n`);
+          cb.onProgress?.("visuals", { type: "asset_failed", scene: i, error: msg });
+          sceneResults.push({ path: null, usage: null, durationSeconds: null });
         }
-      }),
-    );
+      }
+    } else {
+      const parallelResults = await Promise.all(
+        directorScore.scenes.map(async (scene, i) => {
+          try {
+            return await resolveVisualAsset(scene, i, totalScenes, assetsDir, opts, archetypeConfig);
+          } catch (err) {
+            cb.onProgress?.("visuals", { type: "asset_failed", scene: i, error: String(err) });
+            return {
+              path: null as string | null,
+              usage: null as LLMUsage | null,
+              durationSeconds: null,
+            };
+          }
+        }),
+      );
+      sceneResults.push(...parallelResults);
+    }
+
     const sceneAssets = sceneResults.map((r) => r.path);
     const sceneSourceDurations = sceneResults.map((r) => r.durationSeconds);
     for (const r of sceneResults) {

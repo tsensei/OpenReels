@@ -84,9 +84,19 @@ export function estimateCost(
     callCost(TOKEN_ESTIMATES.creativeDirector) +
     callCost(TOKEN_ESTIMATES.critic) +
     aiImages * callCost(TOKEN_ESTIMATES.imagePrompter);
-  const ttsPerChar = ttsProvider === "inworld" ? PRICING.inworldPerChar : PRICING.elevenLabsPerChar;
+  const ttsPerChar =
+    ttsProvider === "inworld"
+      ? PRICING.inworldPerChar
+      : ttsProvider === "chatterbox"
+        ? 0
+        : PRICING.elevenLabsPerChar;
   const ttsCost = ttsCharacters * ttsPerChar;
-  const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
+  const perImage =
+    imageProvider === "openai"
+      ? PRICING.openaiPerImage
+      : imageProvider === "ollama"
+        ? 0
+        : PRICING.geminiPerImage;
   const imageCost = aiImages * perImage;
   const totalCost = llmCost + ttsCost + imageCost;
 
@@ -97,7 +107,12 @@ export function formatCostEstimate(
   breakdown: CostBreakdown,
   imageProvider: ImageProviderKey = "gemini",
 ): string {
-  const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
+  const perImage =
+    imageProvider === "openai"
+      ? PRICING.openaiPerImage
+      : imageProvider === "ollama"
+        ? 0
+        : PRICING.geminiPerImage;
   return [
     `Estimated cost: $${breakdown.totalCost.toFixed(3)}`,
     `  LLM:    $${breakdown.llmCost.toFixed(4)} (${breakdown.details.llmCalls} calls)`,
@@ -117,14 +132,27 @@ export function computeActualLLMCost(
   imageProvider: ImageProviderKey = "gemini",
   ttsProvider: TTSProviderKey = "elevenlabs",
 ): ActualCostBreakdown {
-  const p = PRICING[provider];
+  // Ollama and Chatterbox are free local providers — cost is $0
+  const p = provider === "ollama"
+    ? { perInputToken: 0, perOutputToken: 0 }
+    : PRICING[provider];
   const totalInputTokens = usages.reduce((sum, u) => sum + u.inputTokens, 0);
   const totalOutputTokens = usages.reduce((sum, u) => sum + u.outputTokens, 0);
 
   const llmCost = totalInputTokens * p.perInputToken + totalOutputTokens * p.perOutputToken;
-  const ttsPerChar = ttsProvider === "inworld" ? PRICING.inworldPerChar : PRICING.elevenLabsPerChar;
+  const ttsPerChar =
+    ttsProvider === "inworld"
+      ? PRICING.inworldPerChar
+      : ttsProvider === "chatterbox"
+        ? 0
+        : PRICING.elevenLabsPerChar;
   const ttsCost = nonLlm.ttsCharacters * ttsPerChar;
-  const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
+  const perImage =
+    imageProvider === "openai"
+      ? PRICING.openaiPerImage
+      : imageProvider === "ollama"
+        ? 0
+        : PRICING.geminiPerImage;
   const imageCost = nonLlm.aiImages * perImage;
   const totalCost = llmCost + ttsCost + imageCost;
 

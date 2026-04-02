@@ -10,12 +10,15 @@ import type {
 } from "../schema/providers.js";
 import { GeminiImage } from "./image/gemini.js";
 import { OpenAIImage } from "./image/openai.js";
+import { OllamaImage } from "./image/ollama.js";
 import { AnthropicLLM } from "./llm/anthropic.js";
 import { OpenAILLM } from "./llm/openai.js";
+import { OllamaLLM } from "./llm/ollama.js";
 import { PexelsStock } from "./stock/pexels.js";
 import { PixabayStock } from "./stock/pixabay.js";
 import { ElevenLabsTTS } from "./tts/elevenlabs.js";
 import { InworldTTS } from "./tts/inworld.js";
+import { ChatterboxTTS } from "./tts/chatterbox.js";
 
 export interface ProviderConfig {
   llm: LLMProviderKey;
@@ -23,6 +26,14 @@ export interface ProviderConfig {
   image: ImageProviderKey;
   stock?: StockProviderKey;
   keys?: Record<string, string>;
+  /** Ollama-specific options */
+  ollamaModel?: string;
+  ollamaImageModel?: string;
+  ollamaHost?: string;
+  /** Chatterbox-specific options */
+  chatterboxDevice?: string;
+  chatterboxAudioPrompt?: string;
+  chatterboxPythonBin?: string;
 }
 
 export interface Providers {
@@ -38,17 +49,27 @@ export function createProviders(config: ProviderConfig): Providers {
   const llm: LLMProvider =
     config.llm === "openai"
       ? new OpenAILLM(undefined, k["OPENAI_API_KEY"])
-      : new AnthropicLLM(undefined, k["ANTHROPIC_API_KEY"]);
+      : config.llm === "ollama"
+        ? new OllamaLLM(config.ollamaModel, config.ollamaHost)
+        : new AnthropicLLM(undefined, k["ANTHROPIC_API_KEY"]);
 
   const tts: TTSProvider =
     config.tts === "inworld"
       ? new InworldTTS(undefined, undefined, k["INWORLD_TTS_API_KEY"])
-      : new ElevenLabsTTS(undefined, k["ELEVENLABS_API_KEY"]);
+      : config.tts === "chatterbox"
+        ? new ChatterboxTTS({
+            device: config.chatterboxDevice,
+            audioPrompt: config.chatterboxAudioPrompt,
+            pythonBin: config.chatterboxPythonBin,
+          })
+        : new ElevenLabsTTS(undefined, k["ELEVENLABS_API_KEY"]);
 
   const imageGen: ImageProvider =
     config.image === "openai"
       ? new OpenAIImage(undefined, k["OPENAI_API_KEY"])
-      : new GeminiImage(undefined, k["GOOGLE_API_KEY"]);
+      : config.image === "ollama"
+        ? new OllamaImage(config.ollamaImageModel, config.ollamaHost)
+        : new GeminiImage(undefined, k["GOOGLE_API_KEY"]);
 
   const stockKey = config.stock ?? "pexels";
   const stock: StockProvider =

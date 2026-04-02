@@ -16,6 +16,14 @@ export interface CLIOptions {
   preview: boolean;
   output: string;
   yes: boolean;
+  brief?: string;
+  /** Explicitly provided via --ollama-model. When undefined, model is selected interactively. */
+  ollamaModel?: string;
+  /** Explicitly provided via --ollama-image-model. When undefined, model is selected interactively. */
+  ollamaImageModel?: string;
+  ollamaHost: string;
+  chatterboxDevice?: string;
+  chatterboxAudioPrompt?: string;
 }
 
 export function parseArgs(): CLIOptions {
@@ -28,17 +36,17 @@ export function parseArgs(): CLIOptions {
     .argument("<topic>", "The topic for your video")
     .addOption(
       new Option("-p, --provider <provider>", "LLM provider")
-        .choices(["anthropic", "openai"])
+        .choices(["anthropic", "openai", "ollama"])
         .default("anthropic"),
     )
     .addOption(
       new Option("-i, --image-provider <provider>", "Image generation provider")
-        .choices(["gemini", "openai"])
+        .choices(["gemini", "openai", "ollama"])
         .default("gemini"),
     )
     .addOption(
       new Option("--tts-provider <provider>", "TTS provider")
-        .choices(["elevenlabs", "inworld"])
+        .choices(["elevenlabs", "inworld", "chatterbox"])
         .default("elevenlabs"),
     )
     .option("-a, --archetype <archetype>", "Visual archetype override")
@@ -47,6 +55,12 @@ export function parseArgs(): CLIOptions {
     .option("--preview", "Open Remotion Studio preview after rendering", false)
     .option("-o, --output <dir>", "Output directory", "./output")
     .option("-y, --yes", "Auto-confirm cost estimation prompt (non-interactive mode)", false)
+    .option("--brief <text>", "Topic context for Ollama mode (skips interactive prompt)")
+    .option("--ollama-model <name>", "Ollama LLM model name (default: interactive selection)")
+    .option("--ollama-image-model <name>", "Ollama image generation model name (default: interactive selection)")
+    .option("--ollama-host <url>", "Ollama API host", "http://localhost:11434")
+    .option("--chatterbox-device <device>", "PyTorch device for Chatterbox TTS (cpu, cuda, mps)")
+    .option("--chatterbox-audio-prompt <path>", "Path to reference WAV for Chatterbox voice cloning")
     .parse();
 
   const topic = program.args[0] ?? "";
@@ -67,5 +81,11 @@ export function parseArgs(): CLIOptions {
     preview: opts["preview"] as boolean,
     output: opts["output"] as string,
     yes: opts["yes"] as boolean,
+    brief: opts["brief"] as string | undefined,
+    ollamaModel: opts["ollamaModel"] as string | undefined,
+    ollamaImageModel: opts["ollamaImageModel"] as string | undefined,
+    ollamaHost: opts["ollamaHost"] as string,
+    chatterboxDevice: opts["chatterboxDevice"] as string | undefined,
+    chatterboxAudioPrompt: opts["chatterboxAudioPrompt"] as string | undefined,
   };
 }

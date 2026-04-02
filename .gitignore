@@ -4,3 +4,9 @@ dist/
 .env
 staging_docs/
 output/
+
+# macOS
+.DS_Store
+
+# Python version managers
+.python-version
