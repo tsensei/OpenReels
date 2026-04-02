@@ -1,61 +1,29 @@
 {
   "tracks": [
-    {
-      "id": "epic-01",
-      "mood": "epic_cinematic",
-      "pixabayId": 0,
-      "filename": "epic-cinematic-01.mp3",
-      "attribution": "Pixabay License"
-    },
-    {
-      "id": "epic-02",
-      "mood": "epic_cinematic",
-      "pixabayId": 0,
-      "filename": "epic-cinematic-02.mp3",
-      "attribution": "Pixabay License"
-    },
-    {
-      "id": "lofi-01",
-      "mood": "chill_lofi",
-      "pixabayId": 0,
-      "filename": "chill-lofi-01.mp3",
-      "attribution": "Pixabay License"
-    },
-    {
-      "id": "lofi-02",
-      "mood": "chill_lofi",
-      "pixabayId": 0,
-      "filename": "chill-lofi-02.mp3",
-      "attribution": "Pixabay License"
-    },
-    {
-      "id": "tense-01",
-      "mood": "tense_electronic",
-      "pixabayId": 0,
-      "filename": "tense-electronic-01.mp3",
-      "attribution": "Pixabay License"
-    },
-    {
-      "id": "tense-02",
-      "mood": "tense_electronic",
-      "pixabayId": 0,
-      "filename": "tense-electronic-02.mp3",
-      "attribution": "Pixabay License"
-    },
-    {
-      "id": "uplifting-01",
-      "mood": "uplifting_pop",
-      "pixabayId": 0,
-      "filename": "uplifting-pop-01.mp3",
-      "attribution": "Pixabay License"
-    },
-    {
-      "id": "ambient-01",
-      "mood": "mysterious_ambient",
-      "pixabayId": 0,
-      "filename": "mysterious-ambient-01.mp3",
-      "attribution": "Pixabay License"
-    }
-  ],
-  "_note": "pixabayId values are placeholders. Replace with actual Pixabay track IDs and run 'openreels setup-music' to download."
+    { "id": "chill-lofi-01", "mood": "chill_lofi", "filename": "chill-lofi-01.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 160166, "license": "Pixabay License" },
+    { "id": "chill-lofi-02", "mood": "chill_lofi", "filename": "chill-lofi-02.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 15013, "license": "Pixabay License" },
+    { "id": "chill-lofi-03", "mood": "chill_lofi", "filename": "chill-lofi-03.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 115977, "license": "Pixabay License" },
+    { "id": "dark-cinematic-01", "mood": "dark_cinematic", "filename": "dark-cinematic-01.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 348870, "license": "Pixabay License" },
+    { "id": "dark-cinematic-02", "mood": "dark_cinematic", "filename": "dark-cinematic-02.mp3", "durationSec": 77, "source": "pixabay", "sourceId": 349866, "license": "Pixabay License" },
+    { "id": "dark-cinematic-03", "mood": "dark_cinematic", "filename": "dark-cinematic-03.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 309318, "license": "Pixabay License" },
+    { "id": "dreamy-ethereal-01", "mood": "dreamy_ethereal", "filename": "dreamy-ethereal-01.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 157046, "license": "Pixabay License" },
+    { "id": "dreamy-ethereal-02", "mood": "dreamy_ethereal", "filename": "dreamy-ethereal-02.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 509927, "license": "Pixabay License" },
+    { "id": "dreamy-ethereal-03", "mood": "dreamy_ethereal", "filename": "dreamy-ethereal-03.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 509783, "license": "Pixabay License" },
+    { "id": "epic-cinematic-01", "mood": "epic_cinematic", "filename": "epic-cinematic-01.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 493522, "license": "Pixabay License" },
+    { "id": "epic-cinematic-02", "mood": "epic_cinematic", "filename": "epic-cinematic-02.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 124265, "license": "Pixabay License" },
+    { "id": "mysterious-ambient-01", "mood": "mysterious_ambient", "filename": "mysterious-ambient-01.mp3", "durationSec": 72, "source": "pixabay", "sourceId": 240869, "license": "Pixabay License" },
+    { "id": "mysterious-ambient-02", "mood": "mysterious_ambient", "filename": "mysterious-ambient-02.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 0, "license": "Pixabay License" },
+    { "id": "mysterious-ambient-03", "mood": "mysterious_ambient", "filename": "mysterious-ambient-03.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 21350, "license": "Pixabay License" },
+    { "id": "tense-electronic-01", "mood": "tense_electronic", "filename": "tense-electronic-01.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 347171, "license": "Pixabay License" },
+    { "id": "tense-electronic-02", "mood": "tense_electronic", "filename": "tense-electronic-02.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 255436, "license": "Pixabay License" },
+    { "id": "tense-electronic-03", "mood": "tense_electronic", "filename": "tense-electronic-03.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 350129, "license": "Pixabay License" },
+    { "id": "tense-electronic-04", "mood": "tense_electronic", "filename": "tense-electronic-04.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 348879, "license": "Pixabay License" },
+    { "id": "uplifting-pop-01", "mood": "uplifting_pop", "filename": "uplifting-pop-01.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 400871, "license": "Pixabay License" },
+    { "id": "uplifting-pop-02", "mood": "uplifting_pop", "filename": "uplifting-pop-02.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 327471, "license": "Pixabay License" },
+    { "id": "uplifting-pop-03", "mood": "uplifting_pop", "filename": "uplifting-pop-03.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 403407, "license": "Pixabay License" },
+    { "id": "uplifting-pop-04", "mood": "uplifting_pop", "filename": "uplifting-pop-04.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 181753, "license": "Pixabay License" },
+    { "id": "warm-acoustic-01", "mood": "warm_acoustic", "filename": "warm-acoustic-01.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 232912, "license": "Pixabay License" },
+    { "id": "warm-acoustic-02", "mood": "warm_acoustic", "filename": "warm-acoustic-02.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 198612, "license": "Pixabay License" },
+    { "id": "warm-acoustic-03", "mood": "warm_acoustic", "filename": "warm-acoustic-03.mp3", "durationSec": 90, "source": "pixabay", "sourceId": 0, "license": "Pixabay License" }
+  ]
 }
