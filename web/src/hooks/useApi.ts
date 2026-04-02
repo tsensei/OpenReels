@@ -26,8 +26,13 @@ export interface JobSummary {
   completedAt?: string;
   videoPath?: string;
   stages?: Record<string, { status: string; detail?: string; durationSec?: number }>;
-  costEstimate?: { totalCost: number };
-  actualCost?: { totalCost: number };
+  costEstimate?: CostBreakdown;
+  actualCost?: ActualCostBreakdown;
+  error?: string;
+  runDir?: string;
+  researchData?: ResearchData;
+  score?: DirectorScore;
+  criticReview?: CriticReview;
 }
 
 export interface Archetype {
@@ -54,6 +59,58 @@ export interface ProviderOptions {
   llm: ProviderOption[];
   tts: ProviderOption[];
   image: ProviderOption[];
+}
+
+export interface CostBreakdown {
+  llmCost: number;
+  ttsCost: number;
+  imageCost: number;
+  totalCost: number;
+  details: {
+    llmCalls: number;
+    ttsCharacters: number;
+    aiImages: number;
+  };
+}
+
+export interface ActualCostBreakdown {
+  llmCost: number;
+  ttsCost: number;
+  imageCost: number;
+  totalCost: number;
+  details: {
+    totalInputTokens: number;
+    totalOutputTokens: number;
+    ttsCharacters: number;
+    aiImages: number;
+  };
+}
+
+export interface DirectorScoreScene {
+  visual_type: "ai_image" | "stock_image" | "stock_video" | "text_card";
+  visual_prompt: string;
+  motion: "zoom_in" | "zoom_out" | "pan_right" | "pan_left" | "static";
+  script_line: string;
+  transition?: "none" | "crossfade" | "slide_left" | "slide_right" | "wipe" | "flip";
+}
+
+export interface DirectorScore {
+  emotional_arc: string;
+  archetype: string;
+  music_mood: string;
+  scenes: DirectorScoreScene[];
+}
+
+export interface ResearchData {
+  summary: string;
+  key_facts: string[];
+  mood: string;
+}
+
+export interface CriticReview {
+  score: number;
+  strengths: string[];
+  weaknesses: string[];
 }
 
 export interface CreateJobRequest {
@@ -104,6 +161,10 @@ export const api = {
 
   listProviders() {
     return fetchJson<ProviderOptions>("/providers");
+  },
+
+  getArtifact(jobId: string, artifactPath: string) {
+    return fetchJson<unknown>(`/jobs/${jobId}/artifacts/${artifactPath}`);
   },
 
   getHealth() {
