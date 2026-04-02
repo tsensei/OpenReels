@@ -333,14 +333,16 @@ app.post<{ Params: { id: string } }>("/api/v1/jobs/:id/cancel", async (request, 
     return reply.status(409).send({ error: `Job already ${state}` });
   }
 
-  // Update meta to mark as cancelling
+  // Update meta to mark as cancelling (atomic write: tmp + rename)
   const jobDir = path.join(JOBS_DIR, request.params.id);
   const metaPath = path.join(jobDir, "meta.json");
   if (fs.existsSync(metaPath)) {
     try {
       const meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
       meta.cancelRequested = true;
-      fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+      const tmpPath = path.join(jobDir, ".meta.tmp");
+      fs.writeFileSync(tmpPath, JSON.stringify(meta, null, 2));
+      fs.renameSync(tmpPath, metaPath);
     } catch {}
   }
 

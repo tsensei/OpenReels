@@ -9,6 +9,7 @@ export function useSSE(jobId: string | undefined, onEvent: (event: SSEEvent) => 
   const eventSourceRef = useRef<EventSource | null>(null);
   const onEventRef = useRef(onEvent);
   const doneRef = useRef(false);
+  const unmountedRef = useRef(false);
   onEventRef.current = onEvent;
 
   const connect = useCallback(() => {
@@ -48,7 +49,7 @@ export function useSSE(jobId: string | undefined, onEvent: (event: SSEEvent) => 
 
     es.onerror = () => {
       es.close();
-      if (!doneRef.current) {
+      if (!doneRef.current && !unmountedRef.current) {
         setTimeout(connect, 2000);
       }
     };
@@ -60,8 +61,10 @@ export function useSSE(jobId: string | undefined, onEvent: (event: SSEEvent) => 
 
   useEffect(() => {
     doneRef.current = false;
+    unmountedRef.current = false;
     const cleanup = connect();
     return () => {
+      unmountedRef.current = true;
       cleanup?.();
       eventSourceRef.current?.close();
     };

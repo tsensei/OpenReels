@@ -78,7 +78,7 @@ export function HomePage() {
   const hasTopic = topic.trim().length > 0;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-[100px]">
+    <div className="flex min-h-screen flex-col items-center justify-center px-6 sm:px-10 lg:px-[100px]">
       <div className="flex flex-col items-center gap-9">
         {/* Hero */}
         <div className="text-center">
@@ -91,7 +91,7 @@ export function HomePage() {
         </div>
 
         {/* Input Card */}
-        <form onSubmit={handleSubmit} className="w-[660px]">
+        <form onSubmit={handleSubmit} className="w-full max-w-[660px]">
           <div
             className={cn(
               "rounded-[14px] border bg-card px-6 py-5 transition-all",
@@ -105,6 +105,7 @@ export function HomePage() {
               type="text"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
+              maxLength={200}
               placeholder="The science of black holes, how coffee changed history..."
               className="w-full bg-transparent text-[15px] text-foreground placeholder:text-[#475569] focus:outline-none"
             />

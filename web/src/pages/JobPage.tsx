@@ -178,6 +178,7 @@ export function JobPage() {
   const isRunning = job.status === "running" || job.status === "queued";
   const isCompleted = job.status === "completed";
   const isFailed = job.status === "failed";
+  const isCancelled = job.status === "cancelled";
   const videoUrl = job.videoPath
     ? `/api/v1/jobs/${job.id}/artifacts/${job.videoPath}`
     : null;
@@ -266,6 +267,14 @@ export function JobPage() {
               </span>
             </div>
           )}
+          {isCancelled && (
+            <div className="flex items-center gap-1.5 rounded-lg bg-[#F59E0B20] px-3.5 py-1.5">
+              <div className="size-2 rounded-full bg-[#F59E0B]" />
+              <span className="text-[13px] font-medium text-[#F59E0B]">
+                Cancelled
+              </span>
+            </div>
+          )}
 
           {isRunning && (
             <Button
@@ -322,12 +331,14 @@ export function JobPage() {
 
         {/* Right: Content Area */}
         <div className="min-w-0 flex-1">
-          {isFailed && (
+          {(isFailed || isCancelled) && (
             <FailedPanel
               failedStageName={
-                failedStage ? STAGE_LABELS[failedStage] ?? failedStage : "Unknown Stage"
+                isCancelled
+                  ? "Pipeline"
+                  : failedStage ? STAGE_LABELS[failedStage] ?? failedStage : "Unknown Stage"
               }
-              failedDetail={failedDetail}
+              failedDetail={isCancelled ? "Job was cancelled by user" : failedDetail}
             />
           )}
 
@@ -341,7 +352,7 @@ export function JobPage() {
             />
           )}
 
-          {!isCompleted && !isFailed && (
+          {!isCompleted && !isFailed && !isCancelled && (
             <RunningPanel
               researchData={researchData}
               score={score}

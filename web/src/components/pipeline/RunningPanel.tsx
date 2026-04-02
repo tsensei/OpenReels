@@ -19,6 +19,7 @@ export function RunningPanel({
   researchData,
   score,
   costEstimate,
+  assetFailures,
   stages,
 }: RunningPanelProps) {
   const hasResearch = researchData != null;
@@ -99,6 +100,22 @@ export function RunningPanel({
 
       {/* Cost Estimate */}
       {hasCost && <CostBreakdownCard estimate={costEstimate} variant="compact" />}
+
+      {/* Asset Failures */}
+      {assetFailures.length > 0 && (
+        <div className="rounded-[10px] border border-[#F59E0B30] bg-[#F59E0B10] p-4">
+          <span className="text-[10px] font-semibold uppercase tracking-[1.5px] text-[#F59E0B]">
+            ASSET WARNINGS
+          </span>
+          <div className="mt-2 flex flex-col gap-1">
+            {assetFailures.map((f, i) => (
+              <p key={i} className="text-[12px] text-[#FBBF24]">
+                Scene {f.scene}: {f.error}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* TTS badge (from stage detail) */}
       {stages.tts?.status === "done" && stages.tts.detail && (

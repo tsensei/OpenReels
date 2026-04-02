@@ -219,7 +219,7 @@ function pruneOldJobs(jobsDir: string, maxJobs: number) {
         return { id: d.name, status: "unknown", createdAt: "" };
       }
     })
-    .filter((j) => j.status === "completed" || j.status === "failed")
+    .filter((j) => j.status === "completed" || j.status === "failed" || j.status === "unknown")
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
   while (dirs.length > maxJobs) {
