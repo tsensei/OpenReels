@@ -18,6 +18,7 @@ import {
 import { ProgressDisplay } from "../cli/progress.js";
 import { getArchetype } from "../config/archetype-registry.js";
 import { getPlatformConfig } from "../config/platforms.js";
+import { selectTrack } from "../providers/music/bundled.js";
 import { getTotalDurationInFrames, mapScoreToProps } from "../remotion/lib/score-to-props.js";
 import type { ArchetypeConfig } from "../schema/archetype.js";
 import type { DirectorScore } from "../schema/director-score.js";
@@ -313,18 +314,10 @@ export async function runPipeline(
     let musicSelection: { trackId: string; mood: string; requestedMood: string; fallback: boolean } | null = null;
     if (!opts.noMusic) {
       try {
-        const { selectTrack } = await import("../providers/music/bundled.js");
         const selection = selectTrack(directorScore.music_mood);
         if (selection) {
           musicFilePath = selection.filePath;
           musicSelection = selection;
-          cb.onProgress?.("assembly", {
-            type: "music",
-            track: selection.trackId,
-            mood: selection.mood,
-            requestedMood: selection.requestedMood,
-            fallback: selection.fallback,
-          });
         }
       } catch (err) {
         console.warn(`[orchestrator] Music selection failed, proceeding without music: ${err}`);
@@ -333,6 +326,15 @@ export async function runPipeline(
 
     // Stage 5: Remotion Assembly
     cb.onStageStart?.("assembly");
+    if (musicSelection) {
+      cb.onProgress?.("assembly", {
+        type: "music",
+        track: musicSelection.trackId,
+        mood: musicSelection.mood,
+        requestedMood: musicSelection.requestedMood,
+        fallback: musicSelection.fallback,
+      });
+    }
     const assemblyStart = Date.now();
     const platformConfig = getPlatformConfig(opts.platform);
 

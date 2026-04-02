@@ -20,6 +20,17 @@ fs.mkdirSync(JOBS_DIR, { recursive: true });
 
 const redis = new IORedis(REDIS_URL, { maxRetriesPerRequest: null });
 
+// Validate music manifest at startup — warn but don't crash
+try {
+  const { validateManifest } = await import("./providers/music/bundled.js");
+  const { valid, missing } = validateManifest();
+  if (!valid) {
+    console.warn(`[worker] Music manifest warning: ${missing.length} tracks missing: ${missing.join(", ")}`);
+  }
+} catch {
+  // Music manifest not available — music selection will gracefully degrade
+}
+
 interface JobData {
   topic: string;
   archetype?: string;
