@@ -65,6 +65,16 @@
 - [ ] **Integration test suite** — Add Docker-based integration tests for server.ts and worker.ts using testcontainers or docker-compose test profile with Redis.
   **Priority:** P2
 
+## Music
+
+- [ ] **Crossfade at loop point** — Add ~2s crossfade overlap in MusicTrack.tsx when a video is longer than the track. Requires layering two Audio elements with offset start times and blending volumes during overlap. Most Shorts (30-60s) with 90s tracks never loop, so this is low priority.
+  **Priority:** P3
+  Deferred from plan: Background Music Library (CEO review: underspecified, risky, rarely fires)
+
+- [ ] **Archetype-aware music mood preferences** — Add `musicMoodPreference: MusicMood[]` to each archetype config for a three-tier selection cascade. Currently using two-tier (enum + random fallback). Revisit if LLM mood mismatches become a problem in practice.
+  **Priority:** P3
+  Deferred from plan: Background Music Library (CEO review: simplified per outside voice)
+
 ## Completed
 
 - [x] **HTTP API server mode** — Fastify HTTP server with POST /api/v1/jobs, GET /api/v1/jobs/:id, SSE /api/v1/jobs/:id/events, plus full React web UI.

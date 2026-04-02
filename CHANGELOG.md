@@ -2,6 +2,19 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.5.0] - 2026-04-02
+
+### Added
+- Background music for every generated video. 25 royalty-free tracks across 8 moods (epic cinematic, tense electronic, chill lofi, uplifting pop, mysterious ambient, warm acoustic, dark cinematic, dreamy ethereal), automatically selected from the creative director's mood tag.
+- `--no-music` CLI flag and `noMusic` API option to generate videos without background music.
+- Music manifest integrity check validates all referenced MP3 files exist on startup.
+- Music selection progress event in SSE stream shows which track was picked and why.
+- Selected music track info written to job `meta.json` for provenance.
+
+### Changed
+- `MusicMood` is now a strict 8-value enum instead of a free string. Creative director prompt updated with exact valid values to prevent LLM hallucination and retry costs.
+- `MusicTrack.tsx` simplified to flat volume (0.15) instead of per-word ducking, which caused audible volume pumping during continuous voiceover.
+
 ## [0.4.0] - 2026-04-02
 
 ### Added
