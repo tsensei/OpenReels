@@ -33,7 +33,8 @@ web/                    # React + Tailwind SPA (Vite)
   src/
     pages/              # HomePage, JobPage, GalleryPage, SettingsPage
     hooks/              # useApi, useSSE
-    components/         # Layout, StageCard, shadcn/ui
+    components/         # Layout, StageCard, pipeline/, shadcn/ui
+    lib/                # scene-assets, utils
 prompts/                # system prompts for each agent + playbook
 fixtures/               # sample DirectorScore JSONs
 ```
@@ -43,7 +44,7 @@ fixtures/               # sample DirectorScore JSONs
 ```bash
 pnpm install          # install dependencies
 pnpm start "topic"    # run full pipeline (CLI)
-pnpm test             # run vitest suite (93 tests)
+pnpm test             # run vitest suite (101 tests)
 ```
 
 ### Web UI (Docker Compose)
