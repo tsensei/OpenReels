@@ -27,7 +27,6 @@
 
 - [ ] **Per-transition-type duration mapping** — Add per-type duration overrides to archetypes (e.g., `transitionDurations: { crossfade: 15, flip: 20, wipe: 12 }`). Different transition types need different durations to look natural. Current single-value approach works but flip at 12 frames looks rushed while crossfade at 12 frames is fine.
   **Priority:** P3
-  **Depends on:** v0.2.0 shipping first
 
 - [ ] **Verify beat component frame behavior under TransitionSeries** — Confirm that AIImageBeat/StockVideoBeat/TextCardBeat motion calculations (zoom, pan, spring) produce identical results inside TransitionSeries.Sequence vs regular Sequence. If frame context differs, motion animations would be stretched or compressed.
   **Priority:** P2

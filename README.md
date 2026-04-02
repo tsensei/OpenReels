@@ -1,6 +1,6 @@
 # OpenReels
 
-Open-source AI pipeline that turns any topic into a fully rendered YouTube Short — research, script, voiceover, images, captions, and video assembly in one command.
+Open-source AI pipeline that turns any topic into a fully rendered YouTube Short. Includes a web UI with live pipeline visualization, REST API, and CLI.
 
 ## Demo
 
@@ -40,9 +40,21 @@ Topic in, MP4 out. No editing.
 
 ## Quickstart
 
-### Docker (recommended)
+### Web UI (recommended)
 
-No Node.js, Chrome, or ffmpeg setup required. Just Docker.
+Launch the full web interface with Docker Compose. No Node.js, Chrome, or ffmpeg required.
+
+```bash
+git clone https://github.com/tsensei/OpenReels.git
+cd OpenReels
+cp .env.example .env   # fill in your API keys
+docker compose up      # starts Redis + API + Worker
+# Open http://localhost:3000
+```
+
+Type a topic, pick an archetype, and watch the pipeline run in real time. Research, script, voiceover, visuals, and assembly stages stream live progress to the browser.
+
+### Docker CLI (single run)
 
 ```bash
 cp .env.example .env   # fill in your API keys
@@ -50,13 +62,10 @@ cp .env.example .env   # fill in your API keys
 docker run --env-file .env --shm-size=2gb -v ./output:/output ghcr.io/tsensei/openreels "5 stoic lessons that changed my life"
 ```
 
-Or with docker-compose:
+Or run the CLI through Docker Compose:
 
 ```bash
-git clone https://github.com/tsensei/OpenReels.git
-cd OpenReels
-cp .env.example .env   # fill in your API keys
-docker compose run openreels "5 stoic lessons that changed my life"
+docker compose run worker npx tsx src/index.ts --yes "5 stoic lessons that changed my life"
 ```
 
 ### Local development
@@ -132,7 +141,7 @@ The rewrite moves from Python to TypeScript for native [Remotion](https://www.re
 
 ## Status
 
-v0.3.0 shipped. The core pipeline works end-to-end with Docker support for one-command usage on any platform. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
+v0.4.0 shipped. The core pipeline works end-to-end with a web UI, REST API, and Docker Compose for one-command usage on any platform. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
 
 ## License
 

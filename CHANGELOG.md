@@ -9,24 +9,25 @@ All notable changes to OpenReels will be documented in this file.
 - REST API (Fastify) for programmatic job management. Create, list, monitor, cancel, and delete render jobs via `/api/v1/` endpoints.
 - Server-Sent Events (SSE) streaming for real-time job progress. Each pipeline stage emits typed events as it runs.
 - BullMQ job queue backed by Redis. Jobs survive restarts, support cancellation between stages, and auto-prune when `MAX_JOBS` is set.
-- Worker process that runs the rendering pipeline with callback-driven progress reporting, decoupled from the CLI.
-- Provider factory with bring-your-own-key (BYOK) support. Submit custom API keys per job without storing them server-side.
+- Background worker process runs rendering jobs independently from the CLI, with live progress callbacks.
+- Bring-your-own-key (BYOK) support. Submit your own API keys per job without storing them server-side.
 - Job gallery page with archetype color palette (14 distinct colors) and time-ago labels.
 - Settings page for API key management (stored in browser localStorage).
-- Artifact serving with path traversal protection for downloading generated videos, images, and audio.
+- Download generated videos, images, and audio directly from the web UI.
 - Health check endpoint (`/api/v1/health`) with Redis and filesystem status.
-- Progressive reveal pipeline UI. Research summary, director score, and critic review appear in real time as each stage completes, so you can watch the AI think.
-- Rich SSE data events stream research results, the full director score, and critic review to the frontend. Reconnecting clients recover full state from meta.json.
-- Dedicated panels for each job state: running (progressive data reveal), completed (video player, stats, quality review, cost breakdown), and failed (error details with stage identification).
-- Scene asset URL generation and scene cards with visual type badges (AI, Stock, Stock Video, Text).
-- `StockProviderKey` type export for consistent stock provider typing.
+- Progressive reveal during rendering. Research summary, director score, and critic review appear in real time as each stage completes, so you can watch the AI think.
+- Reconnecting clients recover full pipeline state automatically, no missed events.
+- Three dedicated job views: running (progressive data reveal), completed (video player, quality review, cost breakdown), and failed (error details with the exact stage that broke).
+- Scene cards with visual type badges show what's being generated (AI image, stock photo, stock video, or text card).
 
 ### Changed
-- Pipeline orchestrator refactored to use a `PipelineCallbacks` interface with `onProgress` events, decoupling progress reporting from terminal output. Both CLI and web worker provide their own callbacks.
-- StageCard refactored to CSS Grid timeline layout with running substatus display and connector lines.
-- CLI entry point (`src/index.ts`) now uses the shared provider factory and callback system instead of inline provider construction.
 - Docker Compose upgraded from single-service CLI to 3-service architecture (Redis + API + Worker) with shared job volume.
 - Dockerfile builds the React frontend during image creation and serves it via Fastify.
+- Pipeline timeline shows running substatus (e.g., "Rendering 450 frames") and connector lines between stages.
+
+### For contributors
+- Pipeline orchestrator uses a `PipelineCallbacks` interface with `onProgress` events, decoupling progress from terminal output.
+- CLI entry point uses the shared provider factory and callback system.
 - Imports alphabetized across all source files.
 
 ## [0.3.0] - 2026-04-01
