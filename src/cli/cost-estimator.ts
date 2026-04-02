@@ -70,12 +70,15 @@ export function estimateCost(
   score: DirectorScore,
   imageProvider: ImageProviderKey = "gemini",
   ttsProvider: TTSProviderKey = "elevenlabs",
+  provider: LLMProviderKey = "anthropic",
 ): CostBreakdown {
   const aiImages = score.scenes.filter((s) => s.visual_type === "ai_image").length;
   const ttsCharacters = score.scenes.reduce((sum, s) => sum + s.script_line.length, 0);
   const llmCalls = 3 + aiImages; // research + CD + critic + 1 per ai_image
 
-  const p = PRICING.anthropic; // conservative estimate
+  const p = provider === "ollama"
+    ? { perInputToken: 0, perOutputToken: 0 }
+    : PRICING[provider];
   const callCost = (est: { input: number; output: number }) =>
     est.input * p.perInputToken + est.output * p.perOutputToken;
 

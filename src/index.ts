@@ -47,7 +47,7 @@ async function main(): Promise<void> {
   }
 
   // Build CLI callbacks (wraps ProgressDisplay + cost/log printing)
-  const { callbacks, progress } = createCliCallbacks(opts.yes);
+  const { callbacks } = createCliCallbacks(opts.yes);
 
   // Run pipeline
   const result = await runPipeline(
@@ -69,8 +69,6 @@ async function main(): Promise<void> {
     },
     callbacks,
   );
-
-  progress.summary();
 
   if (result.videoPath) {
     console.log(`\nDone! Video saved to: ${result.videoPath}`);
@@ -146,7 +144,6 @@ async function collectTopicBrief(
     const text = await ask(`  > `);
     rl.close();
     console.info("");
-    // summary carries the full user text; key_facts left empty to avoid duplication.
     return {
       summary: text || `Topic: ${topic}`,
       key_facts: [],
@@ -195,8 +192,6 @@ async function collectTopicBrief(
 
   rl.close();
 
-  // key_facts = each non-empty answer as a standalone atomic fact.
-  // summary = prose joining all answers so the director has full narrative context.
   const key_facts = answers.filter(Boolean);
   const summary = key_facts.length > 0
     ? key_facts.join(". ")

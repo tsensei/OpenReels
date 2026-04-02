@@ -40,14 +40,14 @@ export class ChatterboxTTS implements TTSProvider {
         args.push("--audio-prompt", this.audioPrompt);
       }
 
-      console.info(
-        `\nChatterbox Turbo: generating audio` +
-        (this.device !== "cpu" ? ` (device: ${this.device})` : ` (device: cpu — may be slow)`) +
+      process.stderr.write(
+        `\n  Chatterbox Turbo: synthesising audio` +
+        (this.device !== "cpu" ? ` on ${this.device}` : ` on cpu (may be slow)`) +
         `...\n`,
       );
 
-      // Use async spawn so stderr streams live to the terminal (shows model load progress)
-      // and the Node.js event loop is not blocked during the potentially long model load.
+      // Async spawn — stderr is captured and filtered so raw tqdm progress bars
+      // don't pollute the terminal alongside the Node.js pipeline progress spinner.
       await spawnAsync(this.pythonBin, args);
 
       if (!fs.existsSync(wavPath)) {
@@ -103,13 +103,46 @@ export class ChatterboxTTS implements TTSProvider {
 
 /**
  * Async wrapper around child_process.spawn.
- * Streams stderr live to the terminal so users can see Chatterbox model loading progress.
+ *
+ * Captures Python's stderr and filters it so that:
+ *   - Raw tqdm progress bars (the noisy `0%|█ | 0/1000` lines) are suppressed
+ *   - Key status messages (model loading, "Audio saved") are forwarded as clean lines
+ *   - Any unexpected errors are still surfaced on stderr for debugging
+ *
  * Rejects with a descriptive error if the process exits non-zero.
  */
 function spawnAsync(bin: string, args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(bin, args, {
-      stdio: ["ignore", "pipe", "inherit"], // stdout captured (not used), stderr → terminal live
+      stdio: ["ignore", "pipe", "pipe"], // capture both stdout and stderr
+    });
+
+    // Accumulate stderr to surface on failure, and filter noisy lines in real-time
+    const stderrLines: string[] = [];
+    let stderrBuf = "";
+
+    child.stderr?.on("data", (chunk: Buffer) => {
+      stderrBuf += chunk.toString();
+      const lines = stderrBuf.split("\n");
+      stderrBuf = lines.pop() ?? ""; // keep incomplete last line in buffer
+
+      for (const line of lines) {
+        stderrLines.push(line);
+        const cleaned = line.trim();
+        if (!cleaned) continue;
+
+        // Suppress tqdm progress bars: they contain "|" and "it/s" or "%|"
+        if (/\d+%\|/.test(cleaned) || /it\/s\]/.test(cleaned)) continue;
+        // Suppress diffusers FutureWarning noise
+        if (/FutureWarning|LoRACompatible|deprecate/.test(cleaned)) continue;
+        // Suppress blank carriage-return lines tqdm emits
+        if (/^\r/.test(cleaned)) continue;
+
+        // Forward meaningful status messages cleanly
+        if (/Loading|loaded|Fetching|S3 Token|Audio saved|Timestamps/.test(cleaned)) {
+          process.stderr.write(`  ${cleaned}\n`);
+        }
+      }
     });
 
     child.on("error", (err) => {
@@ -117,10 +150,18 @@ function spawnAsync(bin: string, args: string[]): Promise<void> {
     });
 
     child.on("close", (code) => {
+      // Flush any remaining buffered stderr
+      if (stderrBuf.trim()) stderrLines.push(stderrBuf);
+
       if (code === 0) {
+        process.stderr.write(`  Chatterbox Turbo: audio ready.\n\n`);
         resolve();
       } else {
-        reject(new Error(`Chatterbox TTS script exited with code ${code ?? "unknown"}.`));
+        // On failure, print the last few lines of stderr to aid debugging
+        const tail = stderrLines.slice(-10).join("\n");
+        reject(new Error(
+          `Chatterbox TTS script exited with code ${code ?? "unknown"}.\n${tail}`,
+        ));
       }
     });
   });

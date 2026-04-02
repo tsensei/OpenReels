@@ -81,8 +81,10 @@ export async function selectOllamaModel(
   label: string,
   lockToKnown = false,
 ): Promise<string> {
-  // Build a lookup: base name → full pulled tag (e.g. "gemma3" → "gemma3:27b")
-  // When the user has multiple tags of the same base, prefer non-"latest" tags (more specific).
+  // Build two lookups:
+  //   pulledExact:  full tag → true  (e.g. "x/flux2-klein:4b" → true)
+  //   pulledByBase: base     → full tag (e.g. "gemma3" → "gemma3:27b") for base-only entries
+  const pulledExact = new Set(pulledModels);
   const pulledByBase = new Map<string, string>();
   for (const fullTag of pulledModels) {
     const base = fullTag.replace(/:.*$/, "");
@@ -92,13 +94,33 @@ export async function selectOllamaModel(
     }
   }
 
+  /**
+   * Resolve display name for a known model entry:
+   *   1. If the exact tag is pulled, show it as-is.
+   *   2. If only a different tag of the same base is pulled, show the pulled tag.
+   *   3. Otherwise show the known entry unchanged (unpulled, recommended tag).
+   */
   const resolveDisplayName = (knownEntry: string): string => {
+    if (pulledExact.has(knownEntry)) return knownEntry;
     const base = knownEntry.replace(/:.*$/, "");
     return pulledByBase.get(base) ?? knownEntry;
   };
 
-  const isPulled = (knownEntry: string): boolean =>
-    pulledByBase.has(knownEntry.replace(/:.*$/, ""));
+  /**
+   * A known entry is considered "pulled" if:
+   *   - Its exact tag is pulled (e.g. "x/flux2-klein:4b" pulled → "x/flux2-klein:4b" ✓)
+   *   - OR it has no explicit tag in the known list (bare name like "gemma3") and any tag
+   *     of that base is pulled (e.g. user pulled "gemma3:27b" → "gemma3" ✓)
+   * This prevents x/flux2-klein:9b from showing as pulled just because :4b is pulled.
+   */
+  const isPulled = (knownEntry: string): boolean => {
+    if (pulledExact.has(knownEntry)) return true;
+    // Only fall back to base matching when the known entry has no tag (no ":")
+    // or uses ":latest" — i.e. it's not a specific version tag
+    const tag = knownEntry.includes(":") ? knownEntry.split(":")[1] : null;
+    if (tag && tag !== "latest") return false;
+    return pulledByBase.has(knownEntry.replace(/:.*$/, ""));
+  };
 
   const pulledKnown = knownModels.filter(isPulled);
   const unpulledKnown = knownModels.filter((m) => !isPulled(m));
