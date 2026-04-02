@@ -247,7 +247,7 @@ worker.on("failed", (job, err) => {
     const jobDir = path.join(JOBS_DIR, job.id);
     try {
       const meta = JSON.parse(fs.readFileSync(path.join(jobDir, "meta.json"), "utf-8"));
-      meta.status = "failed";
+      meta.status = meta.cancelRequested ? "cancelled" : "failed";
       meta.error = err.message;
       meta.completedAt = new Date().toISOString();
       // Mark whatever stage was "running" as "error" so the UI can identify it
