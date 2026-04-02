@@ -39,6 +39,17 @@ export function JobPage() {
 
   useEffect(() => {
     if (!id) return;
+    // Reset all state when navigating to a different job
+    setJob(null);
+    setError("");
+    setScore(null);
+    setResearchData(null);
+    setCriticReview(null);
+    setCostEstimate(null);
+    setAssemblyProgress(null);
+    setAssetFailures([]);
+    setCancelling(false);
+
     api
       .getJob(id)
       .then((j) => {

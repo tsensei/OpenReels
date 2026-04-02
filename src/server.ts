@@ -153,6 +153,24 @@ app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
     jobsDir: JOBS_DIR,
   });
 
+  // Create placeholder meta.json so GET /jobs/:id never 404s for a queued job
+  const jobDir = path.join(JOBS_DIR, job.id!);
+  fs.mkdirSync(jobDir, { recursive: true });
+  const placeholderMeta = {
+    id: job.id,
+    topic: topic.trim(),
+    archetype,
+    status: "queued",
+    createdAt: new Date().toISOString(),
+    stages: Object.fromEntries(
+      ["research", "director", "tts", "visuals", "assembly", "critic"].map((s) => [
+        s,
+        { status: "pending" },
+      ]),
+    ),
+  };
+  fs.writeFileSync(path.join(jobDir, "meta.json"), JSON.stringify(placeholderMeta, null, 2));
+
   return reply.status(201).send({
     id: job.id,
     topic: topic.trim(),
