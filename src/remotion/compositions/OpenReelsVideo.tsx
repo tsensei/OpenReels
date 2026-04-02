@@ -116,8 +116,8 @@ const Main: React.FC<CompositionProps> = ({
       {/* Voiceover — single continuous audio track */}
       {voiceoverSrc && <Audio src={resolveAsset(voiceoverSrc)!} />}
 
-      {/* Background music with ducking (computed inside MusicTrack from word timestamps) */}
-      {musicSrc && <MusicTrack src={resolveAsset(musicSrc)!} words={allWords ?? []} />}
+      {/* Background music — flat volume under continuous voiceover */}
+      {musicSrc && <MusicTrack src={resolveAsset(musicSrc)!} />}
     </AbsoluteFill>
   );
 };

@@ -121,6 +121,7 @@ export interface PipelineOptions {
   preview: boolean;
   outputDir: string;
   yes: boolean;
+  noMusic?: boolean;
 }
 
 export interface PipelineResult {
@@ -307,6 +308,29 @@ export async function runPipeline(
       return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
     }
 
+    // Music selection (between visuals and assembly)
+    let musicFilePath: string | null = null;
+    let musicSelection: { trackId: string; mood: string; requestedMood: string; fallback: boolean } | null = null;
+    if (!opts.noMusic) {
+      try {
+        const { selectTrack } = await import("../providers/music/bundled.js");
+        const selection = selectTrack(directorScore.music_mood);
+        if (selection) {
+          musicFilePath = selection.filePath;
+          musicSelection = selection;
+          cb.onProgress?.("assembly", {
+            type: "music",
+            track: selection.trackId,
+            mood: selection.mood,
+            requestedMood: selection.requestedMood,
+            fallback: selection.fallback,
+          });
+        }
+      } catch (err) {
+        console.warn(`[orchestrator] Music selection failed, proceeding without music: ${err}`);
+      }
+    }
+
     // Stage 5: Remotion Assembly
     cb.onStageStart?.("assembly");
     const assemblyStart = Date.now();
@@ -322,6 +346,11 @@ export async function runPipeline(
     // Voiceover also needs to be accessible
     fs.copyFileSync(voiceoverPath, path.join(publicDir, "voiceover.mp3"));
 
+    // Copy music track to publicDir if selected
+    if (musicFilePath) {
+      fs.copyFileSync(musicFilePath, path.join(publicDir, "music.mp3"));
+    }
+
     const compositionProps = mapScoreToProps(
       directorScore,
       {
@@ -331,7 +360,7 @@ export async function runPipeline(
           return `assets/${filename}`;
         }),
         voiceoverPath: "voiceover.mp3",
-        musicPath: null,
+        musicPath: musicFilePath ? "music.mp3" : null,
         sceneWords,
         allWords: ttsResult.words,
         sceneSourceDurations,

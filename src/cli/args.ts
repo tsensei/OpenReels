@@ -16,6 +16,7 @@ export interface CLIOptions {
   preview: boolean;
   output: string;
   yes: boolean;
+  noMusic: boolean;
 }
 
 export function parseArgs(): CLIOptions {
@@ -47,6 +48,7 @@ export function parseArgs(): CLIOptions {
     .option("--preview", "Open Remotion Studio preview after rendering", false)
     .option("-o, --output <dir>", "Output directory", "./output")
     .option("-y, --yes", "Auto-confirm cost estimation prompt (non-interactive mode)", false)
+    .option("--no-music", "Disable background music in the generated video", false)
     .parse();
 
   const topic = program.args[0] ?? "";
@@ -67,5 +69,6 @@ export function parseArgs(): CLIOptions {
     preview: opts["preview"] as boolean,
     output: opts["output"] as string,
     yes: opts["yes"] as boolean,
+    noMusic: opts["noMusic"] as boolean,
   };
 }

@@ -41,6 +41,7 @@ async function main(): Promise<void> {
       preview: opts.preview,
       outputDir: opts.output,
       yes: opts.yes,
+      noMusic: opts.noMusic,
     },
     callbacks,
   );

@@ -25,6 +25,7 @@ interface JobData {
   archetype?: string;
   platform: string;
   dryRun: boolean;
+  noMusic?: boolean;
   providers: {
     llm: string;
     tts: string;
@@ -51,6 +52,7 @@ interface JobMeta {
   researchData?: { summary: string; key_facts: string[]; mood: string };
   score?: unknown; // DirectorScore
   criticReview?: { score: number; strengths: string[]; weaknesses: string[] };
+  musicTrack?: { trackId: string; mood: string; requestedMood: string; fallback: boolean };
   error?: string;
 }
 
@@ -63,7 +65,7 @@ function writeMeta(jobDir: string, meta: JobMeta) {
 const worker = new Worker<JobData>(
   "openreels",
   async (job: Job<JobData>) => {
-    const { topic, archetype, platform, dryRun, providers, keys } = job.data;
+    const { topic, archetype, platform, dryRun, noMusic, providers, keys } = job.data;
     const jobDir = path.join(JOBS_DIR, job.id!);
     fs.mkdirSync(jobDir, { recursive: true });
 
@@ -126,6 +128,9 @@ const worker = new Worker<JobData>(
         } else if (data.type === "score") {
           meta.score = data.score;
           writeMeta(jobDir, meta);
+        } else if (data.type === "music") {
+          meta.musicTrack = { trackId: data.track as string, mood: data.mood as string, requestedMood: data.requestedMood as string, fallback: data.fallback as boolean };
+          writeMeta(jobDir, meta);
         } else if (data.type === "review") {
           meta.criticReview = { score: data.score as number, strengths: data.strengths as string[], weaknesses: data.weaknesses as string[] };
           writeMeta(jobDir, meta);
@@ -179,6 +184,7 @@ const worker = new Worker<JobData>(
         archetype,
         platform,
         dryRun,
+        noMusic,
         preview: false,
         outputDir: jobDir,
         yes: true,
