@@ -152,10 +152,14 @@ const worker = new Worker<JobData>(
       },
 
       isCancelled() {
-        // Check meta.json for cancel flag
+        // Check meta.json for cancel flag and sync back to in-memory meta
         try {
           const currentMeta = JSON.parse(fs.readFileSync(path.join(jobDir, "meta.json"), "utf-8"));
-          return currentMeta.cancelRequested === true;
+          if (currentMeta.cancelRequested === true) {
+            meta.cancelRequested = true;
+            return true;
+          }
+          return false;
         } catch {
           return false;
         }

@@ -256,7 +256,7 @@ export function HomePage() {
         </form>
 
         {/* Suggestion Chips */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center justify-center gap-2.5">
           {SUGGESTIONS.map((s) => (
             <button
               key={s}

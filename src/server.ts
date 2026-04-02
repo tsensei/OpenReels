@@ -117,6 +117,9 @@ app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
   if (!topic || typeof topic !== "string" || topic.trim().length === 0) {
     return reply.status(400).send({ error: "topic is required" });
   }
+  if (topic.trim().length > 500) {
+    return reply.status(400).send({ error: "topic must be 500 characters or fewer" });
+  }
 
   // Validate archetype if provided
   if (archetype) {
@@ -210,8 +213,28 @@ app.get<{ Params: { id: string } }>("/api/v1/jobs/:id/events", async (request, r
   const jobId = request.params.id;
 
   // Check if job exists in BullMQ
+  const jobDir = path.join(JOBS_DIR, jobId);
+  const metaPath = path.join(jobDir, "meta.json");
   const job = await queue.getJob(jobId);
   if (!job) {
+    // Job may have been cleaned from BullMQ (Redis restart, etc.) — fallback to meta.json
+    if (fs.existsSync(metaPath)) {
+      try {
+        const meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+        if (meta.status === "completed" || meta.status === "failed" || meta.status === "cancelled") {
+          reply.raw.writeHead(200, {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            Connection: "keep-alive",
+          });
+          reply.raw.write(`event: job:snapshot\ndata: ${JSON.stringify(meta)}\n\n`);
+          const terminalEvent = meta.status === "completed" ? "job:completed" : "job:failed";
+          reply.raw.write(`event: ${terminalEvent}\ndata: ${JSON.stringify({ state: meta.status })}\n\n`);
+          reply.raw.end();
+          return;
+        }
+      } catch {}
+    }
     return reply.status(404).send({ error: "Job not found" });
   }
 
@@ -222,8 +245,6 @@ app.get<{ Params: { id: string } }>("/api/v1/jobs/:id/events", async (request, r
   });
 
   // Send current state as snapshot
-  const jobDir = path.join(JOBS_DIR, jobId);
-  const metaPath = path.join(jobDir, "meta.json");
   if (fs.existsSync(metaPath)) {
     try {
       const meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
@@ -346,7 +367,11 @@ app.post<{ Params: { id: string } }>("/api/v1/jobs/:id/cancel", async (request, 
     } catch {}
   }
 
-  await job.moveToFailed(new Error("Cancelled by user"), "0", true);
+  // moveToFailed handles queued jobs; for active jobs the token won't match
+  // the worker's lock, so we catch and rely on cancelRequested flag instead
+  try {
+    await job.moveToFailed(new Error("Cancelled by user"), "0", true);
+  } catch {}
   return { status: "cancelled" };
 });
 
