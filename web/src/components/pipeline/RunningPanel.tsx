@@ -10,7 +10,6 @@ interface RunningPanelProps {
   researchData: ResearchData | null;
   score: DirectorScore | null;
   costEstimate: CostBreakdown | null;
-  assemblyProgress: { phase: string; totalFrames?: number } | null;
   assetFailures: Array<{ scene: number; error: string }>;
   stages: Record<string, { status: string; detail?: string; durationSec?: number }>;
 }

@@ -372,7 +372,6 @@ export function JobPage() {
               researchData={researchData}
               score={score}
               costEstimate={costEstimate}
-              assemblyProgress={assemblyProgress}
               assetFailures={assetFailures}
               stages={job.stages ?? {}}
             />
