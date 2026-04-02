@@ -3,7 +3,7 @@ import * as path from "node:path";
 import { z } from "zod";
 import { listArchetypes } from "../config/archetype-registry.js";
 import { loadPlaybook } from "../config/playbook.js";
-import { DirectorScore, Motion, TransitionType, VisualType } from "../schema/director-score.js";
+import { DirectorScore, Motion, MusicMood, TransitionType, VisualType } from "../schema/director-score.js";
 import type { LLMProvider, LLMUsage } from "../schema/providers.js";
 import type { ResearchResult } from "./research.js";
 
@@ -13,7 +13,7 @@ const SYSTEM_PROMPT_PATH = path.join(process.cwd(), "prompts", "creative-directo
 const DirectorScoreRaw = z.object({
   emotional_arc: z.string(),
   archetype: z.enum(listArchetypes() as [string, ...string[]]),
-  music_mood: z.string(),
+  music_mood: MusicMood,
   scenes: z.array(
     z.object({
       visual_type: VisualType,
@@ -111,7 +111,7 @@ function buildDefaultPrompt(): string {
 You must output a DirectorScore with:
 - emotional_arc: A journey descriptor (e.g., "curiosity-to-wisdom", "shock-to-understanding")
 - archetype: Visual style that drives transitions, colors, and captions
-- music_mood: Tag for background music selection (e.g., "epic_cinematic", "chill_lofi", "tense_electronic")
+- music_mood: MUST be exactly one of: "epic_cinematic", "tense_electronic", "chill_lofi", "uplifting_pop", "mysterious_ambient", "warm_acoustic", "dark_cinematic", "dreamy_ethereal"
 - scenes: Array of 4-7 scenes, each with visual_type, visual_prompt, motion, script_line, and an optional transition (crossfade, slide_left, slide_right, wipe, flip, or omit for archetype default)
 
 GOLDEN RULE: Never use the same visual_type more than 2 times consecutively. Mix ai_image, stock_image, stock_video, and text_card for variety.

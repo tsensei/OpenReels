@@ -12,7 +12,7 @@ const makeScore = (scenes: Array<{ visual_type: string; script_line: string }>):
   ({
     emotional_arc: "test",
     archetype: "test",
-    music_mood: "test",
+    music_mood: "epic_cinematic",
     scenes: scenes.map((s) => ({
       ...s,
       visual_prompt: "prompt",

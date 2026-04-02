@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DirectorScore } from "./director-score.js";
+import { DirectorScore, MusicMood } from "./director-score.js";
 
 const validScene = (type: string) => ({
   visual_type: type,
@@ -105,6 +105,26 @@ describe("DirectorScore schema", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.scenes[0]!.transition).toBeUndefined();
+    }
+  });
+
+  it("rejects an invalid music_mood value", () => {
+    const result = DirectorScore.safeParse({
+      ...baseScore,
+      music_mood: "invalid_mood",
+      scenes: [validScene("text_card"), validScene("ai_image"), validScene("stock_video")],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts all valid MusicMood enum values", () => {
+    for (const mood of MusicMood.options) {
+      const result = DirectorScore.safeParse({
+        ...baseScore,
+        music_mood: mood,
+        scenes: [validScene("text_card"), validScene("ai_image"), validScene("stock_video")],
+      });
+      expect(result.success).toBe(true);
     }
   });
 });

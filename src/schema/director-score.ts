@@ -1,5 +1,17 @@
 import { z } from "zod";
 
+export const MusicMood = z.enum([
+  "epic_cinematic",
+  "tense_electronic",
+  "chill_lofi",
+  "uplifting_pop",
+  "mysterious_ambient",
+  "warm_acoustic",
+  "dark_cinematic",
+  "dreamy_ethereal",
+]);
+export type MusicMood = z.infer<typeof MusicMood>;
+
 export const VisualType = z.enum(["ai_image", "stock_image", "stock_video", "text_card"]);
 export type VisualType = z.infer<typeof VisualType>;
 
@@ -31,7 +43,7 @@ export const DirectorScore = z
   .object({
     emotional_arc: z.string().min(1),
     archetype: z.string().min(1),
-    music_mood: z.string().min(1),
+    music_mood: MusicMood,
     scenes: z.array(Scene).min(3).max(10),
   })
   .refine(

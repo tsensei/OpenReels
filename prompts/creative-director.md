@@ -7,7 +7,7 @@ Your job is to create a detailed per-scene production plan called a DirectorScor
 Output a JSON object with:
 - **emotional_arc**: A journey descriptor (e.g., "curiosity-to-wisdom", "shock-to-understanding", "wonder-to-appreciation")
 - **archetype**: Visual style key that drives transitions, colors, and caption style. Choose from the available archetypes.
-- **music_mood**: Tag for background music (e.g., "epic_cinematic", "chill_lofi", "tense_electronic", "uplifting_pop", "mysterious_ambient")
+- **music_mood**: MUST be exactly one of: "epic_cinematic", "tense_electronic", "chill_lofi", "uplifting_pop", "mysterious_ambient", "warm_acoustic", "dark_cinematic", "dreamy_ethereal"
 - **scenes**: Array of 4-7 scenes
 
 Each scene has:
