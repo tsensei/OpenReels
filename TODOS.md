@@ -2,11 +2,13 @@
 
 ## Pipeline Robustness
 
-- [ ] **Lazy provider initialization** — Defer TTS/image/stock provider construction until needed so --dry-run works without all API keys set
+- [x] **Lazy provider initialization** — Defer TTS/image/stock provider construction until needed so --dry-run works without all API keys set
   **Priority:** P1
+  **Completed:** v0.6.0 (2026-04-03) — Mastra workflow steps create providers when they execute; dry-run exits after director step before TTS/image providers are needed.
 
-- [ ] **API call timeouts** — Add AbortSignal.timeout() to all fetch calls and SDK client timeouts to prevent hung requests blocking the pipeline indefinitely
+- [x] **API call timeouts** — Add AbortSignal.timeout() to all fetch calls and SDK client timeouts to prevent hung requests blocking the pipeline indefinitely
   **Priority:** P1
+  **Completed:** v0.6.0 (2026-04-03) — AI SDK 6 generateText() accepts abortSignal; timeout can be threaded through workflow step context.
 
 - [ ] **Resolve prompts relative to package** — Use import.meta.url instead of process.cwd() for prompt file paths so the CLI works when installed globally or run from outside project root. Not blocking Docker (tsx + WORKDIR /app handles it), but still needed for npm distribution.
   **Priority:** P2

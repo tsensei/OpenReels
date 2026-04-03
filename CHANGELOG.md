@@ -2,6 +2,19 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.6.0] - 2026-04-03
+
+### Changed
+- Pipeline orchestrator rewritten with Mastra workflow framework. The 6-stage pipeline (research, director, TTS, visuals, assembly, critic) is now a declarative Mastra workflow graph instead of a 630-line imperative function. Same behavior, better readability for contributors.
+- LLM providers (Anthropic, OpenAI) migrated from raw SDK calls to Vercel AI SDK 6 `generateText()` with `Output.object()` for structured output. Two-pass web search pattern preserved via provider-native tools.
+- DirectorScore scene `transition` field changed from `.optional()` to `.nullable()` for OpenAI structured output compatibility with AI SDK 6's stricter schema handling.
+- Pure utility functions (`splitWordsIntoScenes`, `getVideoDuration`, `confirm`) extracted to `src/pipeline/utils.ts` for reuse outside the orchestrator.
+
+### Added
+- `@mastra/core` dependency for workflow orchestration.
+- `ai`, `@ai-sdk/anthropic`, `@ai-sdk/openai` dependencies for unified LLM provider interface.
+- `src/pipeline/utils.ts` with shared pipeline types (`PipelineCallbacks`, `PipelineOptions`, `PipelineResult`, `STAGE_NAMES`) and utility functions.
+
 ## [0.5.0] - 2026-04-02
 
 ### Added
