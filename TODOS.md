@@ -6,9 +6,8 @@
   **Priority:** P1
   **Completed:** v0.6.0 (2026-04-03) — Mastra workflow steps create providers when they execute; dry-run exits after director step before TTS/image providers are needed.
 
-- [x] **API call timeouts** — Add AbortSignal.timeout() to all fetch calls and SDK client timeouts to prevent hung requests blocking the pipeline indefinitely
+- [ ] **API call timeouts** — Wire AbortSignal.timeout() through AI SDK 6 generateText() calls and TTS/image fetch calls to prevent hung requests. AI SDK 6 supports abortSignal natively but it's not yet passed through the LLMProvider interface or workflow steps.
   **Priority:** P1
-  **Completed:** v0.6.0 (2026-04-03) — AI SDK 6 generateText() accepts abortSignal; timeout can be threaded through workflow step context.
 
 - [ ] **Resolve prompts relative to package** — Use import.meta.url instead of process.cwd() for prompt file paths so the CLI works when installed globally or run from outside project root. Not blocking Docker (tsx + WORKDIR /app handles it), but still needed for npm distribution.
   **Priority:** P2

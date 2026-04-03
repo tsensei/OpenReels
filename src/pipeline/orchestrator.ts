@@ -196,6 +196,34 @@ function buildPipelineWorkflow(
   llmUsages: LLMUsage[],
   log: RunLog,
 ) {
+  // Shared mutable state accessed by steps via closure.
+  // Declared here (top of function) so the data flow is visible before the steps.
+  // Steps close over these bindings — values are set during execution, not at definition time.
+  // Non-serializable data (providers, callbacks) can't pass through Mastra's stateSchema,
+  // so steps receive them via closure and share intermediate results through these objects.
+  const directorResult: {
+    score?: DirectorScore;
+    config?: ArchetypeConfig;
+    costBreakdown?: CostBreakdown;
+    dryRunExit?: boolean;
+    costRejected?: boolean;
+  } = {};
+
+  const ttsResult: {
+    words?: WordTimestamp[];
+    voiceoverPath?: string;
+    sceneWords?: WordTimestamp[][];
+  } = {};
+
+  const visualsResult: {
+    sceneAssets: (string | null)[];
+    sceneSourceDurations: (number | null)[];
+    musicFilePath?: string | null;
+    musicSelection?: { trackId: string; mood: string; requestedMood: string; fallback: boolean } | null;
+  } = { sceneAssets: [], sceneSourceDurations: [] };
+
+  const assemblyResult: { videoPath?: string | null } = {};
+
   // ── Step 1: Research ────────────────────────────────────────────────────
   const researchStep = createStep({
     id: "research",
@@ -531,30 +559,6 @@ function buildPipelineWorkflow(
       return { done: true };
     },
   });
-
-  // Shared mutable state accessed by steps via closure
-  const directorResult: {
-    score?: DirectorScore;
-    config?: ArchetypeConfig;
-    costBreakdown?: CostBreakdown;
-    dryRunExit?: boolean;
-    costRejected?: boolean;
-  } = {};
-
-  const ttsResult: {
-    words?: WordTimestamp[];
-    voiceoverPath?: string;
-    sceneWords?: WordTimestamp[][];
-  } = {};
-
-  const visualsResult: {
-    sceneAssets: (string | null)[];
-    sceneSourceDurations: (number | null)[];
-    musicFilePath?: string | null;
-    musicSelection?: { trackId: string; mood: string; requestedMood: string; fallback: boolean } | null;
-  } = { sceneAssets: [], sceneSourceDurations: [] };
-
-  const assemblyResult: { videoPath?: string | null } = {};
 
   // Build the workflow graph
   const workflow = createWorkflow({
