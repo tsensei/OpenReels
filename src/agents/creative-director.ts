@@ -22,7 +22,7 @@ const DirectorScoreRaw = z.object({
       visual_prompt: z.string(),
       motion: Motion,
       script_line: z.string(),
-      transition: TransitionType.optional(),
+      transition: TransitionType.nullable(),
     }),
   ),
 });
