@@ -655,7 +655,7 @@ export async function runPipeline(
 
   try {
     // Build Mastra workflow with steps that close over opts, callbacks, and shared state
-    const { workflow, directorResult, assemblyResult } = buildPipelineWorkflow(
+    const { workflow, directorResult, visualsResult, assemblyResult } = buildPipelineWorkflow(
       opts,
       cb,
       runDir,
