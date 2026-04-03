@@ -17,6 +17,10 @@ export interface CLIOptions {
   output: string;
   yes: boolean;
   noMusic: boolean;
+  stockVerify: boolean;
+  stockConfidence: number;
+  stockMaxAttempts: number;
+  verificationModel?: string;
 }
 
 export function parseArgs(): CLIOptions {
@@ -49,6 +53,10 @@ export function parseArgs(): CLIOptions {
     .option("-o, --output <dir>", "Output directory", "./output")
     .option("-y, --yes", "Auto-confirm cost estimation prompt (non-interactive mode)", false)
     .option("--music", "Include background music (use --no-music to disable)", true)
+    .option("--stock-verify", "Verify stock footage with vision model (use --no-stock-verify to disable)", true)
+    .option("--stock-confidence <n>", "Min confidence threshold for stock verification (0-1)", parseFloat, 0.6)
+    .option("--stock-max-attempts <n>", "Max stock API calls per scene", parseInt, 4)
+    .option("--verification-model <model>", "Model override for stock verification VLM")
     .parse();
 
   const topic = program.args[0] ?? "";
@@ -70,5 +78,9 @@ export function parseArgs(): CLIOptions {
     output: opts["output"] as string,
     yes: opts["yes"] as boolean,
     noMusic: opts["music"] === false,
+    stockVerify: opts["stockVerify"] as boolean,
+    stockConfidence: opts["stockConfidence"] as number,
+    stockMaxAttempts: opts["stockMaxAttempts"] as number,
+    verificationModel: opts["verificationModel"] as string | undefined,
   };
 }

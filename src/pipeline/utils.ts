@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import * as readline from "node:readline";
 import type { ActualCostBreakdown, CostBreakdown } from "../cli/cost-estimator.js";
 import type { DirectorScore } from "../schema/director-score.js";
+import type { LanguageModel } from "ai";
 import type {
   ImageProvider,
   ImageProviderKey,
@@ -29,7 +30,7 @@ export interface PipelineCallbacks {
   onStageSkip?(stage: StageName, reason: string): void;
   onStageError?(stage: StageName, error: string): void;
   onProgress?(stage: StageName, data: Record<string, unknown>): void;
-  onCostEstimate?(estimate: CostBreakdown, imageProvider: ImageProviderKey): Promise<boolean>;
+  onCostEstimate?(estimate: CostBreakdown, imageProvider: ImageProviderKey, stockSceneCount?: number): Promise<boolean>;
   onActualCost?(cost: ActualCostBreakdown): void;
   onLog?(message: string): void;
   /** Called when pipeline is cancelled between stages. Return true if cancelled. */
@@ -43,7 +44,7 @@ export interface PipelineOptions {
   ttsProvider: TTSProviderKey;
   imageGen: ImageProvider;
   imageProvider: ImageProviderKey;
-  stock: StockProvider;
+  stock: StockProvider[];
   archetype?: string;
   platform: string;
   dryRun: boolean;
@@ -51,6 +52,10 @@ export interface PipelineOptions {
   outputDir: string;
   yes: boolean;
   noMusic?: boolean;
+  stockVerify?: boolean;
+  stockConfidence?: number;
+  stockMaxAttempts?: number;
+  verifyModel?: LanguageModel;
 }
 
 export interface PipelineResult {

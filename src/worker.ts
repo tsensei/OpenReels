@@ -4,7 +4,7 @@ import { type Job, Worker } from "bullmq";
 import IORedis from "ioredis";
 import type { PipelineCallbacks, StageName } from "./pipeline/orchestrator.js";
 import { runPipeline } from "./pipeline/orchestrator.js";
-import { createProviders } from "./providers/factory.js";
+import { createProviders, createVerificationModel } from "./providers/factory.js";
 import { validateManifest } from "./providers/music/bundled.js";
 import type {
   ImageProviderKey,
@@ -182,6 +182,14 @@ const worker = new Worker<JobData>(
       },
     };
 
+    // Create verification model with per-job API keys
+    const llmKey = providers.llm === "openai" ? keys["OPENAI_API_KEY"] : keys["ANTHROPIC_API_KEY"];
+    const verifyModel = createVerificationModel(
+      providers.llm as LLMProviderKey,
+      undefined,
+      llmKey,
+    );
+
     // Run the pipeline
     const result = await runPipeline(
       {
@@ -199,6 +207,7 @@ const worker = new Worker<JobData>(
         preview: false,
         outputDir: jobDir,
         yes: true,
+        verifyModel,
       },
       callbacks,
     );

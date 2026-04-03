@@ -8,6 +8,7 @@ import { generateDirectorScore } from "../agents/creative-director.js";
 import { evaluate } from "../agents/critic.js";
 import { optimizeImagePrompt } from "../agents/image-prompter.js";
 import { research } from "../agents/research.js";
+import { resolveStockAdaptive, type StockResolution } from "../providers/stock/adaptive-resolver.js";
 import type { CostBreakdown } from "../cli/cost-estimator.js";
 import {
   computeActualLLMCost,
@@ -52,7 +53,6 @@ import {
   shouldAutoConfirm,
   shouldSkipPreview,
   splitWordsIntoScenes,
-  getVideoDuration,
   confirm,
 } from "./utils.js";
 
@@ -82,8 +82,8 @@ export function createCliCallbacks(yes: boolean): {
     onStageError(stage, error) {
       progress.fail(idx(stage), error);
     },
-    async onCostEstimate(estimate, imageProvider) {
-      console.log(`\n${formatCostEstimate(estimate, imageProvider)}`);
+    async onCostEstimate(estimate, imageProvider, stockSceneCount) {
+      console.log(`\n${formatCostEstimate(estimate, imageProvider, stockSceneCount)}`);
       if (shouldAutoConfirm(yes)) return true;
       return confirm("Proceed with generation?");
     },
@@ -107,6 +107,7 @@ interface RunLog {
   startedAt: string;
   stages: { name: string; duration: number; status: string; error?: string }[];
   totalCost?: { estimated: number; actual?: number };
+  stockResolutions?: StockResolution[];
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -117,6 +118,39 @@ interface VisualAssetResult {
   path: string | null;
   usage: LLMUsage | null;
   durationSeconds: number | null;
+  stockResolution?: StockResolution;
+}
+
+/** Generate an AI image with optional rejection context from failed stock searches */
+async function generateAIImage(
+  opts: PipelineOptions,
+  visualPrompt: string,
+  scriptLine: string,
+  sceneIndex: number,
+  totalScenes: number,
+  archetype: ArchetypeConfig,
+  assetsDir: string,
+): Promise<VisualAssetResult> {
+  let prompt = visualPrompt;
+  let usage: LLMUsage | null = null;
+  try {
+    const optimized = await optimizeImagePrompt(
+      opts.llm,
+      visualPrompt,
+      scriptLine,
+      sceneIndex,
+      totalScenes,
+      archetype,
+    );
+    prompt = optimized.prompt;
+    usage = optimized.usage;
+  } catch (err) {
+    console.warn(`[visuals] Scene ${sceneIndex} prompt optimization failed, using original: ${err}`);
+  }
+  const imageBuffer = await opts.imageGen.generate(prompt);
+  const filePath = path.join(assetsDir, `scene-${sceneIndex}-ai.png`);
+  fs.writeFileSync(filePath, imageBuffer);
+  return { path: filePath, usage, durationSeconds: null };
 }
 
 async function resolveVisualAsset(
@@ -126,48 +160,44 @@ async function resolveVisualAsset(
   assetsDir: string,
   opts: PipelineOptions,
   archetype: ArchetypeConfig,
+  cb: PipelineCallbacks,
 ): Promise<VisualAssetResult> {
   switch (scene.visual_type) {
-    case "ai_image": {
-      let prompt = scene.visual_prompt;
-      let usage: LLMUsage | null = null;
-      try {
-        const optimized = await optimizeImagePrompt(
-          opts.llm,
-          scene.visual_prompt,
-          scene.script_line,
-          index,
-          totalScenes,
-          archetype,
-        );
-        prompt = optimized.prompt;
-        usage = optimized.usage;
-      } catch (err) {
-        console.warn(`[visuals] Scene ${index} prompt optimization failed, using original: ${err}`);
-      }
-      const imageBuffer = await opts.imageGen.generate(prompt);
-      const filePath = path.join(assetsDir, `scene-${index}-ai.png`);
-      fs.writeFileSync(filePath, imageBuffer);
-      return { path: filePath, usage, durationSeconds: null };
-    }
-    case "stock_image": {
-      const asset = await opts.stock.searchImage(scene.visual_prompt);
-      if (!asset) return { path: null, usage: null, durationSeconds: null };
-      const dest = path.join(assetsDir, `scene-${index}-stock.jpg`);
-      fs.copyFileSync(asset.filePath, dest);
-      return { path: dest, usage: null, durationSeconds: null };
-    }
+    case "ai_image":
+      return generateAIImage(opts, scene.visual_prompt, scene.script_line, index, totalScenes, archetype, assetsDir);
+
+    case "stock_image":
     case "stock_video": {
-      const asset = await opts.stock.searchVideo(scene.visual_prompt);
-      if (!asset) return { path: null, usage: null, durationSeconds: null };
-      const dest = path.join(assetsDir, `scene-${index}-stock.mp4`);
-      fs.copyFileSync(asset.filePath, dest);
-      const durationSeconds = getVideoDuration(dest);
-      return { path: dest, usage: null, durationSeconds };
+      const stockVerify = opts.stockVerify !== false;
+      const result = await resolveStockAdaptive(
+        scene.visual_type,
+        scene.visual_prompt,
+        scene.script_line,
+        index,
+        totalScenes,
+        assetsDir,
+        {
+          llm: opts.llm,
+          imageGen: opts.imageGen,
+          stocks: opts.stock,
+          verifyModel: stockVerify ? (opts.verifyModel ?? null) : null,
+          confidenceThreshold: opts.stockConfidence ?? 0.6,
+          maxAttempts: opts.stockMaxAttempts ?? 4,
+          callbacks: cb,
+          archetype,
+        },
+      );
+      return {
+        path: result.path,
+        usage: result.usage,
+        durationSeconds: result.durationSeconds,
+        stockResolution: result.resolution,
+      };
     }
-    case "text_card": {
+
+    case "text_card":
       return { path: null, usage: null, durationSeconds: null };
-    }
+
     default:
       return { path: null, usage: null, durationSeconds: null };
   }
@@ -315,7 +345,10 @@ function buildPipelineWorkflow(
       log.totalCost = { estimated: costBreakdown.totalCost };
 
       if (cb.onCostEstimate) {
-        const proceed = await cb.onCostEstimate(costBreakdown, opts.imageProvider);
+        const stockSceneCount = cdOutput.data.scenes.filter(
+          (s) => s.visual_type === "stock_image" || s.visual_type === "stock_video",
+        ).length;
+        const proceed = await cb.onCostEstimate(costBreakdown, opts.imageProvider, stockSceneCount);
         if (!proceed) {
           directorResult.costRejected = true;
           return { done: true };
@@ -375,7 +408,7 @@ function buildPipelineWorkflow(
       const sceneResults = await Promise.all(
         score.scenes.map(async (scene, i) => {
           try {
-            return await resolveVisualAsset(scene, i, totalScenes, assetsDir, opts, archetype);
+            return await resolveVisualAsset(scene, i, totalScenes, assetsDir, opts, archetype, cb);
           } catch (err) {
             cb.onProgress?.("visuals", { type: "asset_failed", scene: i, error: String(err) });
             return { path: null, usage: null, durationSeconds: null } as VisualAssetResult;
@@ -387,6 +420,14 @@ function buildPipelineWorkflow(
       visualsResult.sceneSourceDurations = sceneResults.map((r) => r.durationSeconds);
       for (const r of sceneResults) {
         if (r.usage) llmUsages.push(r.usage);
+      }
+
+      // Collect stock resolution metadata for log.json
+      const stockResolutions = sceneResults
+        .map((r) => r.stockResolution)
+        .filter((sr): sr is StockResolution => sr != null);
+      if (stockResolutions.length > 0) {
+        log.stockResolutions = stockResolutions;
       }
 
       const dur = (Date.now() - start) / 1000;
@@ -651,7 +692,10 @@ export async function runPipeline(
     // Compute and report actual cost (only if we got past director stage)
     if (directorResult.score && directorResult.costBreakdown) {
       const score = directorResult.score;
-      const aiImages = score.scenes.filter((s) => s.visual_type === "ai_image").length;
+      // Count actual AI images produced (includes stock→AI fallbacks)
+      const aiImages = visualsResult.sceneAssets.filter(
+        (a) => a != null && a.endsWith("-ai.png"),
+      ).length;
       const ttsCharacters = score.scenes.reduce((sum, s) => sum + s.script_line.length, 0);
       const actualCost = computeActualLLMCost(
         llmUsages,

@@ -3,7 +3,7 @@
 import { parseArgs } from "./cli/args.js";
 import { validateEnv } from "./cli/validate-env.js";
 import { createCliCallbacks, runPipeline } from "./pipeline/orchestrator.js";
-import { createProviders } from "./providers/factory.js";
+import { createProviders, createVerificationModel } from "./providers/factory.js";
 
 async function main(): Promise<void> {
   const opts = parseArgs();
@@ -25,6 +25,11 @@ async function main(): Promise<void> {
   // Create CLI callbacks for terminal progress display
   const { callbacks, progress } = createCliCallbacks(opts.yes);
 
+  // Create verification model for stock footage VLM check
+  const verifyModel = opts.stockVerify
+    ? createVerificationModel(opts.provider, opts.verificationModel)
+    : undefined;
+
   // Run pipeline with CLI callbacks
   const result = await runPipeline(
     {
@@ -42,6 +47,10 @@ async function main(): Promise<void> {
       outputDir: opts.output,
       yes: opts.yes,
       noMusic: opts.noMusic,
+      stockVerify: opts.stockVerify,
+      stockConfidence: opts.stockConfidence,
+      stockMaxAttempts: opts.stockMaxAttempts,
+      verifyModel,
     },
     callbacks,
   );

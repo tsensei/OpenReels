@@ -53,9 +53,20 @@ export function mapScoreToProps(
     const durationSeconds = Math.max(voiceoverDuration + 0.5, 2);
     const durationInFrames = Math.round(durationSeconds * fps);
 
+    // Detect AI fallback: if the score says stock but the asset is a PNG,
+    // the adaptive resolver fell back to AI image generation.
+    const assetSrc = assets.sceneAssets[i] ?? null;
+    let visualType = scene.visual_type;
+    if (
+      (visualType === "stock_video" || visualType === "stock_image") &&
+      assetSrc?.endsWith("-ai.png")
+    ) {
+      visualType = "ai_image";
+    }
+
     return {
-      visualType: scene.visual_type,
-      assetSrc: assets.sceneAssets[i] ?? null,
+      visualType,
+      assetSrc,
       motion: scene.motion,
       visualPrompt: scene.visual_prompt,
       durationInFrames,

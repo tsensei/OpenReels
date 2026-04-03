@@ -22,6 +22,7 @@ export async function optimizeImagePrompt(
   sceneIndex: number,
   totalScenes: number,
   archetype: ArchetypeConfig,
+  rejectionContext?: string,
 ): Promise<ImagePromptOutput> {
   let systemPrompt =
     "You are a visual prompt engineer for AI image generation. Transform scene descriptions into detailed, image-generator-friendly prompts. Return the optimized prompt in the optimized_prompt field.";
@@ -44,11 +45,15 @@ Cultural markers: ${archetype.culturalMarkers}
 Mood: ${archetype.mood}
 Quality guidance: ${archetype.antiArtifactGuidance}`;
 
-  const userMessage = `Scene ${sceneIndex + 1} of ${totalScenes}
+  let userMessage = `Scene ${sceneIndex + 1} of ${totalScenes}
 Visual description: ${visualPrompt}
-Narration: ${scriptLine}
+Narration: ${scriptLine}`;
 
-Generate an optimized image generation prompt for this scene.`;
+  if (rejectionContext) {
+    userMessage += `\n\n## CONTEXT FROM STOCK SEARCH\n${rejectionContext}`;
+  }
+
+  userMessage += `\n\nGenerate an optimized image generation prompt for this scene.`;
 
   const result = await llm.generate({
     systemPrompt,

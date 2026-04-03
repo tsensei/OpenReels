@@ -96,15 +96,21 @@ export function estimateCost(
 export function formatCostEstimate(
   breakdown: CostBreakdown,
   imageProvider: ImageProviderKey = "gemini",
+  stockSceneCount?: number,
 ): string {
   const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
-  return [
+  const lines = [
     `Estimated cost: $${breakdown.totalCost.toFixed(3)}`,
     `  LLM:    $${breakdown.llmCost.toFixed(4)} (${breakdown.details.llmCalls} calls)`,
     `  TTS:    $${breakdown.ttsCost.toFixed(4)} (${breakdown.details.ttsCharacters} chars)`,
     `  Images: $${breakdown.imageCost.toFixed(4)} (${breakdown.details.aiImages} AI images @ $${perImage.toFixed(3)}/ea)`,
     `  Stock:  free`,
-  ].join("\n");
+  ];
+  if (stockSceneCount && stockSceneCount > 0) {
+    const maxAdditional = stockSceneCount * perImage;
+    lines.push(`  Max additional if stock falls back: +$${maxAdditional.toFixed(3)} (${stockSceneCount} stock scenes × $${perImage.toFixed(3)}/ea)`);
+  }
+  return lines.join("\n");
 }
 
 /**

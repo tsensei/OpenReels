@@ -15,6 +15,10 @@ describe("CLIOptions type", () => {
       preview: false,
       output: "./output",
       yes: true,
+      noMusic: false,
+      stockVerify: true,
+      stockConfidence: 0.6,
+      stockMaxAttempts: 4,
     };
     expect(opts.yes).toBe(true);
   });
@@ -30,6 +34,10 @@ describe("CLIOptions type", () => {
       preview: false,
       output: "./output",
       yes: false,
+      noMusic: false,
+      stockVerify: true,
+      stockConfidence: 0.6,
+      stockMaxAttempts: 4,
     };
     expect(opts.yes).toBe(false);
   });
