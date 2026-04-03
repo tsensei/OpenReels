@@ -9,7 +9,7 @@ import type { LLMUsage } from "../../schema/providers.js";
 
 const VerificationSchema = z.object({
   relevant: z.boolean(),
-  confidence: z.number().min(0).max(1),
+  confidence: z.number(),
   reason: z.string(),
 });
 

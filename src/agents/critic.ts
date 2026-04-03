@@ -8,7 +8,7 @@ import type { LLMProvider, LLMUsage } from "../schema/providers.js";
 const SYSTEM_PROMPT_PATH = path.join(process.cwd(), "prompts", "critic.md");
 
 const CritiqueResult = z.object({
-  score: z.number().min(1).max(10),
+  score: z.number(),
   strengths: z.array(z.string()),
   weaknesses: z.array(z.string()),
   revision_needed: z.boolean(),
