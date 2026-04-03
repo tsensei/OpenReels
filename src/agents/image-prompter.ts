@@ -1,8 +1,10 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { z } from "zod";
+import { generateObject } from "ai";
+import type { LanguageModel } from "ai";
 import type { ArchetypeConfig } from "../schema/archetype.js";
-import type { LLMProvider, LLMUsage } from "../schema/providers.js";
+import { extractUsage, type LLMUsage } from "../schema/providers.js";
 
 const SYSTEM_PROMPT_PATH = path.join(process.cwd(), "prompts", "image-prompter.md");
 
@@ -16,7 +18,7 @@ export interface ImagePromptOutput {
 }
 
 export async function optimizeImagePrompt(
-  llm: LLMProvider,
+  model: LanguageModel,
   visualPrompt: string,
   scriptLine: string,
   sceneIndex: number,
@@ -50,11 +52,12 @@ Narration: ${scriptLine}
 
 Generate an optimized image generation prompt for this scene.`;
 
-  const result = await llm.generate({
-    systemPrompt,
-    userMessage,
+  const result = await generateObject({
+    model,
     schema: ImagePromptResult,
+    system: systemPrompt,
+    prompt: userMessage,
   });
 
-  return { prompt: result.data.optimized_prompt, usage: result.usage };
+  return { prompt: result.object.optimized_prompt, usage: extractUsage(result.usage) };
 }

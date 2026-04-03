@@ -1,9 +1,11 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { z } from "zod";
+import { generateObject } from "ai";
+import type { LanguageModel } from "ai";
 import { loadPlaybookSections } from "../config/playbook.js";
 import type { DirectorScore } from "../schema/director-score.js";
-import type { LLMProvider, LLMUsage } from "../schema/providers.js";
+import { extractUsage, type LLMUsage } from "../schema/providers.js";
 
 const SYSTEM_PROMPT_PATH = path.join(process.cwd(), "prompts", "critic.md");
 
@@ -23,7 +25,7 @@ export interface CritiqueOutput {
 }
 
 export async function evaluate(
-  llm: LLMProvider,
+  model: LanguageModel,
   score: DirectorScore,
   topic: string,
 ): Promise<CritiqueOutput> {
@@ -51,10 +53,12 @@ ${JSON.stringify(score, null, 2)}
 
 Evaluate this video plan. Score it 1-10. If it scores below 7, identify the weakest scene and provide specific revision instructions.`;
 
-  const result = await llm.generate({
-    systemPrompt,
-    userMessage,
+  const result = await generateObject({
+    model,
     schema: CritiqueResult,
+    system: systemPrompt,
+    prompt: userMessage,
   });
-  return { data: result.data, usage: result.usage };
+
+  return { data: result.object, usage: extractUsage(result.usage) };
 }

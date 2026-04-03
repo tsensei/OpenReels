@@ -1,10 +1,12 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { z } from "zod";
+import { generateObject } from "ai";
+import type { LanguageModel } from "ai";
 import { listArchetypes } from "../config/archetype-registry.js";
 import { loadPlaybook } from "../config/playbook.js";
 import { DirectorScore, Motion, MusicMood, TransitionType, VisualType } from "../schema/director-score.js";
-import type { LLMProvider, LLMUsage } from "../schema/providers.js";
+import { extractUsage, type LLMUsage } from "../schema/providers.js";
 import type { ResearchResult } from "./research.js";
 
 const SYSTEM_PROMPT_PATH = path.join(process.cwd(), "prompts", "creative-director.md");
@@ -31,7 +33,7 @@ export interface DirectorScoreOutput {
 }
 
 export async function generateDirectorScore(
-  llm: LLMProvider,
+  model: LanguageModel,
   topic: string,
   researchContext: ResearchResult,
   options?: { archetype?: string },
@@ -81,20 +83,22 @@ PACING CONSTRAINT: Total script must be 110-140 words for stories, 90-110 for qu
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const result = await llm.generate({
-        systemPrompt,
-        userMessage:
+      const result = await generateObject({
+        model,
+        schema: DirectorScoreRaw,
+        system: systemPrompt,
+        prompt:
           attempt > 0
             ? `${userMessage}\n\nPREVIOUS ATTEMPT FAILED: ${lastError?.message}. Fix the issue.`
             : userMessage,
-        schema: DirectorScoreRaw,
       });
 
-      totalUsage.inputTokens += result.usage.inputTokens;
-      totalUsage.outputTokens += result.usage.outputTokens;
+      const stepUsage = extractUsage(result.usage);
+      totalUsage.inputTokens += stepUsage.inputTokens;
+      totalUsage.outputTokens += stepUsage.outputTokens;
 
       // Validate with full DirectorScore (includes refinements like golden rule)
-      const validated = DirectorScore.parse(result.data);
+      const validated = DirectorScore.parse(result.object);
       return { data: validated, usage: totalUsage };
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));

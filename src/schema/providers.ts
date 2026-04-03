@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import type { LanguageModelUsage } from "ai";
 
 export type LLMProviderKey = "anthropic" | "openai";
 export type TTSProviderKey = "elevenlabs" | "inworld";
@@ -15,14 +15,12 @@ export interface LLMResult<T> {
   usage: LLMUsage;
 }
 
-export interface LLMProvider {
-  readonly id: LLMProviderKey;
-  generate<T extends z.ZodType>(opts: {
-    systemPrompt: string;
-    userMessage: string;
-    schema: T;
-    enableWebSearch?: boolean;
-  }): Promise<LLMResult<z.infer<T>>>;
+/** Convert Vercel AI SDK usage format to our LLMUsage format */
+export function extractUsage(aiUsage: LanguageModelUsage): LLMUsage {
+  return {
+    inputTokens: aiUsage.inputTokens ?? 0,
+    outputTokens: aiUsage.outputTokens ?? 0,
+  };
 }
 
 export interface TTSProvider {
