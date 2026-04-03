@@ -1,15 +1,17 @@
-import OpenAI from "openai";
-import { z } from "zod";
-import type { LLMProvider, LLMResult } from "../../schema/providers.js";
+import { generateText, Output, stepCountIs } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
+import type { OpenAIProvider } from "@ai-sdk/openai";
+import type { z } from "zod";
+import type { LLMProvider, LLMResult, LLMUsage } from "../../schema/providers.js";
 
 export class OpenAILLM implements LLMProvider {
   readonly id = "openai" as const;
-  private client: OpenAI;
+  private provider: OpenAIProvider;
   private model: string;
 
   constructor(model: string = "gpt-5.4", apiKey?: string) {
-    this.client = apiKey ? new OpenAI({ apiKey }) : new OpenAI();
     this.model = model;
+    this.provider = apiKey ? createOpenAI({ apiKey }) : createOpenAI();
   }
 
   async generate<T extends z.ZodType>(opts: {
@@ -26,79 +28,52 @@ export class OpenAILLM implements LLMProvider {
 
   /**
    * Two-pass approach (mirrors Anthropic provider):
-   * Pass 1: Use search model with web_search_options to get grounded text
-   * Pass 2: Use regular model with function calling to structure the results
+   * Pass 1: Use web search tool to get grounded text
+   * Pass 2: Use structured output to format the results
    */
   private async generateWithSearch<T extends z.ZodType>(opts: {
     systemPrompt: string;
     userMessage: string;
     schema: T;
   }): Promise<LLMResult<z.infer<T>>> {
-    // Pass 1: Web search with a search-capable model
-    const searchResponse = await this.client.chat.completions.create({
-      model: "gpt-4o-search-preview",
-      web_search_options: {},
-      messages: [
-        { role: "system", content: opts.systemPrompt },
-        { role: "user", content: opts.userMessage },
-      ],
-    } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming);
+    const totalUsage: LLMUsage = { inputTokens: 0, outputTokens: 0 };
+    const languageModel = this.provider(this.model);
 
-    const searchContent = searchResponse.choices[0]?.message?.content;
+    // Pass 1: Web search with provider tool
+    const searchResult = await generateText({
+      model: languageModel,
+      system: opts.systemPrompt,
+      prompt: opts.userMessage,
+      tools: {
+        web_search: this.provider.tools.webSearch(),
+      },
+      stopWhen: stepCountIs(5),
+    });
+
+    totalUsage.inputTokens += searchResult.usage.inputTokens ?? 0;
+    totalUsage.outputTokens += searchResult.usage.outputTokens ?? 0;
+
+    const searchContent = searchResult.text;
     if (!searchContent) {
       throw new Error("OpenAI web search returned no content");
     }
 
-    const pass1Usage = {
-      inputTokens: searchResponse.usage?.prompt_tokens ?? 0,
-      outputTokens: searchResponse.usage?.completion_tokens ?? 0,
-    };
-
     // Pass 2: Structure the search results with the regular model
-    const jsonSchema = z.toJSONSchema(opts.schema);
-
-    const structuredResponse = await this.client.chat.completions.create({
-      model: this.model,
-      messages: [
-        { role: "system", content: opts.systemPrompt },
-        {
-          role: "user",
-          content: `Based on the following web research, produce a structured response.\n\n---\n${searchContent}\n---\n\nOriginal request: ${opts.userMessage}`,
-        },
-      ],
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: "structured_output",
-            description: "Return the structured response",
-            parameters: jsonSchema as OpenAI.FunctionParameters,
-          },
-        },
-      ],
-      tool_choice: { type: "function", function: { name: "structured_output" } },
+    const structuredResult = await generateText({
+      model: languageModel,
+      system: opts.systemPrompt,
+      prompt: `Based on the following web research, produce a structured response.\n\n---\n${searchContent}\n---\n\nOriginal request: ${opts.userMessage}`,
+      output: Output.object({ schema: opts.schema }),
     });
 
-    const message = structuredResponse.choices[0]?.message;
-    const toolCall = message?.tool_calls?.[0];
+    totalUsage.inputTokens += structuredResult.usage.inputTokens ?? 0;
+    totalUsage.outputTokens += structuredResult.usage.outputTokens ?? 0;
 
-    if (!toolCall || toolCall.type !== "function" || !toolCall.function?.arguments) {
+    if (structuredResult.output == null) {
       throw new Error("OpenAI did not return structured output from search results");
     }
 
-    const raw = JSON.parse(toolCall.function.arguments);
-    const parsed = opts.schema.safeParse(raw);
-    if (!parsed.success) {
-      throw new Error(`Schema validation failed: ${JSON.stringify(parsed.error)}`);
-    }
-
-    return {
-      data: parsed.data,
-      usage: {
-        inputTokens: pass1Usage.inputTokens + (structuredResponse.usage?.prompt_tokens ?? 0),
-        outputTokens: pass1Usage.outputTokens + (structuredResponse.usage?.completion_tokens ?? 0),
-      },
-    };
+    return { data: structuredResult.output as z.infer<T>, usage: totalUsage };
   }
 
   private async generateStructured<T extends z.ZodType>(opts: {
@@ -106,45 +81,24 @@ export class OpenAILLM implements LLMProvider {
     userMessage: string;
     schema: T;
   }): Promise<LLMResult<z.infer<T>>> {
-    const jsonSchema = z.toJSONSchema(opts.schema);
+    const languageModel = this.provider(this.model);
 
-    const response = await this.client.chat.completions.create({
-      model: this.model,
-      messages: [
-        { role: "system", content: opts.systemPrompt },
-        { role: "user", content: opts.userMessage },
-      ],
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: "structured_output",
-            description: "Return the structured response",
-            parameters: jsonSchema as OpenAI.FunctionParameters,
-          },
-        },
-      ],
-      tool_choice: { type: "function", function: { name: "structured_output" } },
+    const result = await generateText({
+      model: languageModel,
+      system: opts.systemPrompt,
+      prompt: opts.userMessage,
+      output: Output.object({ schema: opts.schema }),
     });
 
-    const message = response.choices[0]?.message;
-    const toolCall = message?.tool_calls?.[0];
-
-    if (!toolCall || toolCall.type !== "function" || !toolCall.function?.arguments) {
+    if (result.output == null) {
       throw new Error("OpenAI did not return structured output");
     }
 
-    const raw = JSON.parse(toolCall.function.arguments);
-    const parsed = opts.schema.safeParse(raw);
-    if (!parsed.success) {
-      throw new Error(`Schema validation failed: ${JSON.stringify(parsed.error)}`);
-    }
-
     return {
-      data: parsed.data,
+      data: result.output as z.infer<T>,
       usage: {
-        inputTokens: response.usage?.prompt_tokens ?? 0,
-        outputTokens: response.usage?.completion_tokens ?? 0,
+        inputTokens: result.usage.inputTokens ?? 0,
+        outputTokens: result.usage.outputTokens ?? 0,
       },
     };
   }
