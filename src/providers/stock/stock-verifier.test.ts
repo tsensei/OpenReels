@@ -87,6 +87,21 @@ describe("verifyStockResult", () => {
     expect(result.relevant).toBe(true);
   });
 
+  it("returns not relevant when VLM returns null output", async () => {
+    mockGenerateText.mockResolvedValueOnce({
+      output: null,
+      usage: { inputTokens: 100, outputTokens: 10 },
+    } as any);
+
+    const result = await verifyStockResult(
+      mockModel, "/tmp/test.jpg", "rocket launch", "A rocket launches", 0.6,
+    );
+
+    expect(result.relevant).toBe(false);
+    expect(result.confidence).toBe(0);
+    expect(result.reason).toContain("no output");
+  });
+
   it("returns stock_unverified on VLM error", async () => {
     mockGenerateText.mockRejectedValueOnce(new Error("Network timeout"));
 

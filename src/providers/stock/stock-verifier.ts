@@ -48,12 +48,12 @@ function extractVideoFrame(videoPath: string): Buffer {
       execFileSync("ffmpeg", [
         "-i", videoPath, "-ss", "1", "-frames:v", "1",
         "-update", "1", "-y", tmpFile,
-      ], { stdio: "pipe" });
+      ], { stdio: "pipe", timeout: 15_000 });
     } catch {
       execFileSync("ffmpeg", [
         "-i", videoPath, "-ss", "0", "-frames:v", "1",
         "-update", "1", "-y", tmpFile,
-      ], { stdio: "pipe" });
+      ], { stdio: "pipe", timeout: 15_000 });
     }
     return fs.readFileSync(tmpFile);
   } finally {
