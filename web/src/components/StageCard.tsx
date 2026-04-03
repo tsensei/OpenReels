@@ -22,6 +22,7 @@ export const STAGE_LABELS: Record<string, string> = {
   director: "Creative Director",
   tts: "Voice Synthesis",
   visuals: "Visual Assets",
+  music: "Music Selection",
   assembly: "Assembly & Render",
   critic: "Quality Review",
 };
@@ -31,6 +32,7 @@ const STAGE_RUNNING_TEXT: Record<string, string> = {
   director: "Writing script...",
   tts: "Synthesizing voiceover...",
   visuals: "Generating visuals...",
+  music: "Selecting music...",
   assembly: "Rendering video...",
   critic: "Reviewing quality...",
 };

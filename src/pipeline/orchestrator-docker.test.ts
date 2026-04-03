@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldAutoConfirm, shouldSkipPreview } from "./orchestrator.js";
+import { shouldAutoConfirm, shouldSkipPreview } from "./cli-utils.js";
 
 describe("non-interactive mode", () => {
   it("auto-confirms when yes is true", () => {

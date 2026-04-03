@@ -36,6 +36,7 @@ export function useSSE(jobId: string | undefined, onEvent: (event: SSEEvent) => 
       "stage:director",
       "stage:tts",
       "stage:visuals",
+      "stage:music",
       "stage:assembly",
       "stage:critic",
       "job:snapshot",

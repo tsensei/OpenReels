@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { PipelineCallbacks } from "./orchestrator.js";
-import { createCliCallbacks, STAGE_NAMES } from "./orchestrator.js";
+import { STAGE_NAMES } from "./orchestrator.js";
+import { createCliCallbacks } from "./cli-utils.js";
 
 describe("STAGE_NAMES", () => {
-  it("contains all 6 stages in correct order", () => {
-    expect(STAGE_NAMES).toEqual(["research", "director", "tts", "visuals", "assembly", "critic"]);
+  it("contains all 7 stages in correct order", () => {
+    expect(STAGE_NAMES).toEqual(["research", "director", "tts", "visuals", "music", "assembly", "critic"]);
   });
 });
 
@@ -63,7 +64,7 @@ describe("PipelineCallbacks interface", () => {
 
 describe("createCliCallbacks", () => {
   it("returns callbacks and progress objects", () => {
-    const { callbacks, progress } = createCliCallbacks(true);
+    const { callbacks, progress } = createCliCallbacks(true, STAGE_NAMES);
     expect(callbacks).toBeDefined();
     expect(progress).toBeDefined();
     expect(typeof callbacks.onStageStart).toBe("function");
@@ -72,7 +73,7 @@ describe("createCliCallbacks", () => {
   });
 
   it("auto-confirms cost estimate when yes=true", async () => {
-    const { callbacks } = createCliCallbacks(true);
+    const { callbacks } = createCliCallbacks(true, STAGE_NAMES);
     const result = await callbacks.onCostEstimate!(
       {
         llmCost: 0,

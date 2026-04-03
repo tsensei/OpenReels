@@ -17,7 +17,7 @@ import {
 } from "@/hooks/useApi";
 import { useSSE } from "@/hooks/useSSE";
 
-const STAGES = ["research", "director", "tts", "visuals", "assembly", "critic"] as const;
+const STAGES = ["research", "director", "tts", "visuals", "music", "assembly", "critic"] as const;
 
 export function JobPage() {
   const { id } = useParams<{ id: string }>();
