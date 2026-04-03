@@ -110,6 +110,8 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 | `--dry-run` | Output DirectorScore JSON without generating assets | off |
 | `--preview` | Open Remotion Studio after rendering | off |
 | `-o, --output <dir>` | Output directory | `./output` |
+| `--image-provider <name>` | Image provider (`gemini` or `openai`) | `gemini` |
+| `--no-music` | Disable background music | music on |
 | `-y, --yes` | Auto-confirm cost estimation (for Docker/CI) | off |
 
 ## Archetypes
@@ -141,7 +143,7 @@ The rewrite moves from Python to TypeScript for native [Remotion](https://www.re
 
 ## Status
 
-v0.4.0 shipped. The core pipeline works end-to-end with a web UI, REST API, and Docker Compose for one-command usage on any platform. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
+v0.6.0 shipped. The core pipeline works end-to-end with a web UI, REST API, and Docker Compose for one-command usage on any platform. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
 
 ## License
 
