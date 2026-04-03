@@ -48,6 +48,7 @@
     "@fastify/cors": "^11.2.0",
     "@fastify/static": "^9.0.0",
     "@google/genai": "^1.47.0",
+    "@mastra/core": "^1.21.0",
     "@remotion/google-fonts": "4.0.441",
     "@remotion/transitions": "4.0.441",
     "ai": "^6.0.145",

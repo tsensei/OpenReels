@@ -1,24 +1,20 @@
-import { execFileSync } from "node:child_process";
+/**
+ * Pipeline orchestrator — thin wrapper around the Mastra workflow.
+ *
+ * Exports the same PipelineOptions/PipelineCallbacks/PipelineResult interface
+ * for backward compatibility with worker.ts and index.ts. Internally creates
+ * and executes the Mastra workflow graph defined in workflow.ts.
+ */
+
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { LanguageModel } from "ai";
-import { bundle } from "@remotion/bundler";
-import { renderMedia, selectComposition } from "@remotion/renderer";
-import { generateDirectorScore } from "../agents/creative-director.js";
-import { evaluate } from "../agents/critic.js";
-import { optimizeImagePrompt } from "../agents/image-prompter.js";
-import { research } from "../agents/research.js";
-import type { ActualCostBreakdown, CostBreakdown } from "../cli/cost-estimator.js";
+import { RequestContext } from "@mastra/core/di";
+import { openreelsPipeline } from "./workflow.js";
 import {
   computeActualLLMCost,
-  estimateCost,
 } from "../cli/cost-estimator.js";
-import { getArchetype } from "../config/archetype-registry.js";
-import { getPlatformConfig } from "../config/platforms.js";
-import { selectTrack } from "../providers/music/bundled.js";
-import { getTotalDurationInFrames, mapScoreToProps } from "../remotion/lib/score-to-props.js";
-import type { ArchetypeConfig } from "../schema/archetype.js";
-import type { DirectorScore } from "../schema/director-score.js";
+import type { ActualCostBreakdown, CostBreakdown } from "../cli/cost-estimator.js";
 import type {
   ImageProvider,
   ImageProviderKey,
@@ -27,7 +23,6 @@ import type {
   StockProvider,
   TTSProvider,
   TTSProviderKey,
-  WordTimestamp,
 } from "../schema/providers.js";
 
 // Stage names matching the pipeline execution order
@@ -81,27 +76,19 @@ export interface PipelineResult {
   logPath: string;
 }
 
-interface RunLog {
-  topic: string;
-  startedAt: string;
-  stages: { name: string; duration: number; status: string; error?: string }[];
-  totalCost?: { estimated: number; actual?: number };
-}
-
 /**
- * Run the full OpenReels pipeline as a Mastra workflow.
- * Same signature as the original orchestrator for backward compatibility.
+ * Run the full OpenReels pipeline via Mastra workflow graph.
+ *
+ * Creates the run directory, then executes the workflow:
+ *   init → research → director → costEstimate → tts → visuals → music → assembly → critic
+ *
+ * Each stage is a Mastra createStep() node. State flows through getStepResult().
  */
 export async function runPipeline(
   opts: PipelineOptions,
   callbacks?: PipelineCallbacks,
 ): Promise<PipelineResult> {
   const cb = callbacks ?? {};
-  const log: RunLog = {
-    topic: opts.topic,
-    startedAt: new Date().toISOString(),
-    stages: [],
-  };
 
   // Create output directory with timestamp to avoid overwrites
   const slug = opts.topic
@@ -119,316 +106,76 @@ export async function runPipeline(
 
   const logPath = path.join(runDir, "log.json");
   const scorePath = path.join(runDir, "score.json");
-  let videoPath: string | null = null;
 
-  // Track all LLM token usage for actual cost reporting
-  const llmUsages: LLMUsage[] = [];
+  // Run log for the finally block
+  const log = {
+    topic: opts.topic,
+    startedAt: new Date().toISOString(),
+    stages: [] as { name: string; duration: number; status: string; error?: string }[],
+    totalCost: undefined as { estimated: number; actual?: number } | undefined,
+  };
 
   try {
-    // ── Stage 1: Research ──────────────────────────────────────────────
-    cb.onStageStart?.("research");
-    let researchResult;
-    const researchStart = Date.now();
-    try {
-      const researchOutput = await research(opts.model, opts.topic);
-      researchResult = researchOutput.data;
-      llmUsages.push(researchOutput.usage);
-      const dur = (Date.now() - researchStart) / 1000;
-      cb.onStageComplete?.("research", `${researchResult.key_facts.length} facts`, dur);
-      cb.onProgress?.("research", { type: "results", summary: researchResult.summary, key_facts: researchResult.key_facts, mood: researchResult.mood });
-      log.stages.push({ name: "research", duration: dur, status: "done" });
-    } catch (err) {
-      const dur = (Date.now() - researchStart) / 1000;
-      cb.onStageSkip?.("research", "web search failed");
-      log.stages.push({ name: "research", duration: dur, status: "skipped", error: String(err) });
-      researchResult = {
-        summary: `Topic: ${opts.topic}`,
-        key_facts: [],
-        mood: "informative",
-        sources: [],
-      };
-    }
+    // Execute the Mastra workflow graph
+    const requestContext = new RequestContext();
+    requestContext.set("opts", opts);
+    requestContext.set("cb", cb);
 
-    if (cb.isCancelled?.()) {
-      return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
-    }
-
-    // ── Stage 2: Creative Director ─────────────────────────────────────
-    cb.onStageStart?.("director");
-    const cdStart = Date.now();
-    const cdOutput = await generateDirectorScore(opts.model, opts.topic, researchResult, {
-      archetype: opts.archetype,
+    const run = await openreelsPipeline.createRun();
+    const result = await run.start({
+      inputData: { runDir, assetsDir, scorePath, logPath },
+      requestContext,
     });
-    const directorScore = cdOutput.data;
-    llmUsages.push(cdOutput.usage);
-    const cdDur = (Date.now() - cdStart) / 1000;
-    cb.onStageComplete?.(
-      "director",
-      `${directorScore.scenes.length} scenes, ${directorScore.archetype}`,
-      cdDur,
-    );
-    log.stages.push({ name: "creative-director", duration: cdDur, status: "done" });
 
-    // Resolve archetype config for image prompt optimization
-    const archetypeConfig = getArchetype(directorScore.archetype);
-
-    // Save DirectorScore
-    fs.writeFileSync(scorePath, JSON.stringify(directorScore, null, 2));
-    cb.onProgress?.("director", { type: "score", score: directorScore });
-
-    // Dry run exit
-    if (opts.dryRun) {
-      cb.onStageSkip?.("tts", "dry run");
-      cb.onStageSkip?.("visuals", "dry run");
-      cb.onStageSkip?.("music", "dry run");
-      cb.onStageSkip?.("assembly", "dry run");
-      cb.onStageSkip?.("critic", "dry run");
-
-      cb.onLog?.("\n--- DirectorScore ---");
-      cb.onLog?.(JSON.stringify(directorScore, null, 2));
-
-      return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
-    }
-
-    // ── Cost Estimation ────────────────────────────────────────────────
-    const costBreakdown = estimateCost(directorScore, opts.imageProvider, opts.ttsProvider);
-    log.totalCost = { estimated: costBreakdown.totalCost };
-
-    if (cb.onCostEstimate) {
-      const proceed = await cb.onCostEstimate(costBreakdown, opts.imageProvider);
-      if (!proceed) {
+    if (result.status === "failed") {
+      const err = result.error;
+      // Check if this is a controlled stop (dry run, cost rejected, cancelled)
+      if (err?.message === "PIPELINE_STOPPED" || err?.message === "CANCELLED") {
         return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
       }
+      throw err instanceof Error ? err : new Error(String(err));
     }
 
-    if (cb.isCancelled?.()) {
-      return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
-    }
+    // Extract results from workflow steps (cast to any — steps are typed at runtime)
+    const steps = result.steps as Record<string, any>;
+    const videoPath = steps?.assembly?.output?.videoPath ?? null;
 
-    // ── Stage 3: TTS ───────────────────────────────────────────────────
-    cb.onStageStart?.("tts");
-    const ttsStart = Date.now();
-    const fullScript = directorScore.scenes.map((s) => s.script_line).join(" ");
-    const ttsResult = await opts.tts.generate(fullScript);
-    const ttsDur = (Date.now() - ttsStart) / 1000;
-
-    // Save audio
-    const voiceoverPath = path.join(assetsDir, "voiceover.mp3");
-    fs.writeFileSync(voiceoverPath, ttsResult.audio);
-
-    // Split word timestamps into per-scene groups
-    const sceneWords = splitWordsIntoScenes(directorScore, ttsResult.words);
-    cb.onStageComplete?.("tts", `${ttsResult.words.length} words`, ttsDur);
-    log.stages.push({ name: "tts", duration: ttsDur, status: "done" });
-
-    if (cb.isCancelled?.()) {
-      return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
-    }
-
-    // ── Stage 4: Visual Assets (parallel) ──────────────────────────────
-    cb.onStageStart?.("visuals");
-    const visualStart = Date.now();
-    const totalScenes = directorScore.scenes.length;
-    const sceneResults = await Promise.all(
-      directorScore.scenes.map(async (scene, i) => {
-        try {
-          return await resolveVisualAsset(scene, i, totalScenes, assetsDir, opts, archetypeConfig);
-        } catch (err) {
-          cb.onProgress?.("visuals", { type: "asset_failed", scene: i, error: String(err) });
-          return {
-            path: null as string | null,
-            usage: null as LLMUsage | null,
-            durationSeconds: null,
-          };
-        }
-      }),
-    );
-    const sceneAssets = sceneResults.map((r) => r.path);
-    const sceneSourceDurations = sceneResults.map((r) => r.durationSeconds);
-    for (const r of sceneResults) {
-      if (r.usage) llmUsages.push(r.usage);
-    }
-    const visualDur = (Date.now() - visualStart) / 1000;
-    const assetCount = sceneAssets.filter(Boolean).length;
-    cb.onStageComplete?.(
-      "visuals",
-      `${assetCount}/${directorScore.scenes.length} assets`,
-      visualDur,
-    );
-    log.stages.push({ name: "visuals", duration: visualDur, status: "done" });
-
-    if (cb.isCancelled?.()) {
-      return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
-    }
-
-    // ── Stage 5: Music Selection ───────────────────────────────────────
-    cb.onStageStart?.("music");
-    const musicStart = Date.now();
-    let musicFilePath: string | null = null;
-    let musicSelection: { trackId: string; mood: string; requestedMood: string; fallback: boolean } | null = null;
-    if (!opts.noMusic) {
-      try {
-        const selection = selectTrack(directorScore.music_mood);
-        if (selection) {
-          musicFilePath = selection.filePath;
-          musicSelection = selection;
-        }
-      } catch (err) {
-        console.warn(`[orchestrator] Music selection failed, proceeding without music: ${err}`);
-      }
-    }
-    const musicDur = (Date.now() - musicStart) / 1000;
-    if (musicSelection) {
-      cb.onProgress?.("music", {
-        type: "selection",
-        track: musicSelection.trackId,
-        mood: musicSelection.mood,
-        requestedMood: musicSelection.requestedMood,
-        fallback: musicSelection.fallback,
-      });
-      cb.onStageComplete?.("music", `${musicSelection.mood} track`, musicDur);
-    } else {
-      cb.onStageSkip?.("music", opts.noMusic ? "disabled" : "no track available");
-    }
-    log.stages.push({ name: "music", duration: musicDur, status: musicSelection ? "done" : "skipped" });
-
-    // ── Stage 6: Remotion Assembly ─────────────────────────────────────
-    cb.onStageStart?.("assembly");
-    const assemblyStart = Date.now();
-    const platformConfig = getPlatformConfig(opts.platform);
-
-    // Symlink assets into a temp public dir for Remotion to serve via staticFile()
-    const publicDir = path.join(runDir, "_remotion_public");
-    fs.mkdirSync(publicDir, { recursive: true });
-    const assetsLink = path.join(publicDir, "assets");
-    if (fs.existsSync(assetsLink)) fs.rmSync(assetsLink, { recursive: true });
-    fs.symlinkSync(path.resolve(assetsDir), assetsLink);
-
-    // Voiceover also needs to be accessible
-    fs.copyFileSync(voiceoverPath, path.join(publicDir, "voiceover.mp3"));
-
-    // Copy music track to publicDir if selected
-    if (musicFilePath) {
-      try {
-        fs.copyFileSync(musicFilePath, path.join(publicDir, "music.mp3"));
-      } catch (err) {
-        console.warn(`[orchestrator] Failed to copy music file, proceeding without music: ${err}`);
-        musicFilePath = null;
+    // Compute actual cost from accumulated LLM usages across steps
+    const llmUsages: LLMUsage[] = [];
+    if (steps?.research?.output?.usage) llmUsages.push(steps.research.output.usage);
+    if (steps?.director?.output?.usage) llmUsages.push(steps.director.output.usage);
+    if (steps?.critic?.output?.usage) llmUsages.push(steps.critic.output.usage);
+    // Visual step usages (from image prompt optimization)
+    const visualUsages = steps?.visuals?.output?.usages;
+    if (Array.isArray(visualUsages)) {
+      for (const u of visualUsages) {
+        if (u) llmUsages.push(u);
       }
     }
 
-    const compositionProps = mapScoreToProps(
-      directorScore,
-      {
-        sceneAssets: sceneAssets.map((a) => {
-          if (!a) return null;
-          const filename = path.basename(a);
-          return `assets/${filename}`;
-        }),
-        voiceoverPath: "voiceover.mp3",
-        musicPath: musicFilePath ? "music.mp3" : null,
-        sceneWords,
-        allWords: ttsResult.words,
-        sceneSourceDurations,
-      },
-      platformConfig.fps,
-    );
-
-    const totalFrames = getTotalDurationInFrames(compositionProps, platformConfig.fps);
-
-    cb.onProgress?.("assembly", { type: "bundling" });
-
-    const remotionEntry = path.join(process.cwd(), "src", "remotion", "index.ts");
-    const bundled = await bundle({
-      entryPoint: remotionEntry,
-      webpackOverride: (config: object) => config,
-      publicDir,
-    });
-
-    cb.onProgress?.("assembly", { type: "rendering", totalFrames });
-
-    const composition = await selectComposition({
-      serveUrl: bundled,
-      id: "OpenReelsVideo",
-      inputProps: compositionProps as unknown as Record<string, unknown>,
-    });
-
-    videoPath = path.join(runDir, "final.mp4");
-    await renderMedia({
-      composition: {
-        ...composition,
-        width: platformConfig.width,
-        height: platformConfig.height,
-        fps: platformConfig.fps,
-        durationInFrames: totalFrames,
-      },
-      serveUrl: bundled,
-      codec: "h264",
-      outputLocation: videoPath,
-      inputProps: compositionProps as unknown as Record<string, unknown>,
-    });
-
-    const assemblyDur = (Date.now() - assemblyStart) / 1000;
-    cb.onStageComplete?.(
-      "assembly",
-      `${(totalFrames / platformConfig.fps).toFixed(1)}s video`,
-      assemblyDur,
-    );
-    log.stages.push({ name: "assembly", duration: assemblyDur, status: "done" });
-
-    if (cb.isCancelled?.()) {
-      return { outputDir: runDir, videoPath, thumbnailPath: null, scorePath, logPath };
+    // Cost reporting
+    if (llmUsages.length > 0 && steps?.director?.output?.directorScore) {
+      const directorScore = steps.director.output.directorScore;
+      const aiImages = directorScore.scenes?.filter((s: any) => s.visual_type === "ai_image").length ?? 0;
+      const ttsCharacters = directorScore.scenes?.reduce((sum: number, s: any) => sum + (s.script_line?.length ?? 0), 0) ?? 0;
+      const actualCost = computeActualLLMCost(
+        llmUsages,
+        { aiImages, ttsCharacters },
+        opts.llmProvider,
+        opts.imageProvider,
+        opts.ttsProvider,
+      );
+      cb.onActualCost?.(actualCost);
     }
 
-    // ── Stage 7: Critic ────────────────────────────────────────────────
-    cb.onStageStart?.("critic");
-    const criticStart = Date.now();
-    try {
-      const critiqueOutput = await evaluate(opts.model, directorScore, opts.topic);
-      const critique = critiqueOutput.data;
-      llmUsages.push(critiqueOutput.usage);
-      const criticDur = (Date.now() - criticStart) / 1000;
-
-      if (critique.revision_needed && critique.score < 7) {
-        cb.onStageComplete?.("critic", `score ${critique.score}/10, revision needed`, criticDur);
-        cb.onLog?.(`\nCritic score: ${critique.score}/10 — ${critique.weaknesses.join(", ")}`);
-        cb.onLog?.("Revision support coming in a future release. Using current version.");
-      } else {
-        cb.onStageComplete?.("critic", `score ${critique.score}/10`, criticDur);
-      }
-      cb.onProgress?.("critic", { type: "review", score: critique.score, strengths: critique.strengths, weaknesses: critique.weaknesses });
-      log.stages.push({ name: "critic", duration: criticDur, status: "done" });
-    } catch (err) {
-      const criticDur = (Date.now() - criticStart) / 1000;
-      cb.onStageSkip?.("critic", "evaluation failed");
-      log.stages.push({
-        name: "critic",
-        duration: criticDur,
-        status: "skipped",
-        error: String(err),
-      });
-    }
-
-    // Compute and report actual cost
-    const aiImages = directorScore.scenes.filter((s) => s.visual_type === "ai_image").length;
-    const ttsCharacters = directorScore.scenes.reduce((sum, s) => sum + s.script_line.length, 0);
-    const actualCost = computeActualLLMCost(
-      llmUsages,
-      { aiImages, ttsCharacters },
-      opts.llmProvider,
-      opts.imageProvider,
-      opts.ttsProvider,
-    );
-    log.totalCost = { estimated: costBreakdown.totalCost, actual: actualCost.totalCost };
-    cb.onActualCost?.(actualCost);
-
-    // Preview (CLI only — uses terminal)
-    if (opts.preview) {
-      if (shouldSkipPreview()) {
+    // Preview (CLI only)
+    if (opts.preview && videoPath) {
+      if (!process.stdin.isTTY) {
         cb.onLog?.("\n--preview requires an interactive terminal (skipped in Docker/CI).");
       } else {
         cb.onLog?.("\nOpening Remotion Studio preview...");
         try {
+          const { execFileSync } = await import("node:child_process");
           execFileSync("npx", ["remotion", "studio"], { stdio: "inherit" });
         } catch {
           cb.onLog?.("Preview closed or failed to open.");
@@ -437,134 +184,12 @@ export async function runPipeline(
     }
 
     cb.onLog?.(`\nOutput: ${runDir}`);
-    cb.onLog?.(`  Video:     ${videoPath}`);
+    if (videoPath) cb.onLog?.(`  Video:     ${videoPath}`);
     cb.onLog?.(`  Score:     ${scorePath}`);
     cb.onLog?.(`  Log:       ${logPath}`);
 
     return { outputDir: runDir, videoPath, thumbnailPath: null, scorePath, logPath };
   } finally {
     fs.writeFileSync(logPath, JSON.stringify(log, null, 2));
-  }
-}
-
-// shouldSkipPreview imported would create circular dep — kept as local helper
-function shouldSkipPreview(): boolean {
-  return !process.stdin.isTTY;
-}
-
-interface VisualAssetResult {
-  path: string | null;
-  usage: LLMUsage | null;
-  durationSeconds: number | null;
-}
-
-async function resolveVisualAsset(
-  scene: DirectorScore["scenes"][number],
-  index: number,
-  totalScenes: number,
-  assetsDir: string,
-  opts: PipelineOptions,
-  archetype: ArchetypeConfig,
-): Promise<VisualAssetResult> {
-  switch (scene.visual_type) {
-    case "ai_image": {
-      // Optimize prompt via LLM before generating the image
-      let prompt = scene.visual_prompt;
-      let usage: LLMUsage | null = null;
-      try {
-        const optimized = await optimizeImagePrompt(
-          opts.model,
-          scene.visual_prompt,
-          scene.script_line,
-          index,
-          totalScenes,
-          archetype,
-        );
-        prompt = optimized.prompt;
-        usage = optimized.usage;
-      } catch (err) {
-        console.warn(`[visuals] Scene ${index} prompt optimization failed, using original: ${err}`);
-      }
-      const imageBuffer = await opts.imageGen.generate(prompt);
-      const filePath = path.join(assetsDir, `scene-${index}-ai.png`);
-      fs.writeFileSync(filePath, imageBuffer);
-      return { path: filePath, usage, durationSeconds: null };
-    }
-    case "stock_image": {
-      const asset = await opts.stock.searchImage(scene.visual_prompt);
-      if (!asset) return { path: null, usage: null, durationSeconds: null };
-      const dest = path.join(assetsDir, `scene-${index}-stock.jpg`);
-      fs.copyFileSync(asset.filePath, dest);
-      return { path: dest, usage: null, durationSeconds: null };
-    }
-    case "stock_video": {
-      const asset = await opts.stock.searchVideo(scene.visual_prompt);
-      if (!asset) return { path: null, usage: null, durationSeconds: null };
-      const dest = path.join(assetsDir, `scene-${index}-stock.mp4`);
-      fs.copyFileSync(asset.filePath, dest);
-      const durationSeconds = getVideoDuration(dest);
-      return { path: dest, usage: null, durationSeconds };
-    }
-    case "text_card": {
-      return { path: null, usage: null, durationSeconds: null };
-    }
-    default:
-      return { path: null, usage: null, durationSeconds: null };
-  }
-}
-
-function splitWordsIntoScenes(score: DirectorScore, allWords: WordTimestamp[]): WordTimestamp[][] {
-  if (allWords.length === 0) {
-    return score.scenes.map(() => []);
-  }
-
-  const wordsPerScene = score.scenes.map((s) => s.script_line.split(/\s+/).filter(Boolean).length);
-  const totalExpected = wordsPerScene.reduce((sum, n) => sum + n, 0);
-  const totalActual = allWords.length;
-
-  const sceneWords: WordTimestamp[][] = [];
-  let wordIndex = 0;
-
-  for (let i = 0; i < score.scenes.length; i++) {
-    const expectedCount = wordsPerScene[i] ?? 0;
-    let wordsToConsume = expectedCount;
-    if (totalExpected !== totalActual && totalExpected > 0) {
-      wordsToConsume = Math.round((expectedCount * totalActual) / totalExpected);
-      wordsToConsume = Math.max(1, wordsToConsume);
-    }
-
-    const words: WordTimestamp[] = [];
-    for (let j = 0; j < wordsToConsume && wordIndex < allWords.length; j++) {
-      const w = allWords[wordIndex];
-      if (w) words.push(w);
-      wordIndex++;
-    }
-
-    sceneWords.push(words);
-  }
-
-  const lastScene = sceneWords[sceneWords.length - 1];
-  if (lastScene) {
-    while (wordIndex < allWords.length) {
-      const w = allWords[wordIndex];
-      if (w) lastScene.push(w);
-      wordIndex++;
-    }
-  }
-
-  return sceneWords;
-}
-
-function getVideoDuration(filePath: string): number | null {
-  try {
-    const result = execFileSync(
-      "ffprobe",
-      ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", filePath],
-      { encoding: "utf-8" },
-    );
-    const duration = parseFloat(result.trim());
-    return Number.isFinite(duration) ? duration : null;
-  } catch {
-    return null;
   }
 }
