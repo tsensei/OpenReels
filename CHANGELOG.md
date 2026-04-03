@@ -2,6 +2,17 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.5.1] - 2026-04-03
+
+### Changed
+- LLM providers migrated from custom SDK wrappers to Vercel AI SDK (`@ai-sdk/anthropic`, `@ai-sdk/openai`). Agents now use `generateObject`/`generateText` for structured output and text generation. Removes `@anthropic-ai/sdk` direct dependency.
+- Music is now an explicit pipeline stage visible in both CLI progress and web UI stage cards. Previously music selection happened silently between visuals and assembly.
+- CLI utilities (`createCliCallbacks`, `shouldAutoConfirm`, `shouldSkipPreview`) extracted to `src/pipeline/cli-utils.ts` for reuse.
+- Provider factory returns a Vercel AI SDK `LanguageModel` instead of a custom `LLMProvider` class. BYOK keys pass through SDK configuration.
+
+### Removed
+- Custom `LLMProvider` interface and `AnthropicLLM`/`OpenAILLM` class implementations (303 LOC). Replaced by Vercel AI SDK's unified model interface.
+
 ## [0.5.0] - 2026-04-02
 
 ### Added
