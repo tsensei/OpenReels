@@ -6,6 +6,7 @@ const validScene = (type: string) => ({
   visual_prompt: "test prompt",
   motion: "static",
   script_line: "Test script line.",
+  transition: null,
 });
 
 const baseScore = {
@@ -97,14 +98,14 @@ describe("DirectorScore schema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("accepts scenes without transition field (optional, undefined)", () => {
+  it("accepts scenes with transition as null", () => {
     const result = DirectorScore.safeParse({
       ...baseScore,
       scenes: [validScene("text_card"), validScene("ai_image"), validScene("stock_video")],
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.scenes[0]!.transition).toBeUndefined();
+      expect(result.data.scenes[0]!.transition).toBeNull();
     }
   });
 

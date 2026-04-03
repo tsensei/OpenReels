@@ -44,6 +44,14 @@ export interface ImageProvider {
   generate(prompt: string, style?: string): Promise<Buffer>;
 }
 
+export interface StockCandidate {
+  url: string;
+  width: number;
+  height: number;
+  duration?: number; // seconds, for video
+  id: string; // provider-specific ID for dedup
+}
+
 export interface StockAsset {
   filePath: string;
   width: number;
@@ -52,6 +60,7 @@ export interface StockAsset {
 }
 
 export interface StockProvider {
-  searchVideo(query: string): Promise<StockAsset | null>;
-  searchImage(query: string): Promise<StockAsset | null>;
+  searchVideo(query: string): Promise<StockCandidate[]>;
+  searchImage(query: string): Promise<StockCandidate[]>;
+  download(candidate: StockCandidate): Promise<StockAsset>;
 }

@@ -35,7 +35,7 @@ export const Scene = z.object({
   script_line: z.string().min(1),
   // Controls how THIS scene transitions into the NEXT scene.
   // Optional — mapper cascade resolves: scene value → archetype default → "none".
-  transition: TransitionType.nullish(),
+  transition: TransitionType.nullable(),
 });
 export type Scene = z.infer<typeof Scene>;
 
