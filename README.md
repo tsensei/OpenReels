@@ -27,7 +27,7 @@ Give it a topic. It handles everything else:
 1. **Research** — web search to ground the script in real facts
 2. **Script** — writes a punchy, language-aware short-form script
 3. **Voiceover** — generates TTS audio with word-level timestamps
-4. **Visuals** — creates AI images matched to each scene
+4. **Visuals** — creates AI images and verifies stock footage with a vision model before using it (rejects bad matches, retries with reformulated queries, falls back to AI generation)
 5. **Captions** — renders styled, animated captions with proper Unicode/CJK/RTL support
 6. **Assembly** — composites everything into a vertical MP4 via Remotion, with scene transitions (crossfade, slide, wipe, flip)
 7. **Critique** — an AI critic scores the output and re-runs the pipeline if quality is below threshold
@@ -112,6 +112,10 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 | `-o, --output <dir>` | Output directory | `./output` |
 | `--image-provider <name>` | Image provider (`gemini` or `openai`) | `gemini` |
 | `--no-music` | Disable background music | music on |
+| `--no-stock-verify` | Disable VLM stock footage verification | verify on |
+| `--stock-confidence <n>` | Min confidence threshold for stock verification (0-1) | `0.6` |
+| `--stock-max-attempts <n>` | Max stock API calls per scene | `4` |
+| `--verification-model <model>` | Model override for stock verification VLM | same as `--provider` |
 | `-y, --yes` | Auto-confirm cost estimation (for Docker/CI) | off |
 
 ## Archetypes
@@ -143,7 +147,7 @@ The rewrite moves from Python to TypeScript for native [Remotion](https://www.re
 
 ## Status
 
-v0.6.0 shipped. The core pipeline works end-to-end with a web UI, REST API, and Docker Compose for one-command usage on any platform. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
+v0.7.0 shipped. The pipeline now verifies stock footage with a vision model before using it, with multi-provider search, query reformulation, and AI image fallback. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
 
 ## License
 

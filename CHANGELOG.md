@@ -15,10 +15,12 @@ All notable changes to OpenReels will be documented in this file.
 - Cost estimator now shows max additional cost if stock scenes fall back to AI generation.
 
 ### Changed
+- Actual cost report now counts AI images from what was produced on disk (including stock fallbacks), not from what the director originally planned.
+
+### For contributors
 - `StockProvider` interface now returns `StockCandidate[]` (metadata without download) and has a `download()` method for lazy fetching. Both Pexels and Pixabay providers updated.
 - `PipelineOptions.stock` changed from single `StockProvider` to `StockProvider[]` for multi-provider support.
 - `createProviders()` factory constructs both stock providers when both API keys are available.
-- Actual cost report now counts AI images from what was produced on disk (including stock fallbacks), not from what the director originally planned.
 - Remotion score-to-props mapper detects when stock scenes fell back to AI images and renders them correctly as AIImageBeat instead of StockVideoBeat.
 
 ### Fixed

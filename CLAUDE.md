@@ -17,7 +17,7 @@ src/
     llm/                # anthropic.ts, openai.ts (AI SDK 6)
     tts/                # elevenlabs.ts, inworld.ts
     image/              # gemini.ts, openai.ts
-    stock/              # pexels.ts, pixabay.ts
+    stock/              # pexels.ts, pixabay.ts, adaptive-resolver.ts, query-reformer.ts, stock-verifier.ts
   config/
     archetypes/         # 14 archetype JSON configs
     archetype-registry.ts
@@ -44,7 +44,7 @@ fixtures/               # sample DirectorScore JSONs
 ```bash
 pnpm install          # install dependencies
 pnpm start "topic"    # run full pipeline (CLI)
-pnpm test             # run vitest suite (114 tests)
+pnpm test             # run vitest suite (133 tests)
 ```
 
 ### Web UI (Docker Compose)

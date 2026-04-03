@@ -76,6 +76,13 @@
   **Priority:** P3
   Deferred from plan: Background Music Library (CEO review: simplified per outside voice)
 
+## Stock Verification
+
+- [ ] **Global scene quality pass** — After all assets resolve, score each scene's visual quality and re-try weak ones with reallocated budget (stock savings → more AI attempts on hard scenes). Scene-level optimization where the pipeline currently optimizes each scene independently.
+  **Priority:** P3
+  **Depends on:** Adaptive stock pipeline (v0.7.0)
+  Deferred from plan: Vision-Verified Adaptive Stock Pipeline (CEO review: correctly scoped as post-verification feature)
+
 ## Completed
 
 - [x] **HTTP API server mode** — Fastify HTTP server with POST /api/v1/jobs, GET /api/v1/jobs/:id, SSE /api/v1/jobs/:id/events, plus full React web UI.
