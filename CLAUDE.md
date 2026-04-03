@@ -11,10 +11,10 @@ src/
   worker.ts             # BullMQ job worker
   cli/                  # args parser, progress display, cost estimator
   agents/               # creative-director, critic, image-prompter, research
-  pipeline/             # orchestrator (6-stage pipeline with PipelineCallbacks)
+  pipeline/             # Mastra workflow orchestrator + utils (6-stage pipeline)
   providers/
     factory.ts          # provider factory with BYOK support
-    llm/                # anthropic.ts, openai.ts
+    llm/                # anthropic.ts, openai.ts (AI SDK 6)
     tts/                # elevenlabs.ts, inworld.ts
     image/              # gemini.ts, openai.ts
     stock/              # pexels.ts, pixabay.ts
@@ -44,7 +44,7 @@ fixtures/               # sample DirectorScore JSONs
 ```bash
 pnpm install          # install dependencies
 pnpm start "topic"    # run full pipeline (CLI)
-pnpm test             # run vitest suite (101 tests)
+pnpm test             # run vitest suite (114 tests)
 ```
 
 ### Web UI (Docker Compose)
