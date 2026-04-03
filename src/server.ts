@@ -165,7 +165,7 @@ app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
     status: "queued",
     createdAt: new Date().toISOString(),
     stages: Object.fromEntries(
-      ["research", "director", "tts", "visuals", "assembly", "critic"].map((s) => [
+      ["research", "director", "tts", "visuals", "music", "assembly", "critic"].map((s) => [
         s,
         { status: "pending" },
       ]),

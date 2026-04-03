@@ -91,17 +91,17 @@ const worker = new Worker<JobData>(
     };
 
     // Initialize all stages as pending
-    for (const name of ["research", "director", "tts", "visuals", "assembly", "critic"]) {
+    for (const name of ["research", "director", "tts", "visuals", "music", "assembly", "critic"]) {
       meta.stages[name] = { status: "pending" };
     }
     writeMeta(jobDir, meta);
 
-    // Create providers with per-job keys
+    // Create providers with per-job keys (model is now a Vercel AI SDK LanguageModel)
     const providerInstances = createProviders({
       llm: providers.llm as LLMProviderKey,
       tts: providers.tts as TTSProviderKey,
       image: providers.image as ImageProviderKey,
-      stock: providers.stock as StockProviderKey,
+      stock: (providers.stock ?? "pexels") as StockProviderKey,
       keys,
     });
 
@@ -139,7 +139,7 @@ const worker = new Worker<JobData>(
         } else if (data.type === "score") {
           meta.score = data.score;
           writeMeta(jobDir, meta);
-        } else if (data.type === "music") {
+        } else if (data.type === "music" || data.type === "selection") {
           meta.musicTrack = { trackId: data.track as string, mood: data.mood as string, requestedMood: data.requestedMood as string, fallback: data.fallback as boolean };
           writeMeta(jobDir, meta);
         } else if (data.type === "review") {
@@ -186,7 +186,8 @@ const worker = new Worker<JobData>(
     const result = await runPipeline(
       {
         topic,
-        llm: providerInstances.llm,
+        model: providerInstances.model,
+        llmProvider: providers.llm as LLMProviderKey,
         tts: providerInstances.tts,
         ttsProvider: providers.tts as TTSProviderKey,
         imageGen: providerInstances.imageGen,

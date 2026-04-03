@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import * as readline from "node:readline";
+import type { LanguageModel } from "ai";
 import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
 import { generateDirectorScore } from "../agents/creative-director.js";
@@ -12,10 +12,7 @@ import type { ActualCostBreakdown, CostBreakdown } from "../cli/cost-estimator.j
 import {
   computeActualLLMCost,
   estimateCost,
-  formatActualCost,
-  formatCostEstimate,
 } from "../cli/cost-estimator.js";
-import { ProgressDisplay } from "../cli/progress.js";
 import { getArchetype } from "../config/archetype-registry.js";
 import { getPlatformConfig } from "../config/platforms.js";
 import { selectTrack } from "../providers/music/bundled.js";
@@ -25,7 +22,7 @@ import type { DirectorScore } from "../schema/director-score.js";
 import type {
   ImageProvider,
   ImageProviderKey,
-  LLMProvider,
+  LLMProviderKey,
   LLMUsage,
   StockProvider,
   TTSProvider,
@@ -39,6 +36,7 @@ export const STAGE_NAMES = [
   "director",
   "tts",
   "visuals",
+  "music",
   "assembly",
   "critic",
 ] as const;
@@ -57,60 +55,10 @@ export interface PipelineCallbacks {
   isCancelled?(): boolean;
 }
 
-export function shouldAutoConfirm(yes: boolean): boolean {
-  return yes || !process.stdin.isTTY;
-}
-
-export function shouldSkipPreview(): boolean {
-  return !process.stdin.isTTY;
-}
-
-/** Create CLI callbacks that wrap ProgressDisplay for terminal output */
-export function createCliCallbacks(yes: boolean): {
-  callbacks: PipelineCallbacks;
-  progress: ProgressDisplay;
-} {
-  const progress = new ProgressDisplay();
-  const stageIndices = new Map<StageName, number>();
-  for (const name of STAGE_NAMES) {
-    stageIndices.set(name, progress.addStage(name.charAt(0).toUpperCase() + name.slice(1)));
-  }
-
-  const idx = (stage: StageName) => stageIndices.get(stage) ?? 0;
-
-  const callbacks: PipelineCallbacks = {
-    onStageStart(stage) {
-      progress.start(idx(stage));
-    },
-    onStageComplete(stage, detail) {
-      progress.complete(idx(stage), detail);
-    },
-    onStageSkip(stage, reason) {
-      progress.skip(idx(stage), reason);
-    },
-    onStageError(stage, error) {
-      progress.fail(idx(stage), error);
-    },
-    async onCostEstimate(estimate, imageProvider) {
-      console.log(`\n${formatCostEstimate(estimate, imageProvider)}`);
-      const autoConfirm = shouldAutoConfirm(yes);
-      if (autoConfirm) return true;
-      return confirm("Proceed with generation?");
-    },
-    onActualCost(cost) {
-      console.log(`\n${formatActualCost(cost)}`);
-    },
-    onLog(message) {
-      console.log(message);
-    },
-  };
-
-  return { callbacks, progress };
-}
-
 export interface PipelineOptions {
   topic: string;
-  llm: LLMProvider;
+  model: LanguageModel;
+  llmProvider: LLMProviderKey;
   tts: TTSProvider;
   ttsProvider: TTSProviderKey;
   imageGen: ImageProvider;
@@ -140,6 +88,10 @@ interface RunLog {
   totalCost?: { estimated: number; actual?: number };
 }
 
+/**
+ * Run the full OpenReels pipeline as a Mastra workflow.
+ * Same signature as the original orchestrator for backward compatibility.
+ */
 export async function runPipeline(
   opts: PipelineOptions,
   callbacks?: PipelineCallbacks,
@@ -173,12 +125,12 @@ export async function runPipeline(
   const llmUsages: LLMUsage[] = [];
 
   try {
-    // Stage 1: Research
+    // ── Stage 1: Research ──────────────────────────────────────────────
     cb.onStageStart?.("research");
     let researchResult;
     const researchStart = Date.now();
     try {
-      const researchOutput = await research(opts.llm, opts.topic);
+      const researchOutput = await research(opts.model, opts.topic);
       researchResult = researchOutput.data;
       llmUsages.push(researchOutput.usage);
       const dur = (Date.now() - researchStart) / 1000;
@@ -197,15 +149,14 @@ export async function runPipeline(
       };
     }
 
-    // Check cancellation between stages
     if (cb.isCancelled?.()) {
       return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
     }
 
-    // Stage 2: Creative Director
+    // ── Stage 2: Creative Director ─────────────────────────────────────
     cb.onStageStart?.("director");
     const cdStart = Date.now();
-    const cdOutput = await generateDirectorScore(opts.llm, opts.topic, researchResult, {
+    const cdOutput = await generateDirectorScore(opts.model, opts.topic, researchResult, {
       archetype: opts.archetype,
     });
     const directorScore = cdOutput.data;
@@ -229,6 +180,7 @@ export async function runPipeline(
     if (opts.dryRun) {
       cb.onStageSkip?.("tts", "dry run");
       cb.onStageSkip?.("visuals", "dry run");
+      cb.onStageSkip?.("music", "dry run");
       cb.onStageSkip?.("assembly", "dry run");
       cb.onStageSkip?.("critic", "dry run");
 
@@ -238,7 +190,7 @@ export async function runPipeline(
       return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
     }
 
-    // Cost estimation
+    // ── Cost Estimation ────────────────────────────────────────────────
     const costBreakdown = estimateCost(directorScore, opts.imageProvider, opts.ttsProvider);
     log.totalCost = { estimated: costBreakdown.totalCost };
 
@@ -253,7 +205,7 @@ export async function runPipeline(
       return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
     }
 
-    // Stage 3: TTS
+    // ── Stage 3: TTS ───────────────────────────────────────────────────
     cb.onStageStart?.("tts");
     const ttsStart = Date.now();
     const fullScript = directorScore.scenes.map((s) => s.script_line).join(" ");
@@ -273,7 +225,7 @@ export async function runPipeline(
       return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
     }
 
-    // Stage 4: Visual Assets (parallel)
+    // ── Stage 4: Visual Assets (parallel) ──────────────────────────────
     cb.onStageStart?.("visuals");
     const visualStart = Date.now();
     const totalScenes = directorScore.scenes.length;
@@ -309,7 +261,9 @@ export async function runPipeline(
       return { outputDir: runDir, videoPath: null, thumbnailPath: null, scorePath, logPath };
     }
 
-    // Music selection (between visuals and assembly)
+    // ── Stage 5: Music Selection ───────────────────────────────────────
+    cb.onStageStart?.("music");
+    const musicStart = Date.now();
     let musicFilePath: string | null = null;
     let musicSelection: { trackId: string; mood: string; requestedMood: string; fallback: boolean } | null = null;
     if (!opts.noMusic) {
@@ -323,18 +277,23 @@ export async function runPipeline(
         console.warn(`[orchestrator] Music selection failed, proceeding without music: ${err}`);
       }
     }
-
-    // Stage 5: Remotion Assembly
-    cb.onStageStart?.("assembly");
+    const musicDur = (Date.now() - musicStart) / 1000;
     if (musicSelection) {
-      cb.onProgress?.("assembly", {
-        type: "music",
+      cb.onProgress?.("music", {
+        type: "selection",
         track: musicSelection.trackId,
         mood: musicSelection.mood,
         requestedMood: musicSelection.requestedMood,
         fallback: musicSelection.fallback,
       });
+      cb.onStageComplete?.("music", `${musicSelection.mood} track`, musicDur);
+    } else {
+      cb.onStageSkip?.("music", opts.noMusic ? "disabled" : "no track available");
     }
+    log.stages.push({ name: "music", duration: musicDur, status: musicSelection ? "done" : "skipped" });
+
+    // ── Stage 6: Remotion Assembly ─────────────────────────────────────
+    cb.onStageStart?.("assembly");
     const assemblyStart = Date.now();
     const platformConfig = getPlatformConfig(opts.platform);
 
@@ -421,11 +380,11 @@ export async function runPipeline(
       return { outputDir: runDir, videoPath, thumbnailPath: null, scorePath, logPath };
     }
 
-    // Stage 6: Critic
+    // ── Stage 7: Critic ────────────────────────────────────────────────
     cb.onStageStart?.("critic");
     const criticStart = Date.now();
     try {
-      const critiqueOutput = await evaluate(opts.llm, directorScore, opts.topic);
+      const critiqueOutput = await evaluate(opts.model, directorScore, opts.topic);
       const critique = critiqueOutput.data;
       llmUsages.push(critiqueOutput.usage);
       const criticDur = (Date.now() - criticStart) / 1000;
@@ -456,7 +415,7 @@ export async function runPipeline(
     const actualCost = computeActualLLMCost(
       llmUsages,
       { aiImages, ttsCharacters },
-      opts.llm.id,
+      opts.llmProvider,
       opts.imageProvider,
       opts.ttsProvider,
     );
@@ -488,6 +447,11 @@ export async function runPipeline(
   }
 }
 
+// shouldSkipPreview imported would create circular dep — kept as local helper
+function shouldSkipPreview(): boolean {
+  return !process.stdin.isTTY;
+}
+
 interface VisualAssetResult {
   path: string | null;
   usage: LLMUsage | null;
@@ -509,7 +473,7 @@ async function resolveVisualAsset(
       let usage: LLMUsage | null = null;
       try {
         const optimized = await optimizeImagePrompt(
-          opts.llm,
+          opts.model,
           scene.visual_prompt,
           scene.script_line,
           index,
@@ -550,18 +514,10 @@ async function resolveVisualAsset(
 }
 
 function splitWordsIntoScenes(score: DirectorScore, allWords: WordTimestamp[]): WordTimestamp[][] {
-  // Split word timestamps into per-scene groups for duration calculation.
-  // Uses ReelMistri's proportional scaling approach to handle ElevenLabs
-  // text normalization (numbers/abbreviations expand into different word counts).
-  //
-  // Note: This is only used for scene DURATION calculation. Captions use
-  // allWords directly with absolute timestamps (timeline-centric approach).
-
   if (allWords.length === 0) {
     return score.scenes.map(() => []);
   }
 
-  // Count expected words per scene from script text
   const wordsPerScene = score.scenes.map((s) => s.script_line.split(/\s+/).filter(Boolean).length);
   const totalExpected = wordsPerScene.reduce((sum, n) => sum + n, 0);
   const totalActual = allWords.length;
@@ -571,9 +527,6 @@ function splitWordsIntoScenes(score: DirectorScore, allWords: WordTimestamp[]): 
 
   for (let i = 0; i < score.scenes.length; i++) {
     const expectedCount = wordsPerScene[i] ?? 0;
-
-    // Proportionally scale word consumption if TTS word count differs
-    // (ReelMistri: tts.py lines 179-182)
     let wordsToConsume = expectedCount;
     if (totalExpected !== totalActual && totalExpected > 0) {
       wordsToConsume = Math.round((expectedCount * totalActual) / totalExpected);
@@ -590,7 +543,6 @@ function splitWordsIntoScenes(score: DirectorScore, allWords: WordTimestamp[]): 
     sceneWords.push(words);
   }
 
-  // Any remaining words go to the last scene
   const lastScene = sceneWords[sceneWords.length - 1];
   if (lastScene) {
     while (wordIndex < allWords.length) {
@@ -615,14 +567,4 @@ function getVideoDuration(filePath: string): number | null {
   } catch {
     return null;
   }
-}
-
-function confirm(message: string): Promise<boolean> {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  return new Promise((resolve) => {
-    rl.question(`${message} [Y/n] `, (answer) => {
-      rl.close();
-      resolve(answer.toLowerCase() !== "n");
-    });
-  });
 }

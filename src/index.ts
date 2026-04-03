@@ -2,7 +2,8 @@
 
 import { parseArgs } from "./cli/args.js";
 import { validateEnv } from "./cli/validate-env.js";
-import { createCliCallbacks, runPipeline } from "./pipeline/orchestrator.js";
+import { createCliCallbacks } from "./pipeline/cli-utils.js";
+import { runPipeline, STAGE_NAMES } from "./pipeline/orchestrator.js";
 import { createProviders } from "./providers/factory.js";
 
 async function main(): Promise<void> {
@@ -15,21 +16,22 @@ async function main(): Promise<void> {
     imageProvider: opts.imageProvider,
   });
 
-  // Initialize providers via factory
-  const { llm, tts, imageGen, stock } = createProviders({
+  // Initialize providers via factory (model is now a Vercel AI SDK LanguageModel)
+  const { model, tts, imageGen, stock } = createProviders({
     llm: opts.provider,
     tts: opts.ttsProvider,
     image: opts.imageProvider,
   });
 
   // Create CLI callbacks for terminal progress display
-  const { callbacks, progress } = createCliCallbacks(opts.yes);
+  const { callbacks, progress } = createCliCallbacks(opts.yes, STAGE_NAMES);
 
   // Run pipeline with CLI callbacks
   const result = await runPipeline(
     {
       topic: opts.topic,
-      llm,
+      model,
+      llmProvider: opts.provider,
       tts,
       ttsProvider: opts.ttsProvider,
       imageGen,
