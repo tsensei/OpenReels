@@ -2,6 +2,28 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.7.0] - 2026-04-03
+
+### Added
+- Vision-verified stock footage. The pipeline now uses a multimodal LLM to check whether stock footage actually matches what was requested before putting it in the video. No more toy rockets in your Artemis launch video.
+- Query reformulation. When stock footage doesn't match, the pipeline automatically rewrites the search query in stock-API-friendly terms (strips proper nouns, uses concrete visual nouns) and retries.
+- Multi-provider stock search. Both Pexels and Pixabay are searched when both API keys are configured. Query-first ordering tries the same query on all providers before reformulating.
+- AI image fallback with negative examples. When all stock options fail verification, the pipeline falls back to AI image generation, feeding the VLM's rejection reasons into the image prompt for better results.
+- Stock verification metadata in log.json. Every stock scene now logs what was tried, what was rejected, why, and whether it fell back to AI.
+- New CLI flags: `--stock-verify` / `--no-stock-verify`, `--stock-confidence`, `--stock-max-attempts`, `--verification-model`.
+- Lazy sequential downloading for stock candidates. Search returns metadata first, assets are downloaded one at a time and verified before downloading the next.
+- Cost estimator now shows max additional cost if stock scenes fall back to AI generation.
+
+### Changed
+- `StockProvider` interface now returns `StockCandidate[]` (metadata without download) and has a `download()` method for lazy fetching. Both Pexels and Pixabay providers updated.
+- `PipelineOptions.stock` changed from single `StockProvider` to `StockProvider[]` for multi-provider support.
+- `createProviders()` factory constructs both stock providers when both API keys are available.
+- Actual cost report now counts AI images from what was produced on disk (including stock fallbacks), not from what the director originally planned.
+- Remotion score-to-props mapper detects when stock scenes fell back to AI images and renders them correctly as AIImageBeat instead of StockVideoBeat.
+
+### Fixed
+- OpenAI structured output schema rejection for the `transition` field (regression from v0.6.0). Changed `.nullish()` to `.nullable()` in both `director-score.ts` and `creative-director.ts`.
+
 ## [0.6.0] - 2026-04-03
 
 ### Changed
