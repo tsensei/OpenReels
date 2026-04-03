@@ -85,7 +85,7 @@ export async function verifyStockResult(
             {
               type: "image",
               image: imageBuffer,
-              mediaType: isVideo ? "image/jpeg" : "image/jpeg",
+              mediaType: assetPath.endsWith(".png") ? "image/png" : "image/jpeg",
             },
           ],
         },

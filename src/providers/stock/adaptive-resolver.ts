@@ -89,7 +89,7 @@ export async function resolveStockAdaptive(
       if (candidates.length === 0) {
         attempts.push({
           query,
-          provider: candidates.length === 0 ? "unknown" : "",
+          provider: "unknown",
           candidateId: "",
           result: "not_found",
         });
