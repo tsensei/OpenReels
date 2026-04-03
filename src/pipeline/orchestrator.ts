@@ -49,9 +49,11 @@ import {
   type PipelineOptions,
   type PipelineResult,
   STAGE_NAMES,
+  shouldAutoConfirm,
   shouldSkipPreview,
   splitWordsIntoScenes,
   getVideoDuration,
+  confirm,
 } from "./utils.js";
 
 /** Create CLI callbacks that wrap ProgressDisplay for terminal output */
@@ -82,9 +84,7 @@ export function createCliCallbacks(yes: boolean): {
     },
     async onCostEstimate(estimate, imageProvider) {
       console.log(`\n${formatCostEstimate(estimate, imageProvider)}`);
-      const autoConfirm = yes || !process.stdin.isTTY;
-      if (autoConfirm) return true;
-      const { confirm } = await import("./utils.js");
+      if (shouldAutoConfirm(yes)) return true;
       return confirm("Proceed with generation?");
     },
     onActualCost(cost) {
