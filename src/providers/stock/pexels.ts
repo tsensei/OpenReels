@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import type { StockAsset, StockProvider } from "../../schema/providers.js";
+import type { StockAsset, StockCandidate, StockProvider } from "../../schema/providers.js";
 
 const PEXELS_BASE = "https://api.pexels.com";
 
@@ -16,8 +16,8 @@ export class PexelsStock implements StockProvider {
     fs.mkdirSync(this.cacheDir, { recursive: true });
   }
 
-  async searchVideo(query: string): Promise<StockAsset | null> {
-    if (!this.apiKey) return null;
+  async searchVideo(query: string): Promise<StockCandidate[]> {
+    if (!this.apiKey) return [];
 
     const url = `${PEXELS_BASE}/videos/search?query=${encodeURIComponent(query)}&per_page=5&orientation=portrait&size=large`;
     const response = await fetch(url, {
@@ -27,78 +27,75 @@ export class PexelsStock implements StockProvider {
     if (!response.ok) {
       if (response.status === 429) {
         console.warn("[stock] Pexels rate limited, skipping video search");
-        return null;
+        return [];
       }
       throw new Error(`Pexels API error: ${response.status}`);
     }
 
     const data = (await response.json()) as PexelsVideoResponse;
-    if (!data.videos || data.videos.length === 0) {
-      // Try without orientation filter (landscape fallback)
-      return this.searchVideoLandscapeFallback(query);
+    let videos = data.videos ?? [];
+
+    // Try without orientation filter if no portrait results
+    if (videos.length === 0) {
+      const fallback = await this.searchVideoLandscapeFallback(query);
+      if (fallback.length > 0) return fallback;
     }
 
-    const video = data.videos[0];
-    if (!video) return null;
-
-    // Pick a video file: at least 720p but no larger than 1080p to avoid 500MB+ downloads
-    const videoFile =
-      video.video_files
-        .filter((f) => (f.width ?? 0) >= 720 && (f.width ?? 0) <= 1920)
-        .sort((a, b) => (b.width ?? 0) - (a.width ?? 0))[0] ??
-      // Fallback: if nothing in the 720-1080 range, take the smallest >= 720
-      video.video_files
-        .filter((f) => (f.width ?? 0) >= 720)
-        .sort((a, b) => (a.width ?? 0) - (b.width ?? 0))[0];
-
-    if (!videoFile?.link) return null;
-
-    const filePath = await this.downloadToCache(videoFile.link, `video-${video.id}.mp4`);
-
-    return {
-      filePath,
-      width: videoFile.width ?? 1080,
-      height: videoFile.height ?? 1920,
-      duration: video.duration,
-    };
+    const candidates: StockCandidate[] = [];
+    for (const video of videos) {
+      const videoFile = this.pickVideoFile(video.video_files);
+      if (!videoFile?.link) continue;
+      candidates.push({
+        url: videoFile.link,
+        width: videoFile.width ?? 1080,
+        height: videoFile.height ?? 1920,
+        duration: video.duration,
+        id: `pexels-video-${video.id}`,
+      });
+    }
+    return candidates;
   }
 
-  private async searchVideoLandscapeFallback(query: string): Promise<StockAsset | null> {
-    if (!this.apiKey) return null;
+  private async searchVideoLandscapeFallback(query: string): Promise<StockCandidate[]> {
+    if (!this.apiKey) return [];
 
     const url = `${PEXELS_BASE}/videos/search?query=${encodeURIComponent(query)}&per_page=3&size=large`;
     const response = await fetch(url, {
       headers: { Authorization: this.apiKey },
     });
 
-    if (!response.ok) return null;
+    if (!response.ok) return [];
     const data = (await response.json()) as PexelsVideoResponse;
-    if (!data.videos || data.videos.length === 0) return null;
+    const videos = data.videos ?? [];
 
-    const video = data.videos[0];
-    if (!video) return null;
-
-    const videoFile =
-      video.video_files
-        .filter((f) => (f.width ?? 0) >= 720 && (f.width ?? 0) <= 1920)
-        .sort((a, b) => (b.width ?? 0) - (a.width ?? 0))[0] ??
-      video.video_files
-        .filter((f) => (f.width ?? 0) >= 720)
-        .sort((a, b) => (a.width ?? 0) - (b.width ?? 0))[0];
-
-    if (!videoFile?.link) return null;
-
-    const filePath = await this.downloadToCache(videoFile.link, `video-${video.id}.mp4`);
-    return {
-      filePath,
-      width: videoFile.width ?? 1920,
-      height: videoFile.height ?? 1080,
-      duration: video.duration,
-    };
+    const candidates: StockCandidate[] = [];
+    for (const video of videos) {
+      const videoFile = this.pickVideoFile(video.video_files);
+      if (!videoFile?.link) continue;
+      candidates.push({
+        url: videoFile.link,
+        width: videoFile.width ?? 1920,
+        height: videoFile.height ?? 1080,
+        duration: video.duration,
+        id: `pexels-video-${video.id}`,
+      });
+    }
+    return candidates;
   }
 
-  async searchImage(query: string): Promise<StockAsset | null> {
-    if (!this.apiKey) return null;
+  private pickVideoFile(files: PexelsVideoResponse["videos"][number]["video_files"]) {
+    return (
+      files
+        .filter((f) => (f.width ?? 0) >= 720 && (f.width ?? 0) <= 1920)
+        .sort((a, b) => (b.width ?? 0) - (a.width ?? 0))[0] ??
+      files
+        .filter((f) => (f.width ?? 0) >= 720)
+        .sort((a, b) => (a.width ?? 0) - (b.width ?? 0))[0]
+    );
+  }
+
+  async searchImage(query: string): Promise<StockCandidate[]> {
+    if (!this.apiKey) return [];
 
     const url = `${PEXELS_BASE}/v1/search?query=${encodeURIComponent(query)}&per_page=5&orientation=portrait&size=large`;
     const response = await fetch(url, {
@@ -108,24 +105,29 @@ export class PexelsStock implements StockProvider {
     if (!response.ok) {
       if (response.status === 429) {
         console.warn("[stock] Pexels rate limited, skipping image search");
-        return null;
+        return [];
       }
       throw new Error(`Pexels API error: ${response.status}`);
     }
 
     const data = (await response.json()) as PexelsImageResponse;
-    if (!data.photos || data.photos.length === 0) return null;
-
-    const photo = data.photos[0];
-    if (!photo) return null;
-
-    const imageUrl = photo.src.large2x ?? photo.src.large ?? photo.src.original;
-    const filePath = await this.downloadToCache(imageUrl, `image-${photo.id}.jpg`);
-
-    return {
-      filePath,
+    return (data.photos ?? []).map((photo) => ({
+      url: photo.src.large2x ?? photo.src.large ?? photo.src.original,
       width: photo.width,
       height: photo.height,
+      id: `pexels-image-${photo.id}`,
+    }));
+  }
+
+  async download(candidate: StockCandidate): Promise<StockAsset> {
+    const ext = candidate.duration != null ? "mp4" : "jpg";
+    const filename = `${candidate.id}.${ext}`;
+    const filePath = await this.downloadToCache(candidate.url, filename);
+    return {
+      filePath,
+      width: candidate.width,
+      height: candidate.height,
+      duration: candidate.duration,
     };
   }
 

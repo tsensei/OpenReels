@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import type { StockAsset, StockProvider } from "../../schema/providers.js";
+import type { StockAsset, StockCandidate, StockProvider } from "../../schema/providers.js";
 
 const PIXABAY_BASE = "https://pixabay.com/api";
 
@@ -16,51 +16,51 @@ export class PixabayStock implements StockProvider {
     fs.mkdirSync(this.cacheDir, { recursive: true });
   }
 
-  async searchVideo(query: string): Promise<StockAsset | null> {
-    if (!this.apiKey) return null;
+  async searchVideo(query: string): Promise<StockCandidate[]> {
+    if (!this.apiKey) return [];
 
     const url = `${PIXABAY_BASE}/videos/?key=${this.apiKey}&q=${encodeURIComponent(query)}&per_page=3`;
     const response = await fetch(url);
-    if (!response.ok) return null;
+    if (!response.ok) return [];
 
     const data = (await response.json()) as PixabayVideoResponse;
-    if (!data.hits || data.hits.length === 0) return null;
-
-    const hit = data.hits[0];
-    if (!hit) return null;
-
-    // Prefer medium (typically ~1280px) over large to avoid huge downloads
-    const videoSource = hit.videos.medium ?? hit.videos.large;
-    const videoUrl = videoSource?.url;
-    if (!videoUrl) return null;
-
-    const filePath = await this.downloadToCache(videoUrl, `pixabay-video-${hit.id}.mp4`);
-    return {
-      filePath,
-      width: videoSource?.width ?? 1280,
-      height: videoSource?.height ?? 720,
-      duration: hit.duration,
-    };
+    return (data.hits ?? []).map((hit) => {
+      const videoSource = hit.videos.medium ?? hit.videos.large;
+      return {
+        url: videoSource?.url ?? "",
+        width: videoSource?.width ?? 1280,
+        height: videoSource?.height ?? 720,
+        duration: hit.duration,
+        id: `pixabay-video-${hit.id}`,
+      };
+    }).filter((c) => c.url !== "");
   }
 
-  async searchImage(query: string): Promise<StockAsset | null> {
-    if (!this.apiKey) return null;
+  async searchImage(query: string): Promise<StockCandidate[]> {
+    if (!this.apiKey) return [];
 
     const url = `${PIXABAY_BASE}/?key=${this.apiKey}&q=${encodeURIComponent(query)}&per_page=3&image_type=photo&orientation=vertical`;
     const response = await fetch(url);
-    if (!response.ok) return null;
+    if (!response.ok) return [];
 
     const data = (await response.json()) as PixabayImageResponse;
-    if (!data.hits || data.hits.length === 0) return null;
-
-    const hit = data.hits[0];
-    if (!hit) return null;
-
-    const filePath = await this.downloadToCache(hit.largeImageURL, `pixabay-image-${hit.id}.jpg`);
-    return {
-      filePath,
+    return (data.hits ?? []).map((hit) => ({
+      url: hit.largeImageURL,
       width: hit.imageWidth,
       height: hit.imageHeight,
+      id: `pixabay-image-${hit.id}`,
+    }));
+  }
+
+  async download(candidate: StockCandidate): Promise<StockAsset> {
+    const ext = candidate.duration != null ? "mp4" : "jpg";
+    const filename = `${candidate.id}.${ext}`;
+    const filePath = await this.downloadToCache(candidate.url, filename);
+    return {
+      filePath,
+      width: candidate.width,
+      height: candidate.height,
+      duration: candidate.duration,
     };
   }
 
