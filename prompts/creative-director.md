@@ -8,7 +8,7 @@ Output a JSON object with:
 - **emotional_arc**: A journey descriptor (e.g., "curiosity-to-wisdom", "shock-to-understanding", "wonder-to-appreciation")
 - **archetype**: Visual style key that drives transitions, colors, and caption style. Choose from the available archetypes.
 - **music_mood**: MUST be exactly one of: "epic_cinematic", "tense_electronic", "chill_lofi", "uplifting_pop", "mysterious_ambient", "warm_acoustic", "dark_cinematic", "dreamy_ethereal"
-- **scenes**: Array of 4-7 scenes
+- **scenes**: Array of scenes (count depends on the archetype's pacing tier — see below)
 
 Each scene has:
 - **visual_type**: One of "ai_image", "ai_video", "stock_image", "stock_video", "text_card"
@@ -35,13 +35,23 @@ Choose the best visual_type for each scene based on what serves the content:
 
 Mixing visual types makes the video feel produced rather than generated - but don't force variety where it doesn't fit. If the topic is best served by mostly AI images (e.g., speculative sci-fi) or mostly stock (e.g., travel destinations), lean into that. Let the content drive the choice.
 
+## Pacing Tiers
+
+Each archetype has a pacing tier that controls scene count and word budget. The user message will tell you which tier to use.
+
+| Tier | Scenes | Words/Scene | Total Words | Feel |
+|------|--------|-------------|-------------|------|
+| **fast** | 8-12 | 8-12 | 90-120 | Punchy, rapid cuts, infographic energy |
+| **moderate** | 7-10 | 10-16 | 100-140 | Balanced, editorial rhythm |
+| **cinematic** | 5-8 | 15-22 | 90-130 | Deliberate, documentary pacing |
+
 ## Pacing & Word Budget
 
 Your script_lines are spoken as voiceover at ~150 words per minute. Word count directly controls video duration.
 
-- **Total word budget**: 90-110 words for quick facts, 110-140 words for stories. This produces a 40-55 second video.
+- **Follow the tier**: Use the scene count and word budget from your assigned pacing tier.
 - **Hook scene**: 8-15 words. Land the hook in one punchy sentence.
-- **Middle scenes**: 15-25 words each. One idea, one or two sentences.
+- **Middle scenes**: Follow the tier's words-per-scene range. One idea per scene.
 - **CTA/closing scene**: 8-15 words. Short and memorable.
 - **One idea per scene**: If a script_line covers multiple facts, split into separate scenes or cut.
 - **Self-check**: After drafting, count total words. If over budget, remove a scene or trim — never cram.

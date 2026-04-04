@@ -1,7 +1,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { z } from "zod";
-import { listArchetypes } from "../config/archetype-registry.js";
+import { getArchetype, listArchetypes } from "../config/archetype-registry.js";
+import type { ScenePacing } from "../schema/archetype.js";
 import { loadPlaybook } from "../config/playbook.js";
 import { DirectorScore, Motion, MusicMood, TransitionType, VisualType } from "../schema/director-score.js";
 import type { LLMProvider, LLMUsage } from "../schema/providers.js";
@@ -14,15 +15,18 @@ const DirectorScoreRaw = z.object({
   emotional_arc: z.string(),
   archetype: z.enum(listArchetypes() as [string, ...string[]]),
   music_mood: MusicMood,
-  scenes: z.array(
-    z.object({
-      visual_type: VisualType,
-      visual_prompt: z.string(),
-      motion: Motion,
-      script_line: z.string(),
-      transition: TransitionType.nullable(),
-    }),
-  ),
+  scenes: z
+    .array(
+      z.object({
+        visual_type: VisualType,
+        visual_prompt: z.string(),
+        motion: Motion,
+        script_line: z.string(),
+        transition: TransitionType.nullable(),
+      }),
+    )
+    .min(3)
+    .max(16),
 });
 
 export interface DirectorScoreOutput {
@@ -34,7 +38,7 @@ export async function generateDirectorScore(
   llm: LLMProvider,
   topic: string,
   researchContext: ResearchResult,
-  options?: { archetype?: string; videoEnabled?: boolean },
+  options?: { archetype?: string; pacing?: string; videoEnabled?: boolean },
 ): Promise<DirectorScoreOutput> {
   let systemPrompt = buildDefaultPrompt();
 
@@ -65,6 +69,9 @@ export async function generateDirectorScore(
     ? "\nai_video: Use for 1-3 scenes where MOTION is the story (explosions, flowing water, launches, transformations). ai_video costs ~$0.30/scene vs ~$0.04 for ai_image. Use selectively. Set motion to 'static' for ai_video scenes (the video model handles motion)."
     : "";
 
+  // Resolve pacing tier: explicit --pacing override > archetype default > lookup table
+  const pacingInstruction = buildPacingInstruction(options?.archetype, options?.pacing);
+
   const userMessage = `Topic: ${topic}
 
 Research context:
@@ -77,11 +84,12 @@ Mood: ${researchContext.mood}
 
 ${archetypeInstruction}
 
-Create a DirectorScore with 4-7 scenes. Use ${visualTypes}.${videoGuidance}
-CRITICAL RULE: Never use the same visual_type more than 2 times in a row.
+${pacingInstruction}
+Use ${visualTypes}.${videoGuidance}
+CRITICAL RULE: Never use the same visual_type more than 2 times in a row. With more scenes, plan your visual_type sequence BEFORE writing scenes to ensure variety.
 Every scene MUST have a script_line (the voiceover text).
 The first scene should be a strong hook.
-PACING CONSTRAINT: Total script must be 110-140 words for stories, 90-110 for quick facts. At 150 WPM this produces a 40-55 second video. Each script_line should be 1-2 sentences. If over budget, cut a scene rather than cramming.`;
+If over budget, cut a scene rather than cramming.`;
 
   const maxRetries = 3;
   let lastError: Error | null = null;
@@ -120,7 +128,7 @@ You must output a DirectorScore with:
 - emotional_arc: A journey descriptor (e.g., "curiosity-to-wisdom", "shock-to-understanding")
 - archetype: Visual style that drives transitions, colors, and captions
 - music_mood: MUST be exactly one of: "epic_cinematic", "tense_electronic", "chill_lofi", "uplifting_pop", "mysterious_ambient", "warm_acoustic", "dark_cinematic", "dreamy_ethereal"
-- scenes: Array of 4-7 scenes, each with visual_type, visual_prompt, motion, script_line, and an optional transition (crossfade, slide_left, slide_right, wipe, flip, or omit for archetype default)
+- scenes: Array of scenes following the archetype's recommended pacing tier
 
 GOLDEN RULE: Never use the same visual_type more than 2 times consecutively. Mix ai_image, stock_image, stock_video, and text_card for variety.
 
@@ -128,3 +136,47 @@ Think like a YouTube Shorts producer. The hook must grab in 1-2 seconds. Every s
 
 Keep total script under 140 words — verbose scripts create rushed, unwatchable videos.`;
 }
+
+// --- Pacing tier configuration ---
+
+const PACING_CONFIG: Record<ScenePacing, { min: number; max: number; wordsPerScene: string; totalWords: string }> = {
+  fast: { min: 8, max: 12, wordsPerScene: "8-12", totalWords: "90-120" },
+  moderate: { min: 7, max: 10, wordsPerScene: "10-16", totalWords: "100-140" },
+  cinematic: { min: 5, max: 8, wordsPerScene: "15-22", totalWords: "90-130" },
+};
+
+const PACING_TIER_TABLE = `After choosing your archetype, use the matching pacing tier from this table:
+- fast (8-12 scenes, 8-12 words/scene, 90-120 words total): infographic, bold_illustration, comic_book
+- moderate (7-10 scenes, 10-16 words/scene, 100-140 words total): warm_editorial, editorial_caricature, anime_illustration, vintage_snapshot, surreal_dreamscape, gothic_fantasy
+- cinematic (5-8 scenes, 15-22 words/scene, 90-130 words total): cinematic_documentary, moody_cinematic, studio_realism, warm_narrative, pastoral_watercolor`;
+
+export function buildPacingInstruction(archetype?: string, pacingOverride?: string): string {
+  // Path 1: Explicit --pacing override always wins
+  if (pacingOverride && pacingOverride in PACING_CONFIG) {
+    const tier = pacingOverride as ScenePacing;
+    const cfg = PACING_CONFIG[tier];
+    console.log(`[creative-director] Using ${tier} pacing (${cfg.min}-${cfg.max} scenes) — explicit override`);
+    return `Use ${tier} pacing. Create a DirectorScore with ${cfg.min}-${cfg.max} scenes.
+Per-scene word budget: ${cfg.wordsPerScene} words. Total word budget: ${cfg.totalWords} words.`;
+  }
+
+  // Path 2: Archetype specified — derive tier from config
+  if (archetype) {
+    try {
+      const config = getArchetype(archetype);
+      const tier = config.scenePacing;
+      const cfg = PACING_CONFIG[tier];
+      console.log(`[creative-director] Using ${tier} pacing (${cfg.min}-${cfg.max} scenes) for archetype ${archetype}`);
+      return `This archetype uses ${tier} pacing. Create a DirectorScore with ${cfg.min}-${cfg.max} scenes.
+Per-scene word budget: ${cfg.wordsPerScene} words. Total word budget: ${cfg.totalWords} words.`;
+    } catch {
+      // Unknown archetype — fall through to table
+    }
+  }
+
+  // Path 3: No archetype specified — LLM picks, include full tier table
+  console.log("[creative-director] No archetype specified — injecting pacing tier lookup table");
+  return PACING_TIER_TABLE;
+}
+
+export { PACING_CONFIG };
