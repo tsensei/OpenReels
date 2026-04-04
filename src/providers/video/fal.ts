@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import * as fsp from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { createFalClient, type FalClient } from "@fal-ai/client";
@@ -58,7 +59,7 @@ export class FalVideo implements VideoProvider {
       throw new Error(`Failed to download fal.ai video: ${response.status}`);
     }
     const buffer = Buffer.from(await response.arrayBuffer());
-    fs.writeFileSync(tmpPath, buffer);
+    await fsp.writeFile(tmpPath, buffer);
 
     if (fs.statSync(tmpPath).size === 0) {
       throw new Error("fal.ai video download produced empty file");

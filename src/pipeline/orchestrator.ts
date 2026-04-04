@@ -164,6 +164,7 @@ async function resolveVisualAsset(
   opts: PipelineOptions,
   archetype: ArchetypeConfig,
   cb: PipelineCallbacks,
+  sceneDurationSeconds?: number,
 ): Promise<VisualAssetResult> {
   switch (scene.visual_type) {
     case "ai_image":
@@ -220,6 +221,7 @@ async function resolveVisualAsset(
         archetype,
         callbacks: cb,
         totalScenes,
+        sceneDurationSeconds,
       });
 
       // Adjust imageGenTimeMs in the resolution metadata
@@ -450,7 +452,12 @@ function buildPipelineWorkflow(
       const sceneResults = await Promise.all(
         score.scenes.map(async (scene, i) => {
           try {
-            return await resolveVisualAsset(scene, i, totalScenes, assetsDir, opts, archetype, cb);
+            // Compute scene voiceover duration from TTS word timings (available from Step 3)
+            const sceneWords = ttsResult.sceneWords?.[i];
+            const firstWord = sceneWords?.[0];
+            const lastWord = sceneWords?.[sceneWords.length - 1];
+            const sceneDuration = firstWord && lastWord ? lastWord.end - firstWord.start + 0.5 : undefined;
+            return await resolveVisualAsset(scene, i, totalScenes, assetsDir, opts, archetype, cb, sceneDuration);
           } catch (err) {
             cb.onProgress?.("visuals", { type: "asset_failed", scene: i, error: String(err) });
             return { path: null, usage: null, durationSeconds: null } as VisualAssetResult;

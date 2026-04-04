@@ -77,12 +77,14 @@ export interface ActualCostBreakdown {
   llmCost: number;
   ttsCost: number;
   imageCost: number;
+  videoCost: number;
   totalCost: number;
   details: {
     totalInputTokens: number;
     totalOutputTokens: number;
     ttsCharacters: number;
     aiImages: number;
+    aiVideos: number;
   };
 }
 
