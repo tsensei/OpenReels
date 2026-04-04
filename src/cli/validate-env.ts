@@ -1,4 +1,4 @@
-import type { ImageProviderKey, LLMProviderKey, TTSProviderKey } from "../schema/providers.js";
+import type { ImageProviderKey, LLMProviderKey, TTSProviderKey, VideoProviderKey } from "../schema/providers.js";
 
 interface EnvRequirement {
   key: string;
@@ -11,6 +11,7 @@ export function validateEnv(opts: {
   provider: LLMProviderKey;
   ttsProvider: TTSProviderKey;
   imageProvider: ImageProviderKey;
+  videoProvider?: VideoProviderKey;
 }): void {
   const requirements: EnvRequirement[] = [
     {
@@ -29,7 +30,7 @@ export function validateEnv(opts: {
       key: "GOOGLE_API_KEY",
       provider: "Google Gemini (LLM/Image/Video)",
       signupUrl: "https://aistudio.google.com/apikey",
-      required: opts.provider === "gemini" || opts.imageProvider === "gemini",
+      required: opts.provider === "gemini" || opts.imageProvider === "gemini" || opts.videoProvider === "gemini",
     },
     {
       key: "ELEVENLABS_API_KEY",

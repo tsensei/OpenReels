@@ -13,6 +13,7 @@ async function main(): Promise<void> {
     provider: opts.provider,
     ttsProvider: opts.ttsProvider,
     imageProvider: opts.imageProvider,
+    videoProvider: opts.videoProvider,
   });
 
   // Initialize providers via factory

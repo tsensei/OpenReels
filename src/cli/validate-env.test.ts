@@ -102,6 +102,21 @@ describe("validateEnv", () => {
     delete process.env["ELEVENLABS_API_KEY"];
   });
 
+  it("requires GOOGLE_API_KEY when --video-provider gemini", () => {
+    delete process.env["GOOGLE_API_KEY"];
+    process.env["ANTHROPIC_API_KEY"] = "test";
+    process.env["ELEVENLABS_API_KEY"] = "test";
+
+    validateEnv({ provider: "anthropic", ttsProvider: "elevenlabs", imageProvider: "openai", videoProvider: "gemini" });
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const output = errorSpy.mock.calls.flat().join("");
+    expect(output).toContain("GOOGLE_API_KEY");
+
+    delete process.env["ANTHROPIC_API_KEY"];
+    delete process.env["ELEVENLABS_API_KEY"];
+  });
+
   it("passes when --provider gemini and GOOGLE_API_KEY is set", () => {
     process.env["GOOGLE_API_KEY"] = "test";
     process.env["ELEVENLABS_API_KEY"] = "test";
