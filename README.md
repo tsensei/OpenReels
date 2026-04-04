@@ -27,7 +27,7 @@ Give it a topic. It handles everything else:
 1. **Research** — web search to ground the script in real facts
 2. **Script** — writes a punchy, language-aware short-form script
 3. **Voiceover** — generates TTS audio with word-level timestamps
-4. **Visuals** — creates AI images and verifies stock footage with a vision model before using it (rejects bad matches, retries with reformulated queries, falls back to AI generation)
+4. **Visuals** — creates AI images, generates AI video clips (image-to-video via Google Veo or fal.ai), and verifies stock footage with a vision model before using it (rejects bad matches, retries with reformulated queries, falls back to AI generation)
 5. **Captions** — renders styled, animated captions with proper Unicode/CJK/RTL support
 6. **Assembly** — composites everything into a vertical MP4 via Remotion, with scene transitions (crossfade, slide, wipe, flip)
 7. **Critique** — an AI critic scores the output and re-runs the pipeline if quality is below threshold
@@ -97,7 +97,7 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 - `ELEVENLABS_API_KEY` or `INWORLD_TTS_API_KEY` — [ElevenLabs](https://elevenlabs.io/) / [Inworld](https://inworld.ai/)
 - `GOOGLE_API_KEY` — [Google AI Studio](https://aistudio.google.com/apikey) (Gemini image generation)
 
-**Optional:** `PEXELS_API_KEY` ([Pexels](https://www.pexels.com/api/)), `PIXABAY_API_KEY` ([Pixabay](https://pixabay.com/api/docs/)) for stock footage (free registration)
+**Optional:** `PEXELS_API_KEY` ([Pexels](https://www.pexels.com/api/)), `PIXABAY_API_KEY` ([Pixabay](https://pixabay.com/api/docs/)) for stock footage (free registration), `FAL_API_KEY` ([fal.ai](https://fal.ai/)) for AI video generation via Kling
 
 ### CLI flags
 
@@ -116,6 +116,9 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 | `--stock-confidence <n>` | Min confidence threshold for stock verification (0-1) | `0.6` |
 | `--stock-max-attempts <n>` | Max stock API calls per scene | `4` |
 | `--verification-model <model>` | Model override for stock verification VLM | same as `--provider` |
+| `--video-provider <name>` | Video provider (`gemini` or `fal`) | auto-detect from keys |
+| `--video-model <model>` | Video model override | provider default |
+| `--no-video` | Disable AI video generation | video on |
 | `-y, --yes` | Auto-confirm cost estimation (for Docker/CI) | off |
 
 ## Archetypes
@@ -147,7 +150,7 @@ The rewrite moves from Python to TypeScript for native [Remotion](https://www.re
 
 ## Status
 
-v0.7.0 shipped. The pipeline now verifies stock footage with a vision model before using it, with multi-provider search, query reformulation, and AI image fallback. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
+v0.8.0 shipped. AI video generation with Google Veo and fal.ai Kling, cross-provider fallback, LLM-generated motion prompts, per-scene cost breakdown. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
 
 ## License
 
