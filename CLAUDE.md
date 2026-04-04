@@ -46,7 +46,7 @@ fixtures/               # sample DirectorScore JSONs
 ```bash
 pnpm install          # install dependencies
 pnpm start "topic"    # run full pipeline (CLI)
-pnpm test             # run vitest suite (267 tests)
+pnpm test             # run vitest suite (288 tests)
 ```
 
 ### Web UI (Docker Compose)
