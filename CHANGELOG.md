@@ -10,9 +10,8 @@ All notable changes to OpenReels will be documented in this file.
 - Gemini pricing in cost estimator. Pre-run and actual cost estimates now use correct per-provider pricing instead of always defaulting to Anthropic rates.
 
 ### Changed
-- Extracted `BaseLLM` abstract class from Anthropic and OpenAI providers. Shared two-pass web search and structured output logic lives in `base.ts`, each provider is ~25 lines.
-- Standardized Pass 2 web search prompt across all providers to the generic extraction pattern.
-- `estimateCost()` now accepts an `llmProvider` parameter for accurate per-provider pricing.
+- LLM providers refactored with a shared base class. Each provider (Anthropic, OpenAI, Gemini) is now ~25 lines instead of ~105, with shared web search and structured output logic extracted.
+- Cost estimates use per-provider pricing. Gemini users see accurate estimates (~30x cheaper than Anthropic) instead of inflated numbers.
 - Settings page shows all provider API keys with correct names and labels.
 
 ### Fixed

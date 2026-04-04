@@ -93,9 +93,9 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 ### API keys
 
 **Required** (at minimum):
-- `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` — [Anthropic](https://console.anthropic.com/) / [OpenAI](https://platform.openai.com/api-keys)
+- `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` or `GOOGLE_API_KEY` — [Anthropic](https://console.anthropic.com/) / [OpenAI](https://platform.openai.com/api-keys) / [Google AI Studio](https://aistudio.google.com/apikey)
 - `ELEVENLABS_API_KEY` or `INWORLD_TTS_API_KEY` — [ElevenLabs](https://elevenlabs.io/) / [Inworld](https://inworld.ai/)
-- `GOOGLE_API_KEY` — [Google AI Studio](https://aistudio.google.com/apikey) (Gemini image generation)
+- `GOOGLE_API_KEY` — also needed for Gemini image generation and AI video (Veo). Use `--provider google` to run LLM + image + video with one key.
 
 **Optional:** `PEXELS_API_KEY` ([Pexels](https://www.pexels.com/api/)), `PIXABAY_API_KEY` ([Pixabay](https://pixabay.com/api/docs/)) for stock footage (free registration), `FAL_API_KEY` ([fal.ai](https://fal.ai/)) for AI video generation via Kling
 
@@ -104,7 +104,7 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--archetype <name>` | Override visual archetype | LLM chooses |
-| `--provider <name>` | LLM provider (`anthropic` or `openai`) | `anthropic` |
+| `--provider <name>` | LLM provider (`anthropic`, `openai`, `gemini`, or `google` to set LLM+image+video to Gemini) | `anthropic` |
 | `--tts-provider <name>` | TTS provider (`elevenlabs` or `inworld`) | `elevenlabs` |
 | `--platform <name>` | Target platform (`youtube`, `tiktok`, `instagram`) | `youtube` |
 | `--dry-run` | Output DirectorScore JSON without generating assets | off |
@@ -150,7 +150,7 @@ The rewrite moves from Python to TypeScript for native [Remotion](https://www.re
 
 ## Status
 
-v0.8.0 shipped. AI video generation with Google Veo and fal.ai Kling, cross-provider fallback, LLM-generated motion prompts, per-scene cost breakdown. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
+v0.9.0 shipped. Google Gemini as third LLM provider with `--provider google` single-vendor mode, BaseLLM refactor, accurate per-provider cost estimates. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
 
 ## License
 
