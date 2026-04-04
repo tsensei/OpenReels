@@ -108,6 +108,7 @@ app.get("/api/v1/providers", async () => ({
 interface CreateJobBody {
   topic: string;
   archetype?: string;
+  pacing?: string;
   platform?: string;
   dryRun?: boolean;
   noMusic?: boolean;
@@ -125,7 +126,7 @@ interface CreateJobBody {
 }
 
 app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
-  const { topic, archetype, platform, dryRun, noMusic, noVideo, providers, keys } = request.body ?? {};
+  const { topic, archetype, pacing, platform, dryRun, noMusic, noVideo, providers, keys } = request.body ?? {};
 
   if (!topic || typeof topic !== "string" || topic.trim().length === 0) {
     return reply.status(400).send({ error: "topic is required" });
@@ -143,6 +144,14 @@ app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
     }
   }
 
+  // Validate pacing tier if provided
+  const validPacingTiers = ["fast", "moderate", "cinematic"];
+  if (pacing && !validPacingTiers.includes(pacing)) {
+    return reply
+      .status(400)
+      .send({ error: `Unknown pacing tier: ${pacing}. Available: ${validPacingTiers.join(", ")}` });
+  }
+
   // Validate platform if provided
   const validPlatforms = Object.keys(PLATFORMS);
   if (platform && !validPlatforms.includes(platform)) {
@@ -154,6 +163,7 @@ app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
   const job = await queue.add("render", {
     topic: topic.trim(),
     archetype,
+    pacing,
     platform: platform ?? "youtube",
     dryRun: dryRun ?? false,
     noMusic: noMusic === true,

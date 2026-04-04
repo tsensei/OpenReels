@@ -50,6 +50,7 @@ export interface PipelineOptions {
   imageProvider: ImageProviderKey;
   stock: StockProvider[];
   archetype?: string;
+  pacing?: string;
   platform: string;
   dryRun: boolean;
   preview: boolean;

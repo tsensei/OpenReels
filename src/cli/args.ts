@@ -16,6 +16,7 @@ export interface CLIOptions {
   kokoroVoice?: string;
   noVideo: boolean;
   archetype?: string;
+  pacing?: string;
   platform: string;
   dryRun: boolean;
   preview: boolean;
@@ -53,6 +54,10 @@ export function parseArgs(): CLIOptions {
     )
     .option("--kokoro-voice <voice>", "Kokoro voice preset (e.g. af_heart, bf_emma, am_fenrir)", "af_heart")
     .option("-a, --archetype <archetype>", "Visual archetype override")
+    .addOption(
+      new Option("--pacing <tier>", "Pacing tier override (overrides archetype default)")
+        .choices(["fast", "moderate", "cinematic"]),
+    )
     .option("--platform <platform>", "Target platform (youtube, tiktok, instagram)", "youtube")
     .option("--dry-run", "Output DirectorScore JSON without generating assets", false)
     .option("--preview", "Open Remotion Studio preview after rendering", false)
@@ -124,6 +129,7 @@ export function parseArgs(): CLIOptions {
     kokoroVoice: opts["kokoroVoice"] as string | undefined,
     noVideo: opts["video"] === false,
     archetype: opts["archetype"] as string | undefined,
+    pacing: opts["pacing"] as string | undefined,
     platform: opts["platform"] as string,
     dryRun: opts["dryRun"] as boolean,
     preview: opts["preview"] as boolean,

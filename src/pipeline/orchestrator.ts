@@ -357,6 +357,7 @@ function buildPipelineWorkflow(
       const videoEnabled = !opts.noVideo && (opts.videoProviders?.length ?? 0) > 0;
       const cdOutput = await generateDirectorScore(opts.llm, opts.topic, inputData, {
         archetype: opts.archetype,
+        pacing: opts.pacing,
         videoEnabled,
       });
       // Store on shared context via closure
@@ -673,7 +674,7 @@ function buildPipelineWorkflow(
       cb.onStageStart?.("critic");
       const start = Date.now();
       try {
-        const critiqueOutput = await evaluate(opts.llm, score, opts.topic);
+        const critiqueOutput = await evaluate(opts.llm, score, opts.topic, opts.pacing);
         const critique = critiqueOutput.data;
         llmUsages.push(critiqueOutput.usage);
         const dur = (Date.now() - start) / 1000;

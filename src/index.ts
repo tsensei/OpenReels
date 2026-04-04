@@ -47,6 +47,7 @@ async function main(): Promise<void> {
       imageProvider: opts.imageProvider,
       stock,
       archetype: opts.archetype,
+      pacing: opts.pacing,
       platform: opts.platform,
       dryRun: opts.dryRun,
       preview: opts.preview,
