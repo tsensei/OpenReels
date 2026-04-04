@@ -18,6 +18,7 @@ src/
     tts/                # elevenlabs.ts, inworld.ts
     image/              # gemini.ts, openai.ts
     stock/              # pexels.ts, pixabay.ts, adaptive-resolver.ts, query-reformer.ts, stock-verifier.ts
+    video/              # gemini.ts (Veo), fal.ts (Kling), video-resolver.ts
   config/
     archetypes/         # 14 archetype JSON configs
     archetype-registry.ts
@@ -44,7 +45,7 @@ fixtures/               # sample DirectorScore JSONs
 ```bash
 pnpm install          # install dependencies
 pnpm start "topic"    # run full pipeline (CLI)
-pnpm test             # run vitest suite (133 tests)
+pnpm test             # run vitest suite (158 tests)
 ```
 
 ### Web UI (Docker Compose)
