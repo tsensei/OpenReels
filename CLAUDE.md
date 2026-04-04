@@ -14,7 +14,7 @@ src/
   pipeline/             # Mastra workflow orchestrator + utils (6-stage pipeline)
   providers/
     factory.ts          # provider factory with BYOK support
-    llm/                # anthropic.ts, openai.ts (AI SDK 6)
+    llm/                # base.ts (BaseLLM), anthropic.ts, openai.ts, gemini.ts (AI SDK 6)
     tts/                # elevenlabs.ts, inworld.ts
     image/              # gemini.ts, openai.ts
     stock/              # pexels.ts, pixabay.ts, adaptive-resolver.ts, query-reformer.ts, stock-verifier.ts
@@ -45,7 +45,7 @@ fixtures/               # sample DirectorScore JSONs
 ```bash
 pnpm install          # install dependencies
 pnpm start "topic"    # run full pipeline (CLI)
-pnpm test             # run vitest suite (158 tests)
+pnpm test             # run vitest suite (185 tests)
 ```
 
 ### Web UI (Docker Compose)
