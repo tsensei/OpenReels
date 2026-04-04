@@ -90,6 +90,9 @@
   **Depends on:** AI video generation feature
   Deferred from plan: AI Video Generation (CEO review: outside voice flagged, user deferred to TODO)
 
+- [ ] **Gemini generateVideos initial call timeout** — The 180s `TIMEOUT_MS` in gemini.ts only guards the polling loop. The initial `this.client.models.generateVideos()` call that submits the job has no application-level timeout, relying on OS socket timeout (~120s). Wrap with `Promise.race` or `AbortSignal.timeout()`. Same class of issue as the fal.ai subscribe timeout (P1 in Pipeline Robustness).
+  **Priority:** P2
+
 ## Completed
 
 - [x] **HTTP API server mode** — Fastify HTTP server with POST /api/v1/jobs, GET /api/v1/jobs/:id, SSE /api/v1/jobs/:id/events, plus full React web UI.

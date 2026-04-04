@@ -34,7 +34,7 @@ export interface ResolvedAssets {
   musicPath: string | null;
   sceneWords: WordTimestamp[][]; // per-scene words (for duration calculation only)
   allWords: WordTimestamp[]; // full absolute timestamps from TTS
-  sceneSourceDurations: (number | null)[]; // source video durations in seconds (stock_video only)
+  sceneSourceDurations: (number | null)[]; // source video durations in seconds (stock_video and ai_video)
 }
 
 export function mapScoreToProps(
