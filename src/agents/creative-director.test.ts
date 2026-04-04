@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildPacingInstruction, PACING_CONFIG } from "./creative-director.js";
 
 describe("buildPacingInstruction", () => {
-  // Path 1: explicit archetype — derive tier from config
+  // Path 2: explicit archetype — derive tier from config
   it("returns single tier instruction for known archetype (fast)", () => {
     const result = buildPacingInstruction("infographic");
     expect(result).toContain("fast");
@@ -22,7 +22,7 @@ describe("buildPacingInstruction", () => {
     expect(result).toContain("5-8");
   });
 
-  // Path 2: no archetype — full tier lookup table
+  // Path 3: no archetype — full tier lookup table
   it("returns full tier lookup table when no archetype specified", () => {
     const result = buildPacingInstruction();
     expect(result).toContain("After choosing your archetype");
@@ -40,7 +40,7 @@ describe("buildPacingInstruction", () => {
     expect(result).toContain("After choosing your archetype");
   });
 
-  // Path 3: --pacing override wins
+  // Path 1: --pacing override wins
   it("uses explicit pacing override regardless of archetype", () => {
     const result = buildPacingInstruction("cinematic_documentary", "fast");
     expect(result).toContain("fast");

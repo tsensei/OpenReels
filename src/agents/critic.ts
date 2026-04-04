@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { z } from "zod";
+import { PACING_CONFIG } from "./creative-director.js";
 import { getArchetype } from "../config/archetype-registry.js";
 import { loadPlaybookSections } from "../config/playbook.js";
 import type { DirectorScore } from "../schema/director-score.js";
@@ -49,7 +50,7 @@ export async function evaluate(
 
   // Derive pacing tier: explicit override > archetype config lookup
   let pacingTier: ScenePacing = "moderate";
-  if (pacingOverride && ["fast", "moderate", "cinematic"].includes(pacingOverride)) {
+  if (pacingOverride && pacingOverride in PACING_CONFIG) {
     pacingTier = pacingOverride as ScenePacing;
   } else {
     try {
@@ -59,11 +60,12 @@ export async function evaluate(
     }
   }
 
-  const PACING_RANGES: Record<ScenePacing, string> = {
-    fast: "8-12 scenes, 8-12 words per scene, 90-120 total words",
-    moderate: "7-10 scenes, 10-16 words per scene, 100-140 total words",
-    cinematic: "5-8 scenes, 15-22 words per scene, 90-130 total words",
-  };
+  const PACING_RANGES = Object.fromEntries(
+    Object.entries(PACING_CONFIG).map(([tier, cfg]) => [
+      tier,
+      `${cfg.min}-${cfg.max} scenes, ${cfg.wordsPerScene} words per scene, ${cfg.totalWords} total words`,
+    ]),
+  ) as Record<ScenePacing, string>;
 
   const userMessage = `Topic: ${topic}
 
