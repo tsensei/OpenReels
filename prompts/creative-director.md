@@ -50,9 +50,9 @@ Each archetype has a pacing tier that controls scene count and word budget. The 
 Your script_lines are spoken as voiceover at ~150 words per minute. Word count directly controls video duration.
 
 - **Follow the tier**: Use the scene count and word budget from your assigned pacing tier.
-- **Hook scene**: 8-15 words. Land the hook in one punchy sentence.
+- **Hook scene (scene 1)**: 8-15 words. Land the hook in one punchy sentence.
 - **Middle scenes**: Follow the tier's words-per-scene range. One idea per scene.
-- **CTA/closing scene**: 8-15 words. Short and memorable.
+- **CTA scene (FINAL scene, REQUIRED)**: 8-15 words. Must be a call-to-action, NOT a story conclusion. Use a CTA pattern from the playbook (engagement ask, knowledge test, share prompt, follow hook, or cliffhanger). Typically a text_card. Example: "What would you have done? Drop your answer below."
 - **One idea per scene**: If a script_line covers multiple facts, split into separate scenes or cut.
 - **Self-check**: After drafting, count total words. If over budget, remove a scene or trim — never cram.
 

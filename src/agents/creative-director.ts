@@ -132,7 +132,7 @@ You must output a DirectorScore with:
 
 GOLDEN RULE: Never use the same visual_type more than 2 times consecutively. Mix ai_image, stock_image, stock_video, and text_card for variety.
 
-Think like a YouTube Shorts producer. The hook must grab in 1-2 seconds. Every scene should move the story forward. End with a memorable line.
+Think like a YouTube Shorts producer. The hook must grab in 1-2 seconds. Every scene should move the story forward. The FINAL scene MUST be a call-to-action (e.g. "What would you have done? Comment below."), not a story conclusion.
 
 Keep total script under 140 words — verbose scripts create rushed, unwatchable videos.`;
 }
