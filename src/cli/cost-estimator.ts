@@ -3,6 +3,7 @@ import type {
   ImageProviderKey,
   LLMProviderKey,
   LLMUsage,
+  MusicProviderKey,
   TTSProviderKey,
   VideoProviderKey,
 } from "../schema/providers.js";
@@ -12,6 +13,7 @@ export interface CostBreakdown {
   ttsCost: number;
   imageCost: number;
   videoCost: number;
+  musicCost: number;
   totalCost: number;
   details: {
     llmCalls: number;
@@ -27,6 +29,7 @@ export interface ActualCostBreakdown {
   ttsCost: number;
   imageCost: number;
   videoCost: number;
+  musicCost: number;
   totalCost: number;
   details: {
     totalInputTokens: number;
@@ -61,7 +64,7 @@ const PRICING = {
     elevenlabs: 0.00018, // $0.18 per 1K chars (avg of Creator $0.20 and Pro $0.17, Multilingual v2)
     inworld: 0.00001, // $0.01 per 1K chars (Inworld TTS-1.5 Max: $10/1M chars)
     kokoro: 0, // Free — local inference
-    "gemini-tts": 0, // Free tier (Gemini 2.5 Flash TTS preview)
+    "gemini-tts": 0.00002, // ~$0.02/1K chars (Gemini 2.5 Flash TTS: $0.50/1M text in + $10/1M audio out, ~2 audio tokens per char)
     "openai-tts": 0.00005, // ~$0.05 per 1K chars (gpt-4o-mini-tts: $0.60/1M text tokens in + $12/1M audio tokens out)
   } satisfies Record<TTSProviderKey, number>,
   // Gemini 3.1 Flash Image Preview: $60/M output tokens
@@ -74,6 +77,8 @@ const PRICING = {
   // Video generation pricing (per second of generated video)
   veoLitePerSecond: 0.05, // Veo 3.1 Lite ($0.30 for 6s clip)
   falKlingPerSecond: 0.07, // Kling v2.1 via fal.ai ($0.35 for 5s clip)
+  // Music generation pricing
+  lyriaPerTrack: 0.08, // Lyria 3 Pro: $0.08 per song (ai.google.dev/gemini-api/docs/music-generation)
 };
 
 // Per-call-type token estimates for pre-run cost prediction
@@ -90,6 +95,7 @@ export function estimateCost(
   ttsProvider: TTSProviderKey = "elevenlabs",
   videoProvider?: VideoProviderKey,
   llmProvider: LLMProviderKey = "anthropic",
+  musicProvider: MusicProviderKey = "bundled",
 ): CostBreakdown {
   const aiImageScenes = score.scenes.filter((s) => s.visual_type === "ai_image").length;
   const aiVideoScenes = score.scenes.filter((s) => s.visual_type === "ai_video").length;
@@ -117,7 +123,11 @@ export function estimateCost(
   const videoPerSecond = videoProvider === "fal" ? PRICING.falKlingPerSecond : PRICING.veoLitePerSecond;
   const videoCost = aiVideoScenes * 6 * videoPerSecond;
 
-  const totalCost = llmCost + ttsCost + imageCost + videoCost;
+  // Music generation cost: Lyria $0.08/track + ~1 LLM call for prompter
+  const musicCost =
+    musicProvider === "lyria" ? PRICING.lyriaPerTrack + callCost(TOKEN_ESTIMATES.imagePrompter) : 0;
+
+  const totalCost = llmCost + ttsCost + imageCost + videoCost + musicCost;
 
   // Per-scene cost breakdown
   const perScene = score.scenes.map((s) => {
@@ -142,7 +152,7 @@ export function estimateCost(
   });
 
   return {
-    llmCost, ttsCost, imageCost, videoCost, totalCost,
+    llmCost, ttsCost, imageCost, videoCost, musicCost, totalCost,
     details: { llmCalls, ttsCharacters, aiImages, aiVideos: aiVideoScenes },
     perScene,
   };
@@ -162,6 +172,9 @@ export function formatCostEstimate(
   ];
   if (breakdown.details.aiVideos > 0) {
     lines.push(`  Video:  $${breakdown.videoCost.toFixed(4)} (${breakdown.details.aiVideos} AI videos)`);
+  }
+  if (breakdown.musicCost > 0) {
+    lines.push(`  Music:  $${breakdown.musicCost.toFixed(4)} (Lyria AI generation)`);
   }
   lines.push(`  Stock:  free`);
   if (stockSceneCount && stockSceneCount > 0) {
@@ -185,11 +198,12 @@ export function formatCostEstimate(
  */
 export function computeActualLLMCost(
   usages: LLMUsage[],
-  nonLlm: { aiImages: number; ttsCharacters: number; aiVideos?: number },
+  nonLlm: { aiImages: number; ttsCharacters: number; aiVideos?: number; musicGenerated?: boolean },
   provider: LLMProviderKey = "anthropic",
   imageProvider: ImageProviderKey = "gemini",
   ttsProvider: TTSProviderKey = "elevenlabs",
   videoProvider?: VideoProviderKey,
+  musicProvider?: MusicProviderKey,
 ): ActualCostBreakdown {
   const p = PRICING[provider];
   const totalInputTokens = usages.reduce((sum, u) => sum + u.inputTokens, 0);
@@ -203,13 +217,15 @@ export function computeActualLLMCost(
   const videoPerSecond = videoProvider === "fal" ? PRICING.falKlingPerSecond : PRICING.veoLitePerSecond;
   const aiVideos = nonLlm.aiVideos ?? 0;
   const videoCost = aiVideos * 6 * videoPerSecond;
-  const totalCost = llmCost + ttsCost + imageCost + videoCost;
+  const musicCost = nonLlm.musicGenerated && musicProvider === "lyria" ? PRICING.lyriaPerTrack : 0;
+  const totalCost = llmCost + ttsCost + imageCost + videoCost + musicCost;
 
   return {
     llmCost,
     ttsCost,
     imageCost,
     videoCost,
+    musicCost,
     totalCost,
     details: {
       totalInputTokens,
@@ -230,6 +246,9 @@ export function formatActualCost(breakdown: ActualCostBreakdown): string {
   ];
   if (breakdown.details.aiVideos > 0) {
     lines.push(`  Video:  $${breakdown.videoCost.toFixed(4)} (${breakdown.details.aiVideos} AI videos)`);
+  }
+  if (breakdown.musicCost > 0) {
+    lines.push(`  Music:  $${breakdown.musicCost.toFixed(4)} (Lyria AI generation)`);
   }
   return lines.join("\n");
 }

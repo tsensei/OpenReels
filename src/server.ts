@@ -119,6 +119,7 @@ interface CreateJobBody {
     stock?: string;
     video?: string;
     videoModel?: string;
+    music?: string;
   };
   keys?: Record<string, string>;
 }
@@ -164,6 +165,7 @@ app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
       stock: providers?.stock ?? "pexels",
       video: providers?.video,
       videoModel: providers?.videoModel,
+      music: providers?.music ?? "bundled",
     },
     keys: keys ?? {},
     jobsDir: JOBS_DIR,

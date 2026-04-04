@@ -1,4 +1,4 @@
-import type { ImageProviderKey, LLMProviderKey, TTSProviderKey, VideoProviderKey } from "../schema/providers.js";
+import type { ImageProviderKey, LLMProviderKey, MusicProviderKey, TTSProviderKey, VideoProviderKey } from "../schema/providers.js";
 
 interface EnvRequirement {
   key: string;
@@ -12,6 +12,7 @@ export function validateEnv(opts: {
   ttsProvider: TTSProviderKey;
   imageProvider: ImageProviderKey;
   videoProvider?: VideoProviderKey;
+  musicProvider?: MusicProviderKey;
 }): void {
   const requirements: EnvRequirement[] = [
     {
@@ -34,7 +35,8 @@ export function validateEnv(opts: {
         opts.provider === "gemini" ||
         opts.imageProvider === "gemini" ||
         opts.videoProvider === "gemini" ||
-        opts.ttsProvider === "gemini-tts",
+        opts.ttsProvider === "gemini-tts" ||
+        opts.musicProvider === "lyria",
     },
     {
       key: "ELEVENLABS_API_KEY",

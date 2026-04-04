@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { Mastra } from "@mastra/core";
 import { createStep, createWorkflow } from "@mastra/core/workflows";
@@ -20,7 +21,7 @@ import {
 import { ProgressDisplay } from "../cli/progress.js";
 import { getArchetype } from "../config/archetype-registry.js";
 import { getPlatformConfig } from "../config/platforms.js";
-import { selectTrack } from "../providers/music/bundled.js";
+import { resolveMusic, type MusicResolution } from "./music-resolver.js";
 import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
 import { getTotalDurationInFrames, mapScoreToProps } from "../remotion/lib/score-to-props.js";
@@ -110,6 +111,7 @@ interface RunLog {
   totalCost?: { estimated: number; actual?: number };
   stockResolutions?: StockResolution[];
   videoResolutions?: VideoResolution[];
+  musicResolution?: { provider: string; prompt?: string; metadata?: Record<string, unknown>; fallback: boolean };
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -292,6 +294,7 @@ function buildPipelineWorkflow(
     sceneSourceDurations: (number | null)[];
     musicFilePath?: string | null;
     musicSelection?: { trackId: string; mood: string; requestedMood: string; fallback: boolean } | null;
+    musicResolution?: MusicResolution | null;
   } = { sceneAssets: [], sceneSourceDurations: [] };
 
   const assemblyResult: { videoPath?: string | null } = {};
@@ -384,7 +387,7 @@ function buildPipelineWorkflow(
       }
 
       // Cost estimation
-      const costBreakdown = estimateCost(cdOutput.data, opts.imageProvider, opts.ttsProvider, opts.videoProvider, opts.llm.id);
+      const costBreakdown = estimateCost(cdOutput.data, opts.imageProvider, opts.ttsProvider, opts.videoProvider, opts.llm.id, opts.musicProviderKey);
       directorResult.costBreakdown = costBreakdown;
       log.totalCost = { estimated: costBreakdown.totalCost };
 
@@ -449,14 +452,18 @@ function buildPipelineWorkflow(
       const start = Date.now();
       const totalScenes = score.scenes.length;
 
-      const sceneResults = await Promise.all(
+      // Compute scene durations from TTS word timings for visual assets and music
+      const sceneDurations = (ttsResult.sceneWords ?? []).map((words) => {
+        const first = words?.[0];
+        const last = words?.[words.length - 1];
+        return first && last ? last.end - first.start + 0.5 : 3;
+      });
+
+      // Run visual asset resolution and music generation in parallel
+      const scenePromise = Promise.all(
         score.scenes.map(async (scene, i) => {
           try {
-            // Compute scene voiceover duration from TTS word timings (available from Step 3)
-            const sceneWords = ttsResult.sceneWords?.[i];
-            const firstWord = sceneWords?.[0];
-            const lastWord = sceneWords?.[sceneWords.length - 1];
-            const sceneDuration = firstWord && lastWord ? lastWord.end - firstWord.start + 0.5 : undefined;
+            const sceneDuration = sceneDurations[i];
             return await resolveVisualAsset(scene, i, totalScenes, assetsDir, opts, archetype, cb, sceneDuration);
           } catch (err) {
             cb.onProgress?.("visuals", { type: "asset_failed", scene: i, error: String(err) });
@@ -465,10 +472,46 @@ function buildPipelineWorkflow(
         }),
       );
 
+      const musicPromise = resolveMusic(score, sceneDurations, {
+        musicProvider: opts.musicProvider ?? new (await import("../providers/music/bundled-adapter.js")).BundledMusic(),
+        musicProviderKey: opts.musicProviderKey ?? "bundled",
+        llm: opts.llm,
+        noMusic: opts.noMusic,
+        callbacks: cb,
+      });
+
+      const [sceneResults, musicResult] = await Promise.all([scenePromise, musicPromise]);
+
       visualsResult.sceneAssets = sceneResults.map((r) => r.path);
       visualsResult.sceneSourceDurations = sceneResults.map((r) => r.durationSeconds);
       for (const r of sceneResults) {
         if (r.usage) llmUsages.push(r.usage);
+      }
+
+      // Track music prompter LLM usage
+      if (musicResult?.prompterUsage) {
+        llmUsages.push(musicResult.prompterUsage);
+      }
+
+      // Store music result and emit progress event for worker meta.json
+      if (musicResult) {
+        visualsResult.musicFilePath = musicResult.filePath;
+        visualsResult.musicResolution = musicResult;
+        // Backward-compatible musicSelection for existing progress events
+        visualsResult.musicSelection = {
+          trackId: musicResult.provider === "lyria" ? "lyria-generated" : "bundled",
+          mood: score.music_mood,
+          requestedMood: score.music_mood,
+          fallback: musicResult.fallback,
+        };
+        // Emit full music metadata for worker to persist in meta.json
+        cb.onProgress?.("visuals", {
+          type: "music_resolved",
+          provider: musicResult.provider,
+          prompt: musicResult.prompt,
+          metadata: musicResult.metadata,
+          fallback: musicResult.fallback,
+        });
       }
 
       // Collect stock resolution metadata for log.json
@@ -487,23 +530,20 @@ function buildPipelineWorkflow(
         log.videoResolutions = videoResolutions;
       }
 
+      // Write music resolution metadata to log.json
+      if (musicResult) {
+        log.musicResolution = {
+          provider: musicResult.provider,
+          prompt: musicResult.prompt,
+          metadata: musicResult.metadata,
+          fallback: musicResult.fallback,
+        };
+      }
+
       const dur = (Date.now() - start) / 1000;
       const assetCount = visualsResult.sceneAssets.filter(Boolean).length;
       cb.onStageComplete?.("visuals", `${assetCount}/${totalScenes} assets`, dur);
       log.stages.push({ name: "visuals", duration: dur, status: "done" });
-
-      // Music selection
-      if (!opts.noMusic) {
-        try {
-          const selection = selectTrack(score.music_mood);
-          if (selection) {
-            visualsResult.musicFilePath = selection.filePath;
-            visualsResult.musicSelection = selection;
-          }
-        } catch (err) {
-          console.warn(`[orchestrator] Music selection failed, proceeding without music: ${err}`);
-        }
-      }
 
       return { done: true };
     },
@@ -548,6 +588,10 @@ function buildPipelineWorkflow(
       if (musicFilePath) {
         try {
           fs.copyFileSync(musicFilePath, path.join(publicDir, "music.mp3"));
+          // Clean up temp file from Lyria to prevent /tmp disk fill on servers
+          if (musicFilePath.includes(os.tmpdir())) {
+            try { fs.unlinkSync(musicFilePath); } catch { /* ignore cleanup error */ }
+          }
         } catch (err) {
           console.warn(`[orchestrator] Failed to copy music file, proceeding without music: ${err}`);
           musicFilePath = null;
@@ -759,13 +803,15 @@ export async function runPipeline(
       ).length;
       const aiImages = aiImageFiles + aiVideoScenes;
       const ttsCharacters = score.scenes.reduce((sum, s) => sum + s.script_line.length, 0);
+      const musicGenerated = visualsResult.musicResolution?.provider === "lyria";
       const actualCost = computeActualLLMCost(
         llmUsages,
-        { aiImages, ttsCharacters, aiVideos: aiVideoScenes },
+        { aiImages, ttsCharacters, aiVideos: aiVideoScenes, musicGenerated },
         opts.llm.id,
         opts.imageProvider,
         opts.ttsProvider,
         opts.videoProvider,
+        opts.musicProviderKey,
       );
       log.totalCost = {
         estimated: directorResult.costBreakdown.totalCost,

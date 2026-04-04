@@ -13,6 +13,8 @@ import { GeminiTTS } from "./tts/gemini.js";
 import { InworldTTS } from "./tts/inworld.js";
 import { KokoroTTS } from "./tts/kokoro.js";
 import { OpenAITTS } from "./tts/openai.js";
+import { BundledMusic } from "./music/bundled-adapter.js";
+import { LyriaMusic } from "./music/lyria.js";
 
 vi.mock("./llm/anthropic.js", () => ({
   AnthropicLLM: vi.fn().mockImplementation(() => ({ id: "anthropic", generate: vi.fn() })),
@@ -55,6 +57,12 @@ vi.mock("./stock/pexels.js", () => ({
 }));
 vi.mock("./stock/pixabay.js", () => ({
   PixabayStock: vi.fn().mockImplementation(() => ({ searchVideo: vi.fn(), searchImage: vi.fn(), download: vi.fn() })),
+}));
+vi.mock("./music/bundled-adapter.js", () => ({
+  BundledMusic: vi.fn().mockImplementation(() => ({ generate: vi.fn() })),
+}));
+vi.mock("./music/lyria.js", () => ({
+  LyriaMusic: vi.fn().mockImplementation(() => ({ generate: vi.fn() })),
 }));
 
 describe("createProviders", () => {
@@ -232,5 +240,43 @@ describe("createProviders", () => {
 
     expect(ElevenLabsTTS).toHaveBeenCalled();
     expect(AlignedTTSProvider).not.toHaveBeenCalled();
+  });
+
+  it("creates BundledMusic by default", () => {
+    const providers = createProviders({
+      llm: "anthropic",
+      tts: "elevenlabs",
+      image: "gemini",
+    });
+
+    expect(providers.music).toBeDefined();
+    expect(BundledMusic).toHaveBeenCalled();
+    expect(LyriaMusic).not.toHaveBeenCalled();
+  });
+
+  it("creates LyriaMusic when music config is lyria", () => {
+    const providers = createProviders({
+      llm: "anthropic",
+      tts: "elevenlabs",
+      image: "gemini",
+      music: "lyria",
+      keys: { GOOGLE_API_KEY: "test-goog-key" },
+    });
+
+    expect(providers.music).toBeDefined();
+    expect(LyriaMusic).toHaveBeenCalledWith("test-goog-key");
+    expect(BundledMusic).not.toHaveBeenCalled();
+  });
+
+  it("creates BundledMusic when music config is bundled", () => {
+    const providers = createProviders({
+      llm: "anthropic",
+      tts: "elevenlabs",
+      image: "gemini",
+      music: "bundled",
+    });
+
+    expect(BundledMusic).toHaveBeenCalled();
+    expect(LyriaMusic).not.toHaveBeenCalled();
   });
 });

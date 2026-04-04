@@ -7,6 +7,8 @@ import type {
   ImageProvider,
   ImageProviderKey,
   LLMProvider,
+  MusicProvider,
+  MusicProviderKey,
   StockProvider,
   TTSProvider,
   TTSProviderKey,
@@ -54,6 +56,8 @@ export interface PipelineOptions {
   outputDir: string;
   yes: boolean;
   noMusic?: boolean;
+  musicProvider?: MusicProvider;
+  musicProviderKey?: MusicProviderKey;
   stockVerify?: boolean;
   stockConfidence?: number;
   stockMaxAttempts?: number;

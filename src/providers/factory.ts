@@ -7,6 +7,8 @@ import type {
   ImageProviderKey,
   LLMProvider,
   LLMProviderKey,
+  MusicProvider,
+  MusicProviderKey,
   StockProvider,
   StockProviderKey,
   TTSProvider,
@@ -30,6 +32,8 @@ import { OpenAITTS } from "./tts/openai.js";
 import { WhisperAligner } from "./tts/whisper-aligner.js";
 import { GeminiVideo } from "./video/gemini.js";
 import { FalVideo } from "./video/fal.js";
+import { BundledMusic } from "./music/bundled-adapter.js";
+import { LyriaMusic } from "./music/lyria.js";
 
 export interface ProviderConfig {
   llm: LLMProviderKey;
@@ -37,6 +41,7 @@ export interface ProviderConfig {
   image: ImageProviderKey;
   stock?: StockProviderKey;
   video?: VideoProviderKey;
+  music?: MusicProviderKey;
   videoModel?: string;
   kokoroVoice?: string;
   keys?: Record<string, string>;
@@ -48,6 +53,7 @@ export interface Providers {
   imageGen: ImageProvider;
   stock: StockProvider[];
   videoProviders: VideoProvider[];
+  music: MusicProvider;
 }
 
 export function createProviders(config: ProviderConfig): Providers {
@@ -117,7 +123,13 @@ export function createProviders(config: ProviderConfig): Providers {
     if (falKey) videoProviders.push(new FalVideo(undefined, falKey));
   }
 
-  return { llm, tts, imageGen, stock, videoProviders };
+  // Music provider: lyria requires GOOGLE_API_KEY, bundled is always available
+  const music: MusicProvider =
+    config.music === "lyria"
+      ? new LyriaMusic(k["GOOGLE_API_KEY"] ?? googleKey)
+      : new BundledMusic();
+
+  return { llm, tts, imageGen, stock, videoProviders, music };
 }
 
 /** Create an AI SDK LanguageModel instance for VLM verification */
@@ -131,7 +143,10 @@ export function createVerificationModel(
     return openai(model ?? "gpt-4o");
   }
   if (provider === "gemini") {
-    const google = apiKey ? createGoogleGenerativeAI({ apiKey }) : createGoogleGenerativeAI();
+    // @ai-sdk/google looks for GOOGLE_GENERATIVE_AI_API_KEY by default,
+    // but OpenReels standardizes on GOOGLE_API_KEY across all providers.
+    const key = apiKey ?? process.env["GOOGLE_API_KEY"];
+    const google = key ? createGoogleGenerativeAI({ apiKey: key }) : createGoogleGenerativeAI();
     return google(model ?? "gemini-2.5-flash");
   }
   const anthropic = apiKey ? createAnthropic({ apiKey }) : createAnthropic();

@@ -178,4 +178,34 @@ describe("validateEnv", () => {
     delete process.env["GOOGLE_API_KEY"];
     delete process.env["PEXELS_API_KEY"];
   });
+
+  it("requires GOOGLE_API_KEY when --music-provider lyria", () => {
+    delete process.env["GOOGLE_API_KEY"];
+    process.env["ANTHROPIC_API_KEY"] = "test";
+    process.env["ELEVENLABS_API_KEY"] = "test";
+
+    validateEnv({ provider: "anthropic", ttsProvider: "elevenlabs", imageProvider: "openai", musicProvider: "lyria" });
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const output = errorSpy.mock.calls.flat().join("");
+    expect(output).toContain("GOOGLE_API_KEY");
+
+    delete process.env["ANTHROPIC_API_KEY"];
+    delete process.env["ELEVENLABS_API_KEY"];
+  });
+
+  it("does not require GOOGLE_API_KEY when --music-provider bundled", () => {
+    process.env["ANTHROPIC_API_KEY"] = "test";
+    process.env["ELEVENLABS_API_KEY"] = "test";
+    process.env["OPENAI_API_KEY"] = "test";
+    delete process.env["GOOGLE_API_KEY"];
+
+    validateEnv({ provider: "anthropic", ttsProvider: "elevenlabs", imageProvider: "openai", musicProvider: "bundled" });
+
+    expect(exitSpy).not.toHaveBeenCalled();
+
+    delete process.env["ANTHROPIC_API_KEY"];
+    delete process.env["ELEVENLABS_API_KEY"];
+    delete process.env["OPENAI_API_KEY"];
+  });
 });

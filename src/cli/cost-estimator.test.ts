@@ -69,7 +69,18 @@ describe("estimateCost", () => {
       { visual_type: "text_card", script_line: "Test" },
     ]);
     const result = estimateCost(score);
-    expect(result.totalCost).toBeCloseTo(result.llmCost + result.ttsCost + result.imageCost + result.videoCost);
+    expect(result.totalCost).toBeCloseTo(
+      result.llmCost + result.ttsCost + result.imageCost + result.videoCost + result.musicCost,
+    );
+  });
+
+  it("includes music cost when lyria provider specified", () => {
+    const score = makeScore([{ visual_type: "ai_image", script_line: "Test" }]);
+    const bundled = estimateCost(score, "gemini", "elevenlabs", undefined, "anthropic", "bundled");
+    const lyria = estimateCost(score, "gemini", "elevenlabs", undefined, "anthropic", "lyria");
+    expect(bundled.musicCost).toBe(0);
+    expect(lyria.musicCost).toBeGreaterThan(0);
+    expect(lyria.musicCost).toBeCloseTo(0.08, 1); // ~$0.08 for Lyria + small LLM cost
   });
 
   it("counts ai_video scenes for video cost and Phase 1 image cost", () => {
@@ -133,6 +144,13 @@ describe("formatCostEstimate", () => {
     expect(formatted).toContain("Stock:  free");
   });
 
+  it("includes music line when lyria provider specified", () => {
+    const score = makeScore([{ visual_type: "ai_image", script_line: "Test" }]);
+    const formatted = formatCostEstimate(estimateCost(score, "gemini", "elevenlabs", undefined, "anthropic", "lyria"));
+    expect(formatted).toContain("Music:");
+    expect(formatted).toContain("Lyria AI generation");
+  });
+
   it("includes video line when ai_video scenes present", () => {
     const score = makeScore([
       { visual_type: "ai_video", script_line: "Video scene" },
@@ -155,7 +173,9 @@ describe("computeActualLLMCost", () => {
     expect(result.details.totalInputTokens).toBe(3000);
     expect(result.details.totalOutputTokens).toBe(1500);
     expect(result.totalCost).toBeGreaterThan(0);
-    expect(result.totalCost).toBeCloseTo(result.llmCost + result.ttsCost + result.imageCost + result.videoCost);
+    expect(result.totalCost).toBeCloseTo(
+      result.llmCost + result.ttsCost + result.imageCost + result.videoCost + result.musicCost,
+    );
   });
 
   it("includes video cost in actual cost computation", () => {
@@ -170,7 +190,33 @@ describe("computeActualLLMCost", () => {
     );
     expect(result.details.aiVideos).toBe(2);
     expect(result.videoCost).toBeGreaterThan(0);
-    expect(result.totalCost).toBeCloseTo(result.llmCost + result.ttsCost + result.imageCost + result.videoCost);
+    expect(result.totalCost).toBeCloseTo(
+      result.llmCost + result.ttsCost + result.imageCost + result.videoCost + result.musicCost,
+    );
+  });
+
+  it("includes music cost in actual cost computation", () => {
+    const usages: LLMUsage[] = [{ inputTokens: 100, outputTokens: 50 }];
+    const withMusic = computeActualLLMCost(
+      usages,
+      { aiImages: 0, ttsCharacters: 0, musicGenerated: true },
+      "anthropic",
+      "gemini",
+      "elevenlabs",
+      undefined,
+      "lyria",
+    );
+    const withoutMusic = computeActualLLMCost(
+      usages,
+      { aiImages: 0, ttsCharacters: 0, musicGenerated: false },
+      "anthropic",
+      "gemini",
+      "elevenlabs",
+      undefined,
+      "bundled",
+    );
+    expect(withMusic.musicCost).toBeGreaterThan(0);
+    expect(withoutMusic.musicCost).toBe(0);
   });
 
   it("uses openai pricing when specified", () => {

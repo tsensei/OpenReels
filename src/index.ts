@@ -14,15 +14,17 @@ async function main(): Promise<void> {
     ttsProvider: opts.ttsProvider,
     imageProvider: opts.imageProvider,
     videoProvider: opts.videoProvider,
+    musicProvider: opts.musicProvider,
   });
 
   // Initialize providers via factory
-  const { llm, tts, imageGen, stock, videoProviders } = createProviders({
+  const { llm, tts, imageGen, stock, videoProviders, music } = createProviders({
     llm: opts.provider,
     tts: opts.ttsProvider,
     image: opts.imageProvider,
     video: opts.videoProvider,
     videoModel: opts.videoModel,
+    music: opts.musicProvider,
     kokoroVoice: opts.kokoroVoice,
   });
 
@@ -51,6 +53,8 @@ async function main(): Promise<void> {
       outputDir: opts.output,
       yes: opts.yes,
       noMusic: opts.noMusic,
+      musicProvider: music,
+      musicProviderKey: opts.musicProvider,
       videoProviders: opts.noVideo ? [] : videoProviders,
       videoProvider: opts.videoProvider,
       noVideo: opts.noVideo,

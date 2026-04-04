@@ -1,6 +1,6 @@
 import { createRequire } from "node:module";
 import { Command, Option } from "commander";
-import type { ImageProviderKey, LLMProviderKey, TTSProviderKey, VideoProviderKey } from "../schema/providers.js";
+import type { ImageProviderKey, LLMProviderKey, MusicProviderKey, TTSProviderKey, VideoProviderKey } from "../schema/providers.js";
 
 const require = createRequire(import.meta.url);
 const { version } = require("../../package.json") as { version: string };
@@ -12,6 +12,7 @@ export interface CLIOptions {
   ttsProvider: TTSProviderKey;
   videoProvider?: VideoProviderKey;
   videoModel?: string;
+  musicProvider: MusicProviderKey;
   kokoroVoice?: string;
   noVideo: boolean;
   archetype?: string;
@@ -57,6 +58,11 @@ export function parseArgs(): CLIOptions {
     .option("--preview", "Open Remotion Studio preview after rendering", false)
     .option("-o, --output <dir>", "Output directory", "./output")
     .option("-y, --yes", "Auto-confirm cost estimation prompt (non-interactive mode)", false)
+    .addOption(
+      new Option("--music-provider <provider>", "Music provider")
+        .choices(["bundled", "lyria"])
+        .default("bundled"),
+    )
     .option("--music", "Include background music (use --no-music to disable)", true)
     .option("--stock-verify", "Verify stock footage with vision model (use --no-stock-verify to disable)", true)
     .option("--stock-confidence <n>", "Min confidence threshold for stock verification (0-1)", parseFloat, 0.6)
@@ -87,9 +93,17 @@ export function parseArgs(): CLIOptions {
     if (!imageSource || imageSource === "default") {
       opts["imageProvider"] = "gemini";
     }
+    const ttsSource = program.getOptionValueSource("ttsProvider");
+    if (!ttsSource || ttsSource === "default") {
+      opts["ttsProvider"] = "gemini-tts";
+    }
     const videoSource = program.getOptionValueSource("videoProvider");
     if (!videoSource || videoSource === "default") {
       opts["videoProvider"] = "gemini";
+    }
+    const musicSource = program.getOptionValueSource("musicProvider");
+    if (!musicSource || musicSource === "default") {
+      opts["musicProvider"] = "lyria";
     }
   } else if (opts["provider"] === "local") {
     opts["provider"] = "anthropic"; // LLM defaults unchanged
@@ -106,6 +120,7 @@ export function parseArgs(): CLIOptions {
     ttsProvider: opts["ttsProvider"] as TTSProviderKey,
     videoProvider: opts["videoProvider"] as VideoProviderKey | undefined,
     videoModel: opts["videoModel"] as string | undefined,
+    musicProvider: opts["musicProvider"] as MusicProviderKey,
     kokoroVoice: opts["kokoroVoice"] as string | undefined,
     noVideo: opts["video"] === false,
     archetype: opts["archetype"] as string | undefined,

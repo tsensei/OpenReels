@@ -9,6 +9,7 @@ import { validateManifest } from "./providers/music/bundled.js";
 import type {
   ImageProviderKey,
   LLMProviderKey,
+  MusicProviderKey,
   StockProviderKey,
   TTSProviderKey,
   VideoProviderKey,
@@ -46,6 +47,7 @@ interface JobData {
     stock: string;
     video?: string;
     videoModel?: string;
+    music?: string;
   };
   keys: Record<string, string>;
   jobsDir: string;
@@ -68,6 +70,7 @@ interface JobMeta {
   score?: unknown; // DirectorScore
   criticReview?: { score: number; strengths: string[]; weaknesses: string[] };
   musicTrack?: { trackId: string; mood: string; requestedMood: string; fallback: boolean };
+  musicGeneration?: { provider: string; prompt?: string; metadata?: Record<string, unknown>; fallback: boolean };
   error?: string;
 }
 
@@ -108,6 +111,7 @@ const worker = new Worker<JobData>(
       stock: providers.stock as StockProviderKey,
       video: providers.video as VideoProviderKey | undefined,
       videoModel: providers.videoModel,
+      music: (providers.music as MusicProviderKey) ?? "bundled",
       keys,
     });
 
@@ -147,6 +151,14 @@ const worker = new Worker<JobData>(
           writeMeta(jobDir, meta);
         } else if (data.type === "music") {
           meta.musicTrack = { trackId: data.track as string, mood: data.mood as string, requestedMood: data.requestedMood as string, fallback: data.fallback as boolean };
+          writeMeta(jobDir, meta);
+        } else if (data.type === "music_resolved") {
+          meta.musicGeneration = {
+            provider: data.provider as string,
+            prompt: data.prompt as string | undefined,
+            metadata: data.metadata as Record<string, unknown> | undefined,
+            fallback: data.fallback as boolean,
+          };
           writeMeta(jobDir, meta);
         } else if (data.type === "review") {
           meta.criticReview = { score: data.score as number, strengths: data.strengths as string[], weaknesses: data.weaknesses as string[] };
@@ -216,6 +228,8 @@ const worker = new Worker<JobData>(
         platform,
         dryRun,
         noMusic,
+        musicProvider: providerInstances.music,
+        musicProviderKey: (providers.music as MusicProviderKey) ?? "bundled",
         preview: false,
         outputDir: jobDir,
         yes: true,
