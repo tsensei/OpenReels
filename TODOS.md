@@ -93,6 +93,13 @@
 - [ ] **Gemini generateVideos initial call timeout** — The 180s `TIMEOUT_MS` in gemini.ts only guards the polling loop. The initial `this.client.models.generateVideos()` call that submits the job has no application-level timeout, relying on OS socket timeout (~120s). Wrap with `Promise.race` or `AbortSignal.timeout()`. Same class of issue as the fal.ai subscribe timeout (P1 in Pipeline Robustness).
   **Priority:** P2
 
+## TTS
+
+- [ ] **Voice catalog command** — Add `--list-voices <provider>` CLI flag that prints available voices for any TTS provider (ElevenLabs, Inworld, Kokoro, Gemini TTS, OpenAI TTS) and exits. Users currently have no way to discover voice options without reading provider docs. Kokoro has ~50 voices, Gemini TTS has multiple, ElevenLabs has hundreds. Build as a unified interface across all providers rather than provider-specific flags.
+  **Priority:** P3
+  **Depends on:** TTS alignment layer (Kokoro + Gemini TTS providers)
+  Deferred from plan: Unified TTS Alignment Layer (CEO review: user prefers unified voice interface later)
+
 ## Completed
 
 - [x] **HTTP API server mode** — Fastify HTTP server with POST /api/v1/jobs, GET /api/v1/jobs/:id, SSE /api/v1/jobs/:id/events, plus full React web UI.
