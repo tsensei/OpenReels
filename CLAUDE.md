@@ -11,7 +11,7 @@ src/
   worker.ts             # BullMQ job worker
   cli/                  # args parser, progress display, cost estimator
   agents/               # creative-director, critic, image-prompter, music-prompter, research
-  pipeline/             # Mastra workflow orchestrator + utils (6-stage pipeline)
+  pipeline/             # Mastra workflow orchestrator + utils + music-resolver (6-stage pipeline)
   providers/
     factory.ts          # provider factory with BYOK support
     llm/                # base.ts (BaseLLM), anthropic.ts, openai.ts, gemini.ts (AI SDK 6)

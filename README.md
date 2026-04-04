@@ -1,6 +1,8 @@
 # OpenReels
 
-Open-source AI pipeline that turns any topic into a fully rendered YouTube Short. Includes a web UI with live pipeline visualization, REST API, and CLI.
+Open-source AI pipeline that turns any topic into a fully produced YouTube Short. One command. Research, script, voiceover, AI-generated visuals, AI-generated music, animated captions, scene transitions. Out comes a vertical MP4, ready to upload.
+
+Web UI with live pipeline visualization, REST API, Docker, and CLI. Bring your own API keys.
 
 ## Demo
 
@@ -20,29 +22,43 @@ at the Sony World Photography Award, only to reveal it was AI-generated and refu
 
 </div>
 
-## What it does
+## How it works
 
-Give it a topic. It handles everything else:
+Give it a topic. It handles everything:
 
-1. **Research** — web search to ground the script in real facts
-2. **Script** — writes a punchy, language-aware short-form script
-3. **Voiceover** — generates TTS audio with word-level timestamps
-4. **Visuals** — creates AI images, generates AI video clips (image-to-video via Google Veo or fal.ai), and verifies stock footage with a vision model before using it (rejects bad matches, retries with reformulated queries, falls back to AI generation)
-5. **Captions** — renders styled, animated captions with proper Unicode/CJK/RTL support
-6. **Assembly** — composites everything into a vertical MP4 via Remotion, with scene transitions (crossfade, slide, wipe, flip)
-7. **Critique** — an AI critic scores the output and re-runs the pipeline if quality is below threshold
+| Stage | What happens |
+|-------|-------------|
+| **Research** | Web search grounds the script in real facts, not hallucinations |
+| **Script** | Writes a punchy short-form script with scene breakdowns, visual direction, and emotional arc |
+| **Voiceover** | Generates TTS audio with word-level timestamps for karaoke-style captions |
+| **Visuals** | AI images (Gemini, DALL-E), AI video clips (Google Veo, fal.ai Kling), and vision-verified stock footage that rejects bad matches and retries automatically |
+| **Music** | AI-generated background score via Google Lyria 3 Pro, scene-synced to match the video's emotional arc. Or pick from 25 bundled royalty-free tracks |
+| **Captions** | Styled, animated captions with proper Unicode, CJK, and RTL support across 6 caption styles |
+| **Assembly** | Composites everything into a vertical MP4 via Remotion with crossfade, slide, wipe, and flip transitions |
+| **Critique** | AI critic scores the output. If quality is below threshold, the pipeline re-runs |
 
-```
-openreels "OpenAI shut down Sora to redirect compute into robotics — why they killed their most hyped product" --archetype editorial_caricature
-```
+Every stage streams live progress to the web UI. You watch the AI research, write, paint, compose, and render in real time.
 
-Topic in, MP4 out. No editing.
+## Provider flexibility
+
+Mix and match providers or go all-in on one ecosystem:
+
+| Capability | Providers |
+|-----------|-----------|
+| **LLM** | Anthropic Claude, OpenAI GPT, Google Gemini |
+| **TTS** | ElevenLabs, Inworld, OpenAI TTS, Gemini TTS, Kokoro (free, local) |
+| **Images** | Gemini Imagen, OpenAI DALL-E |
+| **Video** | Google Veo, fal.ai Kling (with cross-provider fallback) |
+| **Music** | Google Lyria 3 Pro (AI-generated, $0.08/track), Bundled library (free) |
+| **Stock** | Pexels, Pixabay (both searched, vision-verified, with AI fallback) |
+
+**One key, everything Google:** `--provider google` sets LLM, images, TTS, video, and music to Google APIs with a single `GOOGLE_API_KEY`.
+
+**Zero-cost voiceover:** `--provider local` uses Kokoro for free local TTS. No API key needed.
 
 ## Quickstart
 
 ### Web UI (recommended)
-
-Launch the full web interface with Docker Compose. No Node.js, Chrome, or ffmpeg required.
 
 ```bash
 git clone https://github.com/tsensei/OpenReels.git
@@ -52,7 +68,7 @@ docker compose up      # starts Redis + API + Worker
 # Open http://localhost:3000
 ```
 
-Type a topic, pick an archetype, and watch the pipeline run in real time. Research, script, voiceover, visuals, and assembly stages stream live progress to the browser.
+Type a topic, pick your providers, and watch the pipeline run. Research, script, voiceover, visuals, music, and assembly stages stream live to the browser. Download the final video when it's done.
 
 ### Docker CLI (single run)
 
@@ -62,7 +78,7 @@ cp .env.example .env   # fill in your API keys
 docker run --env-file .env --shm-size=2gb -v ./output:/output ghcr.io/tsensei/openreels "5 stoic lessons that changed my life"
 ```
 
-Or run the CLI through Docker Compose:
+Or run through Docker Compose:
 
 ```bash
 docker compose run worker npx tsx src/index.ts --yes "5 stoic lessons that changed my life"
@@ -70,7 +86,7 @@ docker compose run worker npx tsx src/index.ts --yes "5 stoic lessons that chang
 
 ### Local development
 
-**Prerequisites:** Node.js 22+, pnpm, ffprobe (for stock video duration detection)
+**Prerequisites:** Node.js 22+, pnpm, ffprobe
 
 ```bash
 git clone https://github.com/tsensei/OpenReels.git
@@ -80,47 +96,66 @@ cp .env.example .env   # fill in your API keys
 ```
 
 ```bash
-# Full pipeline run
-pnpm start "5 stoic lessons that changed my life"
+# Full pipeline with AI music
+pnpm start "the fall of the Roman Empire" --provider google
 
-# Dry run (outputs DirectorScore JSON, no API spend on assets)
+# Free local TTS, no API spend on voiceover
+pnpm start "5 stoic lessons" --provider local
+
+# Dry run (outputs DirectorScore JSON, no asset generation)
 pnpm start "your topic" --dry-run
 
-# With specific archetype and provider
+# Specific archetype and provider combo
 pnpm start "your topic" --archetype anime_illustration --provider openai
 ```
 
 ### API keys
 
-**Required** (at minimum):
+**Minimum to run** (pick one LLM + one TTS):
 - `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` or `GOOGLE_API_KEY` — [Anthropic](https://console.anthropic.com/) / [OpenAI](https://platform.openai.com/api-keys) / [Google AI Studio](https://aistudio.google.com/apikey)
-- `ELEVENLABS_API_KEY` or `INWORLD_TTS_API_KEY` — [ElevenLabs](https://elevenlabs.io/) / [Inworld](https://inworld.ai/). Or use `--tts-provider kokoro` for free local TTS (no key needed), `--tts-provider openai-tts` (reuses `OPENAI_API_KEY`), or `--tts-provider gemini-tts` (reuses `GOOGLE_API_KEY`).
-- `GOOGLE_API_KEY` — also needed for Gemini image generation, AI video (Veo), and Gemini TTS. Use `--provider google` to run LLM + image + video with one key.
+- `ELEVENLABS_API_KEY` or `INWORLD_TTS_API_KEY` — [ElevenLabs](https://elevenlabs.io/) / [Inworld](https://inworld.ai/). Or use `--tts-provider kokoro` (free, no key), `--tts-provider openai-tts`, or `--tts-provider gemini-tts`
+- `GOOGLE_API_KEY` — also needed for Gemini image generation, AI video (Veo), AI music (Lyria), and Gemini TTS
 
-**Optional:** `PEXELS_API_KEY` ([Pexels](https://www.pexels.com/api/)), `PIXABAY_API_KEY` ([Pixabay](https://pixabay.com/api/docs/)) for stock footage (free registration), `FAL_API_KEY` ([fal.ai](https://fal.ai/)) for AI video generation via Kling
+**Optional:** `PEXELS_API_KEY` ([Pexels](https://www.pexels.com/api/)), `PIXABAY_API_KEY` ([Pixabay](https://pixabay.com/api/docs/)) for stock footage, `FAL_API_KEY` ([fal.ai](https://fal.ai/)) for Kling video generation
 
 ### CLI flags
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--archetype <name>` | Override visual archetype | LLM chooses |
-| `--provider <name>` | LLM provider (`anthropic`, `openai`, `gemini`, `google` for all-Gemini, or `local` for free local TTS) | `anthropic` |
+| `--provider <name>` | LLM provider (`anthropic`, `openai`, `gemini`, `google`, `local`) | `anthropic` |
+| `--image-provider <name>` | Image provider (`gemini`, `openai`) | `gemini` |
 | `--tts-provider <name>` | TTS provider (`elevenlabs`, `inworld`, `kokoro`, `gemini-tts`, `openai-tts`) | `elevenlabs` |
+| `--music-provider <name>` | Music provider (`bundled`, `lyria`) | `bundled` |
+| `--video-provider <name>` | Video provider (`gemini`, `fal`) | auto-detect |
+| `--archetype <name>` | Override visual archetype | LLM chooses |
 | `--platform <name>` | Target platform (`youtube`, `tiktok`, `instagram`) | `youtube` |
 | `--dry-run` | Output DirectorScore JSON without generating assets | off |
 | `--preview` | Open Remotion Studio after rendering | off |
 | `-o, --output <dir>` | Output directory | `./output` |
-| `--image-provider <name>` | Image provider (`gemini` or `openai`) | `gemini` |
 | `--no-music` | Disable background music | music on |
-| `--no-stock-verify` | Disable VLM stock footage verification | verify on |
-| `--stock-confidence <n>` | Min confidence threshold for stock verification (0-1) | `0.6` |
-| `--stock-max-attempts <n>` | Max stock API calls per scene | `4` |
-| `--verification-model <model>` | Model override for stock verification VLM | same as `--provider` |
-| `--video-provider <name>` | Video provider (`gemini` or `fal`) | auto-detect from keys |
-| `--video-model <model>` | Video model override | provider default |
-| `--kokoro-voice <voice>` | Kokoro voice preset (e.g. `af_heart`, `bf_emma`, `am_fenrir`) | `af_heart` |
 | `--no-video` | Disable AI video generation | video on |
-| `-y, --yes` | Auto-confirm cost estimation (for Docker/CI) | off |
+| `--no-stock-verify` | Disable VLM stock footage verification | verify on |
+| `--stock-confidence <n>` | Min confidence for stock verification (0-1) | `0.6` |
+| `--stock-max-attempts <n>` | Max stock API calls per scene | `4` |
+| `--video-model <model>` | Video model override | provider default |
+| `--kokoro-voice <voice>` | Kokoro voice preset | `af_heart` |
+| `-y, --yes` | Auto-confirm cost estimation (Docker/CI) | off |
+
+## Cost transparency
+
+Before spending any money, the pipeline shows a detailed cost breakdown and asks for confirmation:
+
+```
+Estimated cost: $0.686
+  LLM:    $0.0029 (7 calls)
+  TTS:    $0.0171 (853 chars)
+  Images: $0.3030 (3 AI images @ $0.101/ea)
+  Video:  $0.3000 (1 AI videos)
+  Music:  $0.0802 (Lyria AI generation)
+  Stock:  free
+```
+
+After rendering, actual cost is computed from real token usage. Use `--dry-run` to preview the DirectorScore without spending anything.
 
 ## Archetypes
 
@@ -145,13 +180,13 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 
 ## Background
 
-OpenReels is a full rewrite and open-source rebrand of [ReelMistri](https://github.com/tsensei/ReelMistri/), a CLI pipeline originally built for Bangla-language YouTube Shorts automation. ReelMistri proved the concept: one command, fully produced video, language-aware scripts, culturally coherent visuals, proper Bengali text rendering.
+OpenReels is a full rewrite of [ReelMistri](https://github.com/tsensei/ReelMistri/), a CLI pipeline originally built for Bangla-language YouTube Shorts automation. ReelMistri proved the concept: one command, fully produced video, language-aware scripts, culturally coherent visuals, proper Bengali text rendering.
 
 The rewrite moves from Python to TypeScript for native [Remotion](https://www.remotion.dev/) integration. Cleaner video rendering, better developer experience, no Python-to-TypeScript bridge.
 
 ## Status
 
-v0.10.0 shipped. Unified TTS alignment layer with Kokoro (free local TTS), Gemini TTS, and OpenAI TTS providers. Any TTS provider now gets word-level timestamps automatically via Whisper forced alignment. Use `--provider local` for zero-cost voiceover. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
+v0.11.0 shipped. AI-generated background music via Google Lyria 3 Pro with scene-synced scoring. See [CHANGELOG.md](CHANGELOG.md) for full version history and [TODOS.md](TODOS.md) for known issues and roadmap.
 
 ## License
 

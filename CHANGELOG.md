@@ -5,16 +5,15 @@ All notable changes to OpenReels will be documented in this file.
 ## [0.11.0] - 2026-04-04
 
 ### Added
-- AI-generated background music via Google Lyria 3 Pro (`--music-provider lyria`). Replaces random bundled track selection with scene-synced scoring that matches the video's emotional arc.
-- LLM music prompter agent that translates scene narratives, mood, and emotional arc into detailed Lyria prompts with per-scene timestamp sections and instrument direction.
-- `--music-provider` CLI flag with `bundled` (default, free) and `lyria` ($0.08/track) options.
-- `--provider google` convenience flag now sets all providers to Google: LLM, image, TTS, video, and music.
-- Music generation runs in parallel with visual asset resolution for zero additional pipeline latency.
-- Automatic fallback from Lyria to bundled tracks on API failure, with safety filter retry (strips intense adjectives and retries once before falling back).
-- Music cost estimation and actual cost tracking in both CLI and web UI.
-- Music provider dropdown in web UI with Lyria 3 Pro and Bundled options.
-- Audio preview player in the completed panel of the web UI.
-- Music generation metadata (prompt, provider, Lyria response) persisted to log.json and meta.json for debugging.
+- AI-generated background music via Google Lyria 3 Pro (`--music-provider lyria`). Every video gets a unique score that follows the emotional arc of the narration, with per-scene instrument direction and intensity mapping. No more random track selection.
+- An LLM music prompter agent writes detailed Lyria prompts from the video's mood, emotional arc, and scene narratives, with timestamp sections like `[0:00 - 0:12] sparse piano, building tension. Intensity: 3/10`.
+- `--music-provider` CLI flag: `bundled` (default, free) or `lyria` ($0.08/track).
+- `--provider google` now sets everything to Google in one shot: LLM, images, TTS, video, and music. One API key, full pipeline.
+- Music generates in parallel with visuals, so AI scoring adds zero extra wait time.
+- If Lyria's safety filter rejects a prompt, the pipeline strips intense adjectives and retries. If that fails too, it falls back to bundled tracks silently.
+- Music cost shows in both the pre-run estimate and post-run actual cost breakdown.
+- Web UI: music provider dropdown and audio preview player in the completed panel.
+- Music generation metadata (the Lyria prompt, provider, response data) saved to log.json and meta.json for prompt iteration and debugging.
 
 ### Fixed
 - `--provider google` now correctly sets TTS to `gemini-tts` (was defaulting to elevenlabs, requiring an ElevenLabs key).
