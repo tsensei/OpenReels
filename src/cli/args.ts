@@ -77,6 +77,7 @@ export function parseArgs(): CLIOptions {
 
   // --provider google is a convenience alias that sets LLM+image+video to Gemini.
   // Explicit per-provider flags take precedence over the meta-flag.
+  // After this block, opts["provider"] is always a valid LLMProviderKey ("google" is rewritten to "gemini").
   if (opts["provider"] === "google") {
     opts["provider"] = "gemini";
     const imageSource = program.getOptionValueSource("imageProvider");
