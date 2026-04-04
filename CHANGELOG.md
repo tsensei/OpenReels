@@ -2,6 +2,24 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.9.0] - 2026-04-04
+
+### Added
+- Google Gemini as third LLM provider. Use `--provider gemini` to run the full pipeline with Gemini for reasoning, research, and creative direction.
+- `--provider google` convenience flag that sets LLM, image, and video providers to Gemini in one shot. One API key for three capabilities.
+- Gemini pricing in cost estimator. Pre-run and actual cost estimates now use correct per-provider pricing instead of always defaulting to Anthropic rates.
+
+### Changed
+- Extracted `BaseLLM` abstract class from Anthropic and OpenAI providers. Shared two-pass web search and structured output logic lives in `base.ts`, each provider is ~25 lines.
+- Standardized Pass 2 web search prompt across all providers to the generic extraction pattern.
+- `estimateCost()` now accepts an `llmProvider` parameter for accurate per-provider pricing.
+- Settings page shows all provider API keys with correct names and labels.
+
+### Fixed
+- Settings page used wrong env var name `GEMINI_API_KEY` instead of `GOOGLE_API_KEY`.
+- Settings page was missing OpenAI, Inworld, and Pixabay API key entries.
+- Worker verification model key lookup now handles Gemini provider correctly.
+
 ## [0.8.0] - 2026-04-04
 
 ### Added
