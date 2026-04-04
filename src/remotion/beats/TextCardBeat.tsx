@@ -4,7 +4,7 @@ import { TEXT_CARD_FONTS } from "../lib/fonts";
 import type { SceneProps } from "../lib/score-to-props";
 
 export const TextCardBeat: React.FC<SceneProps> = ({
-  visualPrompt,
+  scriptLine,
   colorPalette,
   textCardFont,
 }) => {
@@ -39,7 +39,7 @@ export const TextCardBeat: React.FC<SceneProps> = ({
           textShadow: `0 0 40px ${accent}66`,
         }}
       >
-        {visualPrompt}
+        {scriptLine}
       </div>
       {/* Accent bar — above caption safe zone (bottom 18%) */}
       <div

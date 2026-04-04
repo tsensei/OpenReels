@@ -62,6 +62,13 @@ describe("mapScoreToProps", () => {
     expect(props.scenes[1]!.motion).toBe("zoom_in");
   });
 
+  it("passes scriptLine from score to scene props", () => {
+    const props = mapScoreToProps(baseScore, baseAssets);
+    expect(props.scenes[0]!.scriptLine).toBe("Scene one.");
+    expect(props.scenes[1]!.scriptLine).toBe("Scene two.");
+    expect(props.scenes[2]!.scriptLine).toBe("Scene three.");
+  });
+
   it("calculates scene duration from word timestamps with padding", () => {
     const props = mapScoreToProps(baseScore, baseAssets, 30);
     // Scene 1: words from 0 to 3 = 3s + 0.5s padding = 3.5s = 105 frames

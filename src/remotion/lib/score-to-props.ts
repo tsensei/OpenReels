@@ -8,6 +8,7 @@ export interface SceneProps {
   assetSrc: string | null;
   motion: string;
   visualPrompt: string;
+  scriptLine: string;
   durationInFrames: number;
   words: WordTimestamp[];
   colorPalette?: ArchetypeConfig["colorPalette"];
@@ -75,6 +76,7 @@ export function mapScoreToProps(
       assetSrc,
       motion,
       visualPrompt: scene.visual_prompt,
+      scriptLine: scene.script_line,
       durationInFrames,
       words, // per-scene words kept for scene duration calc, not used for captions
       colorPalette: archetype.colorPalette,

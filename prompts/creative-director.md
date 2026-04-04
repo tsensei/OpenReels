@@ -12,7 +12,7 @@ Output a JSON object with:
 
 Each scene has:
 - **visual_type**: One of "ai_image", "ai_video", "stock_image", "stock_video", "text_card"
-- **visual_prompt**: For ai_image: describe the desired scene (subject, setting, action, emotional tone). A downstream prompt optimizer will expand this into a detailed image generation prompt using the archetype's style bible. Focus on WHAT to show, not HOW to prompt an image generator. For stock_image/stock_video: a 3-5 word search query. For text_card: the display text.
+- **visual_prompt**: For ai_image: describe the desired scene (subject, setting, action, emotional tone). A downstream prompt optimizer will expand this into a detailed image generation prompt using the archetype's style bible. Focus on WHAT to show, not HOW to prompt an image generator. For stock_image/stock_video: a 3-5 word search query. For text_card: a short headline keyword or phrase (e.g. "WARNINGS IGNORED", "THE REAL COST"). No font, color, background, or styling descriptions. The renderer handles all styling from the archetype config.
 - **motion**: Camera motion - "zoom_in", "zoom_out", "pan_right", "pan_left", or "static". Ignored for stock_video.
 - **script_line**: The voiceover narration for this scene. REQUIRED for every scene.
 - **transition** (optional): Controls how THIS scene flows into the NEXT scene. Options:
