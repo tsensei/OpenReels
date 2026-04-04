@@ -2,6 +2,29 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.8.0] - 2026-04-04
+
+### Added
+- AI video generation. Scenes marked `ai_video` get a first-frame AI image, then animate it into a 4-10 second video clip via Google Veo or fal.ai (Kling). Motion is the story... explosions, flowing water, rocket launches come alive.
+- Two video providers: Google Veo (`--video-provider gemini`) and fal.ai Kling (`--video-provider fal`). Cross-provider fallback tries the secondary provider on failure, then degrades gracefully to a static AI image.
+- LLM-generated motion prompts. When generating video, a separate prompt optimization pass produces motion-rich descriptions ("asteroid rotates against star field, debris trail, Earth grows in background") instead of static scene descriptions.
+- Per-scene cost breakdown in the confirmation prompt. Each scene now shows its estimated cost (Scene 1: ai_video $0.33, Scene 2: stock $0.00).
+- Smart duration matching. Video providers declare their supported durations, and the resolver picks the smallest duration >= the scene's voiceover length. Never loops AI video.
+- Video generation telemetry in log.json: timing, provider, success/failure, and fallback chain per scene.
+- New CLI flags: `--video-provider`, `--video-model`, `--no-video`.
+- Web UI: new "AV" badge for AI video scenes, video asset URLs in scene preview.
+
+### Changed
+- Creative director prompt is now cost-aware about video. It only suggests `ai_video` when video providers are available, and recommends 1-3 video scenes per Short where motion adds real value.
+- `optimizeImagePrompt()` now takes an options bag (`{ mode, rejectionContext }`) instead of a trailing optional parameter. Existing callers updated.
+- Cost estimator includes video generation cost in totals and per-scene breakdowns.
+
+### Fixed
+- Anti-loop guard in score-to-props.ts was ineffective due to mutation-before-read bug. The capped duration is now computed from the original value.
+- Video model override (`--video-model`) no longer leaks to the secondary provider. Only the primary provider receives the user-specified model.
+- Web UI SceneCard, scene-assets, and useApi type now handle `ai_video` visual type (enum completeness fix).
+- StockVideoBeat no longer loops AI-generated video clips, preventing visible seam artifacts.
+
 ## [0.7.0] - 2026-04-03
 
 ### Added

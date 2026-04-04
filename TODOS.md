@@ -6,7 +6,7 @@
   **Priority:** P1
   **Completed:** v0.6.0 (2026-04-03) — Mastra workflow steps create providers when they execute; dry-run exits after director step before TTS/image providers are needed.
 
-- [ ] **API call timeouts** — Wire AbortSignal.timeout() through AI SDK 6 generateText() calls and TTS/image fetch calls to prevent hung requests. AI SDK 6 supports abortSignal natively but it's not yet passed through the LLMProvider interface or workflow steps.
+- [ ] **API call timeouts** — Wire AbortSignal.timeout() through AI SDK 6 generateText() calls, TTS/image fetch calls, and VideoProvider.generate() calls to prevent hung requests. AI SDK 6 supports abortSignal natively but it's not yet passed through the LLMProvider interface or workflow steps. Video gen is the longest-running call (60-120s per scene) and most likely to benefit.
   **Priority:** P1
 
 - [ ] **Resolve prompts relative to package** — Use import.meta.url instead of process.cwd() for prompt file paths so the CLI works when installed globally or run from outside project root. Not blocking Docker (tsx + WORKDIR /app handles it), but still needed for npm distribution.
@@ -82,6 +82,13 @@
   **Priority:** P3
   **Depends on:** Adaptive stock pipeline (v0.7.0)
   Deferred from plan: Vision-Verified Adaptive Stock Pipeline (CEO review: correctly scoped as post-verification feature)
+
+## Video Generation
+
+- [ ] **Mid-pipeline cancellation for video gen** — Check isCancelled() before starting Phase 2 (video gen) for each scene in resolveAIVideo(). Currently isCancelled() is checked between stages but not between individual scenes within Promise.all(). Video gen takes 60-120s per scene; without this, up to 3 concurrent scenes continue generating (and spending $0.25-0.35 each) after cancellation.
+  **Priority:** P2
+  **Depends on:** AI video generation feature
+  Deferred from plan: AI Video Generation (CEO review: outside voice flagged, user deferred to TODO)
 
 ## Completed
 
