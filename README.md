@@ -94,8 +94,8 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 
 **Required** (at minimum):
 - `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` or `GOOGLE_API_KEY` — [Anthropic](https://console.anthropic.com/) / [OpenAI](https://platform.openai.com/api-keys) / [Google AI Studio](https://aistudio.google.com/apikey)
-- `ELEVENLABS_API_KEY` or `INWORLD_TTS_API_KEY` — [ElevenLabs](https://elevenlabs.io/) / [Inworld](https://inworld.ai/)
-- `GOOGLE_API_KEY` — also needed for Gemini image generation and AI video (Veo). Use `--provider google` to run LLM + image + video with one key.
+- `ELEVENLABS_API_KEY` or `INWORLD_TTS_API_KEY` — [ElevenLabs](https://elevenlabs.io/) / [Inworld](https://inworld.ai/). Or use `--tts-provider kokoro` for free local TTS (no key needed), `--tts-provider openai-tts` (reuses `OPENAI_API_KEY`), or `--tts-provider gemini-tts` (reuses `GOOGLE_API_KEY`).
+- `GOOGLE_API_KEY` — also needed for Gemini image generation, AI video (Veo), and Gemini TTS. Use `--provider google` to run LLM + image + video with one key.
 
 **Optional:** `PEXELS_API_KEY` ([Pexels](https://www.pexels.com/api/)), `PIXABAY_API_KEY` ([Pixabay](https://pixabay.com/api/docs/)) for stock footage (free registration), `FAL_API_KEY` ([fal.ai](https://fal.ai/)) for AI video generation via Kling
 
@@ -104,8 +104,8 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--archetype <name>` | Override visual archetype | LLM chooses |
-| `--provider <name>` | LLM provider (`anthropic`, `openai`, `gemini`, or `google` to set LLM+image+video to Gemini) | `anthropic` |
-| `--tts-provider <name>` | TTS provider (`elevenlabs` or `inworld`) | `elevenlabs` |
+| `--provider <name>` | LLM provider (`anthropic`, `openai`, `gemini`, `google` for all-Gemini, or `local` for free local TTS) | `anthropic` |
+| `--tts-provider <name>` | TTS provider (`elevenlabs`, `inworld`, `kokoro`, `gemini-tts`, `openai-tts`) | `elevenlabs` |
 | `--platform <name>` | Target platform (`youtube`, `tiktok`, `instagram`) | `youtube` |
 | `--dry-run` | Output DirectorScore JSON without generating assets | off |
 | `--preview` | Open Remotion Studio after rendering | off |
@@ -118,6 +118,7 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 | `--verification-model <model>` | Model override for stock verification VLM | same as `--provider` |
 | `--video-provider <name>` | Video provider (`gemini` or `fal`) | auto-detect from keys |
 | `--video-model <model>` | Video model override | provider default |
+| `--kokoro-voice <voice>` | Kokoro voice preset (e.g. `af_heart`, `bf_emma`, `am_fenrir`) | `af_heart` |
 | `--no-video` | Disable AI video generation | video on |
 | `-y, --yes` | Auto-confirm cost estimation (for Docker/CI) | off |
 
@@ -150,7 +151,7 @@ The rewrite moves from Python to TypeScript for native [Remotion](https://www.re
 
 ## Status
 
-v0.9.0 shipped. Google Gemini as third LLM provider with `--provider google` single-vendor mode, BaseLLM refactor, accurate per-provider cost estimates. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
+v0.10.0 shipped. Unified TTS alignment layer with Kokoro (free local TTS), Gemini TTS, and OpenAI TTS providers. Any TTS provider now gets word-level timestamps automatically via Whisper forced alignment. Use `--provider local` for zero-cost voiceover. See [CHANGELOG.md](CHANGELOG.md) for details and [TODOS.md](TODOS.md) for known issues.
 
 ## License
 

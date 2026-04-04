@@ -7,8 +7,8 @@ All notable changes to OpenReels will be documented in this file.
 ### Added
 - Unified TTS alignment layer. Any TTS provider that returns audio now gets word-level timestamps automatically via Whisper forced alignment. Enables karaoke captions and scene duration calculation for providers without native timestamp support.
 - Kokoro TTS provider (`--tts-provider kokoro`). Local, zero-cost text-to-speech using Kokoro 82M. No API key needed. Runs in a subprocess to avoid ONNX runtime conflicts.
-- Gemini TTS provider (`--tts-provider gemini-tts`). Uses existing Google API key. Returns 24kHz PCM, auto-aligned by the decorator.
-- OpenAI TTS provider (`--tts-provider openai-tts`). Uses existing OpenAI API key with gpt-4o-mini-tts model. Returns MP3 natively.
+- Gemini TTS provider (`--tts-provider gemini-tts`). Uses your existing Google API key, no additional setup.
+- OpenAI TTS provider (`--tts-provider openai-tts`). Uses your existing OpenAI API key with gpt-4o-mini-tts.
 - `--provider local` convenience flag that sets TTS to Kokoro for fully local voiceover generation.
 - `--kokoro-voice` flag for selecting Kokoro voice presets (default: af_heart).
 - Per-provider TTS pricing in cost estimator. Kokoro shows $0.00, Gemini TTS shows free tier, OpenAI TTS shows token-based estimate.
