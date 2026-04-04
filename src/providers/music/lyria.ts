@@ -27,6 +27,7 @@ export class LyriaMusic implements MusicProvider {
     this.client = new GoogleGenAI({ apiKey: key });
   }
 
+  // mood is already baked into the LLM-generated prompt; Lyria uses the prompt text directly
   async generate(prompt: string, _mood: MusicMood): Promise<MusicResult> {
     let lastError: Error | null = null;
     let currentPrompt = prompt;
@@ -107,14 +108,14 @@ export class LyriaMusic implements MusicProvider {
   }
 }
 
-/** Check if an error is a safety filter rejection */
+/** Check if an error is a safety filter rejection (not rate limits or network) */
 function isSafetyFilterError(err: Error): boolean {
   const msg = err.message.toLowerCase();
   return (
     msg.includes("safety") ||
-    msg.includes("blocked") ||
     msg.includes("harm") ||
-    msg.includes("policy")
+    msg.includes("content policy") ||
+    (msg.includes("blocked") && (msg.includes("safety") || msg.includes("harm") || msg.includes("content")))
   );
 }
 
@@ -130,7 +131,6 @@ function sanitizePrompt(prompt: string): string {
     "brutal",
     "menacing",
     "threatening",
-    "dark",
     "sinister",
     "ominous",
     "heavy",

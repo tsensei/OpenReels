@@ -473,7 +473,7 @@ function buildPipelineWorkflow(
       );
 
       const musicPromise = resolveMusic(score, sceneDurations, {
-        musicProvider: opts.musicProvider ?? new (await import("../providers/music/bundled-adapter.js")).BundledMusic(),
+        musicProvider: opts.musicProvider!,
         musicProviderKey: opts.musicProviderKey ?? "bundled",
         llm: opts.llm,
         noMusic: opts.noMusic,

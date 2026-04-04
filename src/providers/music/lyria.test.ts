@@ -109,6 +109,15 @@ describe("LyriaMusic", () => {
     await expect(lyria.generate("test", "epic_cinematic" as MusicMood)).rejects.toThrow(
       "Rate limit exceeded",
     );
+    expect(mockGenerateContent).toHaveBeenCalledTimes(1); // no retry — "rate limit" doesn't match tightened safety patterns
+  });
+
+  it("does not retry on 'policy' without safety context", async () => {
+    mockGenerateContent.mockRejectedValue(new Error("Rate limit policy exceeded"));
+
+    await expect(lyria.generate("test", "epic_cinematic" as MusicMood)).rejects.toThrow(
+      "Rate limit policy exceeded",
+    );
     expect(mockGenerateContent).toHaveBeenCalledTimes(1); // no retry
   });
 });
@@ -121,6 +130,8 @@ describe("sanitizePrompt", () => {
     expect(result).toContain("restrained");
     expect(result).toContain("atmosphere");
     expect(result).toContain("drums");
+    // "Dark" is preserved — it's a legitimate music descriptor (dark ambient, dark jazz)
+    expect(result).toContain("Dark");
   });
 
   it("preserves musical structure", () => {

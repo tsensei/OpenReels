@@ -126,7 +126,7 @@ export function createProviders(config: ProviderConfig): Providers {
   // Music provider: lyria requires GOOGLE_API_KEY, bundled is always available
   const music: MusicProvider =
     config.music === "lyria"
-      ? new LyriaMusic(k["GOOGLE_API_KEY"] ?? googleKey)
+      ? new LyriaMusic(googleKey)
       : new BundledMusic();
 
   return { llm, tts, imageGen, stock, videoProviders, music };
