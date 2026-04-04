@@ -15,7 +15,7 @@ src/
   providers/
     factory.ts          # provider factory with BYOK support
     llm/                # base.ts (BaseLLM), anthropic.ts, openai.ts, gemini.ts (AI SDK 6)
-    tts/                # elevenlabs.ts, inworld.ts
+    tts/                # elevenlabs.ts, inworld.ts, kokoro.ts, gemini.ts, openai.ts, aligned-tts-provider.ts, whisper-aligner.ts
     image/              # gemini.ts, openai.ts
     stock/              # pexels.ts, pixabay.ts, adaptive-resolver.ts, query-reformer.ts, stock-verifier.ts
     video/              # gemini.ts (Veo), fal.ts (Kling), video-resolver.ts
@@ -45,7 +45,7 @@ fixtures/               # sample DirectorScore JSONs
 ```bash
 pnpm install          # install dependencies
 pnpm start "topic"    # run full pipeline (CLI)
-pnpm test             # run vitest suite (185 tests)
+pnpm test             # run vitest suite (236 tests)
 ```
 
 ### Web UI (Docker Compose)
