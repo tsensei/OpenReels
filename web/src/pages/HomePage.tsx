@@ -35,6 +35,7 @@ export function HomePage() {
   const [ttsProvider, setTtsProvider] = useState("elevenlabs");
   const [imageProvider, setImageProvider] = useState("gemini");
   const [musicProvider, setMusicProvider] = useState("bundled");
+  const [pacing, setPacing] = useState("");
   const [dryRun, setDryRun] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -61,6 +62,7 @@ export function HomePage() {
       const result = await api.createJob({
         topic: topic.trim(),
         archetype: archetype || undefined,
+        pacing: pacing || undefined,
         platform,
         dryRun,
         providers: {
@@ -145,6 +147,20 @@ export function HomePage() {
                         .join(" ")}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+
+              {/* Pacing selector */}
+              <Select value={pacing} onValueChange={(v) => setPacing(v ?? "")}>
+                <SelectTrigger size="sm" className="h-auto gap-1.5 rounded-[8px] border-[#334155] bg-transparent px-3 py-1.5 text-xs font-medium text-[#94A3B8]">
+                  <SlidersHorizontal className="size-3.5 text-[#64748B]" />
+                  <SelectValue placeholder="Auto Pace" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Auto Pace</SelectItem>
+                  <SelectItem value="fast">Fast</SelectItem>
+                  <SelectItem value="moderate">Moderate</SelectItem>
+                  <SelectItem value="cinematic">Cinematic</SelectItem>
                 </SelectContent>
               </Select>
 

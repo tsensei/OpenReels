@@ -118,6 +118,7 @@ export interface CriticReview {
 export interface CreateJobRequest {
   topic: string;
   archetype?: string;
+  pacing?: string;
   platform?: string;
   dryRun?: boolean;
   providers?: {
