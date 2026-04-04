@@ -34,6 +34,7 @@ export function HomePage() {
   const [llmProvider, setLlmProvider] = useState("anthropic");
   const [ttsProvider, setTtsProvider] = useState("elevenlabs");
   const [imageProvider, setImageProvider] = useState("gemini");
+  const [musicProvider, setMusicProvider] = useState("bundled");
   const [dryRun, setDryRun] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -66,6 +67,7 @@ export function HomePage() {
           llm: llmProvider,
           tts: ttsProvider,
           image: imageProvider,
+          music: musicProvider,
         },
       });
       navigate(`/jobs/${result.id}`);
@@ -228,6 +230,20 @@ export function HomePage() {
                             {p.label}
                           </SelectItem>
                         ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                      Music Provider
+                    </label>
+                    <Select value={musicProvider} onValueChange={(v) => v && setMusicProvider(v)}>
+                      <SelectTrigger className="h-9 w-full rounded-lg">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="bundled">Bundled (free)</SelectItem>
+                        <SelectItem value="lyria">Lyria 3 Pro ($0.08)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

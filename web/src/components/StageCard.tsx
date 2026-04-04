@@ -15,6 +15,7 @@ export interface StageCardProps {
   isLast?: boolean;
   prevStatus?: TimelineStatus;
   subStatus?: string;
+  children?: React.ReactNode;
 }
 
 export const STAGE_LABELS: Record<string, string> = {
@@ -145,6 +146,7 @@ export function StageCard({
   isLast,
   prevStatus,
   subStatus,
+  children,
 }: StageCardProps) {
   const label = STAGE_LABELS[name] ?? name;
 
@@ -236,6 +238,7 @@ export function StageCard({
         >
           {statusText}
         </span>
+        {children}
       </div>
     </li>
   );

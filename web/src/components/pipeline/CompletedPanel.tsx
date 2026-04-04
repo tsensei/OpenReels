@@ -67,6 +67,11 @@ export function CompletedPanel({
         )}
       </div>
 
+      {/* Music Preview */}
+      {job.runDir && (
+        <MusicPreview jobId={job.id} runDir={job.runDir} />
+      )}
+
       {/* Right column: Stats + Quality + Cost */}
       <div className="min-w-0 flex flex-1 flex-col gap-3">
         {/* Stats row */}
@@ -115,6 +120,35 @@ export function CompletedPanel({
           variant="full"
         />
       </div>
+    </div>
+  );
+}
+
+function MusicPreview({ jobId, runDir }: { jobId: string; runDir: string }) {
+  const musicUrl = `/api/v1/jobs/${jobId}/artifacts/${runDir}/_remotion_public/music.mp3`;
+  const [hasMusic, setHasMusic] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch(musicUrl, { method: "HEAD" })
+      .then((res) => setHasMusic(res.ok))
+      .catch(() => setHasMusic(false));
+  }, [musicUrl]);
+
+  if (hasMusic === null || !hasMusic) return null;
+
+  return (
+    <div className="w-full sm:w-[220px] md:w-[280px] max-w-[280px] mx-auto sm:mx-0">
+      <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[1.5px] text-[#64748B]">
+        Background Music
+      </span>
+      <audio
+        src={musicUrl}
+        controls
+        className="w-full h-8 rounded-lg"
+        preload="metadata"
+      >
+        <track kind="captions" />
+      </audio>
     </div>
   );
 }
