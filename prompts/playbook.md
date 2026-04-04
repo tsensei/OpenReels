@@ -151,8 +151,8 @@ The critic evaluates each Short across 7 dimensions using this concrete rubric. 
 
 ### Pacing (Weight: 15%)
 - **1-3**: Total script >160 words OR any scene >35 words OR hook >15 words.
-- **4-6**: Total script 141-160 words OR any scene 26-35 words OR one scene holds >30% of total words.
-- **7-8**: Total script 90-140 words, all scenes <=25 words, hook <=15 words, 5-7 scenes.
+- **4-6**: Total script significantly over the tier's word budget OR any scene exceeds the tier's per-scene range OR one scene holds >30% of total words.
+- **7-8**: Total words within the tier's budget, all scenes within the tier's per-scene range, hook <=15 words, scene count within the tier's range.
 - **9-10**: Meets 7-8 criteria PLUS dynamic rhythm — short-long-short sentence variation, builds energy toward climax.
 
 ### Visual Variety (Weight: 15%)

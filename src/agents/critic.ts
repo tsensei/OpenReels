@@ -1,8 +1,10 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { z } from "zod";
+import { getArchetype } from "../config/archetype-registry.js";
 import { loadPlaybookSections } from "../config/playbook.js";
 import type { DirectorScore } from "../schema/director-score.js";
+import type { ScenePacing } from "../schema/archetype.js";
 import type { LLMProvider, LLMUsage } from "../schema/providers.js";
 
 const SYSTEM_PROMPT_PATH = path.join(process.cwd(), "prompts", "critic.md");
@@ -26,6 +28,7 @@ export async function evaluate(
   llm: LLMProvider,
   score: DirectorScore,
   topic: string,
+  pacingOverride?: string,
 ): Promise<CritiqueOutput> {
   let systemPrompt =
     "You are a video quality critic. Evaluate the DirectorScore for hook strength, visual variety, pacing, script quality, and overall coherence. Score 1-10. If below 7, provide specific revision instructions targeting the weakest scene.";
@@ -44,7 +47,28 @@ export async function evaluate(
     console.warn(`[critic] Playbook rubric not loaded: ${err}`);
   }
 
+  // Derive pacing tier: explicit override > archetype config lookup
+  let pacingTier: ScenePacing = "moderate";
+  if (pacingOverride && ["fast", "moderate", "cinematic"].includes(pacingOverride)) {
+    pacingTier = pacingOverride as ScenePacing;
+  } else {
+    try {
+      pacingTier = getArchetype(score.archetype).scenePacing;
+    } catch {
+      // Unknown archetype — default to moderate
+    }
+  }
+
+  const PACING_RANGES: Record<ScenePacing, string> = {
+    fast: "8-12 scenes, 8-12 words per scene, 90-120 total words",
+    moderate: "7-10 scenes, 10-16 words per scene, 100-140 total words",
+    cinematic: "5-8 scenes, 15-22 words per scene, 90-130 total words",
+  };
+
   const userMessage = `Topic: ${topic}
+
+This video uses **${pacingTier}** pacing (${PACING_RANGES[pacingTier]}).
+Evaluate pacing against these tier-specific thresholds, NOT a fixed "5-7 scenes" standard.
 
 DirectorScore:
 ${JSON.stringify(score, null, 2)}

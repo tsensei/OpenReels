@@ -12,14 +12,17 @@ Evaluate the DirectorScore using the Critic Rubric provided below. Score each di
 
 ## Pacing Checks
 
+The user message specifies which pacing tier this video uses (fast, moderate, or cinematic). Evaluate pacing against the tier-specific thresholds, NOT a fixed scene count standard.
+
 Before scoring, perform these concrete checks on the script_lines:
 
-1. **Total word count**: Count all words across script_lines. Flag if >140 (stories) or >110 (quick facts). Estimate duration at 150 WPM.
-2. **Per-scene length**: Flag any script_line with >30 words (~12 seconds) or a hook (scene 0) with >15 words.
-3. **One idea per scene**: Flag scenes that cover multiple distinct facts or events.
-4. **Scene balance**: Flag if any single scene has more than 30% of total words (lopsided pacing).
+1. **Total word count**: Count all words across script_lines. Compare against the tier's total word budget (provided in the user message). Flag if significantly over budget. Estimate duration at 150 WPM.
+2. **Scene count**: Compare against the tier's scene count range (provided in the user message). Flag if outside the range.
+3. **Per-scene length**: Flag any script_line that exceeds the tier's words-per-scene range, or a hook (scene 0) with >15 words.
+4. **One idea per scene**: Flag scenes that cover multiple distinct facts or events.
+5. **Scene balance**: Flag if any single scene has more than 30% of total words (lopsided pacing).
 
-If ANY check fails: Pacing score MUST be <=5, revision_needed MUST be true, and revision_instructions MUST name the specific violation with a concrete fix (e.g. "Scene 3 has 42 words — split into two scenes or cut to under 25 words").
+If ANY check fails: Pacing score MUST be <=5, revision_needed MUST be true, and revision_instructions MUST name the specific violation with a concrete fix.
 
 ## Calibration:
 - 9-10: Exceptional. Would perform well on YouTube/TikTok.
