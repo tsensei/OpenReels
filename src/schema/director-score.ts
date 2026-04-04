@@ -12,7 +12,7 @@ export const MusicMood = z.enum([
 ]);
 export type MusicMood = z.infer<typeof MusicMood>;
 
-export const VisualType = z.enum(["ai_image", "stock_image", "stock_video", "text_card"]);
+export const VisualType = z.enum(["ai_image", "ai_video", "stock_image", "stock_video", "text_card"]);
 export type VisualType = z.infer<typeof VisualType>;
 
 export const Motion = z.enum(["zoom_in", "zoom_out", "pan_right", "pan_left", "static"]);

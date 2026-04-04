@@ -4,6 +4,7 @@ export type LLMProviderKey = "anthropic" | "openai";
 export type TTSProviderKey = "elevenlabs" | "inworld";
 export type ImageProviderKey = "gemini" | "openai";
 export type StockProviderKey = "pexels" | "pixabay";
+export type VideoProviderKey = "gemini" | "fal";
 
 export interface LLMUsage {
   inputTokens: number;
@@ -63,4 +64,19 @@ export interface StockProvider {
   searchVideo(query: string): Promise<StockCandidate[]>;
   searchImage(query: string): Promise<StockCandidate[]>;
   download(candidate: StockCandidate): Promise<StockAsset>;
+}
+
+export interface VideoProvider {
+  readonly supportedDurations: number[];
+  generate(opts: {
+    sourceImage: Buffer;
+    prompt: string;
+    durationSeconds?: number;
+    aspectRatio?: string;
+  }): Promise<VideoResult>;
+}
+
+export interface VideoResult {
+  filePath: string;
+  durationSeconds: number;
 }

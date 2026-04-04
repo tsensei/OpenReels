@@ -10,6 +10,8 @@ import type {
   StockProviderKey,
   TTSProvider,
   TTSProviderKey,
+  VideoProvider,
+  VideoProviderKey,
 } from "../schema/providers.js";
 import { GeminiImage } from "./image/gemini.js";
 import { OpenAIImage } from "./image/openai.js";
@@ -19,12 +21,16 @@ import { PexelsStock } from "./stock/pexels.js";
 import { PixabayStock } from "./stock/pixabay.js";
 import { ElevenLabsTTS } from "./tts/elevenlabs.js";
 import { InworldTTS } from "./tts/inworld.js";
+import { GeminiVideo } from "./video/gemini.js";
+import { FalVideo } from "./video/fal.js";
 
 export interface ProviderConfig {
   llm: LLMProviderKey;
   tts: TTSProviderKey;
   image: ImageProviderKey;
   stock?: StockProviderKey;
+  video?: VideoProviderKey;
+  videoModel?: string;
   keys?: Record<string, string>;
 }
 
@@ -33,6 +39,7 @@ export interface Providers {
   tts: TTSProvider;
   imageGen: ImageProvider;
   stock: StockProvider[];
+  videoProviders: VideoProvider[];
 }
 
 export function createProviders(config: ProviderConfig): Providers {
@@ -68,7 +75,21 @@ export function createProviders(config: ProviderConfig): Providers {
     if (pixabayKey) stock.push(new PixabayStock(pixabayKey));
   }
 
-  return { llm, tts, imageGen, stock };
+  // Build video provider array: construct available providers, primary first
+  const videoProviders: VideoProvider[] = [];
+  const googleKey = k["GOOGLE_API_KEY"] ?? process.env["GOOGLE_API_KEY"];
+  const falKey = k["FAL_API_KEY"] ?? process.env["FAL_API_KEY"];
+  const videoPrimary = config.video ?? (googleKey ? "gemini" : falKey ? "fal" : undefined);
+
+  if (videoPrimary === "fal") {
+    if (falKey) videoProviders.push(new FalVideo(config.videoModel, falKey));
+    if (googleKey) videoProviders.push(new GeminiVideo(undefined, googleKey));
+  } else if (videoPrimary === "gemini" || videoPrimary === undefined) {
+    if (googleKey) videoProviders.push(new GeminiVideo(config.videoModel, googleKey));
+    if (falKey) videoProviders.push(new FalVideo(undefined, falKey));
+  }
+
+  return { llm, tts, imageGen, stock, videoProviders };
 }
 
 /** Create an AI SDK LanguageModel instance for VLM verification */

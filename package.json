@@ -46,6 +46,7 @@
     "@ai-sdk/anthropic": "^3.0.66",
     "@ai-sdk/openai": "^3.0.50",
     "@anthropic-ai/sdk": "^0.80.0",
+    "@fal-ai/client": "^1.9.5",
     "@fastify/cors": "^11.2.0",
     "@fastify/static": "^9.0.0",
     "@google/genai": "^1.47.0",
