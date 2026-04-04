@@ -10,7 +10,7 @@ src/
   server.ts             # Fastify REST API server
   worker.ts             # BullMQ job worker
   cli/                  # args parser, progress display, cost estimator
-  agents/               # creative-director, critic, image-prompter, research
+  agents/               # creative-director, critic, image-prompter, music-prompter, research
   pipeline/             # Mastra workflow orchestrator + utils (6-stage pipeline)
   providers/
     factory.ts          # provider factory with BYOK support
@@ -18,6 +18,7 @@ src/
     tts/                # elevenlabs.ts, inworld.ts, kokoro.ts, gemini.ts, openai.ts, aligned-tts-provider.ts, whisper-aligner.ts
     image/              # gemini.ts, openai.ts
     stock/              # pexels.ts, pixabay.ts, adaptive-resolver.ts, query-reformer.ts, stock-verifier.ts
+    music/              # lyria.ts (Lyria 3 Pro), bundled-adapter.ts, bundled.ts
     video/              # gemini.ts (Veo), fal.ts (Kling), video-resolver.ts
   config/
     archetypes/         # 14 archetype JSON configs
@@ -45,7 +46,7 @@ fixtures/               # sample DirectorScore JSONs
 ```bash
 pnpm install          # install dependencies
 pnpm start "topic"    # run full pipeline (CLI)
-pnpm test             # run vitest suite (236 tests)
+pnpm test             # run vitest suite (267 tests)
 ```
 
 ### Web UI (Docker Compose)
