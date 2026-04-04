@@ -2,6 +2,7 @@ import type { DirectorScoreScene } from "@/hooks/useApi";
 
 const VISUAL_TYPE_BADGE: Record<DirectorScoreScene["visual_type"], { label: string; color: string }> = {
   ai_image: { label: "AI", color: "bg-indigo-500/20 text-indigo-400" },
+  ai_video: { label: "AV", color: "bg-purple-500/20 text-purple-400" },
   stock_image: { label: "ST", color: "bg-cyan-500/20 text-cyan-400" },
   stock_video: { label: "SV", color: "bg-emerald-500/20 text-emerald-400" },
   text_card: { label: "TX", color: "bg-amber-500/20 text-amber-400" },

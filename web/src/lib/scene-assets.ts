@@ -16,6 +16,8 @@ export function getSceneAssetUrl(
   switch (scene.visual_type) {
     case "ai_image":
       return `${base}/scene-${index}-ai.png`;
+    case "ai_video":
+      return `${base}/scene-${index}-ai-video.mp4`;
     case "stock_image":
       return `${base}/scene-${index}-stock.jpg`;
     case "stock_video":

@@ -138,6 +138,52 @@ describe("mapScoreToProps", () => {
     const props = mapScoreToProps(baseScore, baseAssets);
     expect(props.scenes[0]!.transitionDurationFrames).toBe(12);
   });
+
+  it("remaps ai_video to ai_image when asset is a fallback PNG", () => {
+    const score: DirectorScore = {
+      ...baseScore,
+      scenes: [
+        {
+          visual_type: "ai_video",
+          visual_prompt: "Rocket launch",
+          motion: "static",
+          script_line: "Watch the launch.",
+        },
+      ],
+    };
+    const assets: ResolvedAssets = {
+      ...baseAssets,
+      sceneAssets: ["/images/scene-0-ai.png"],
+      sceneWords: [makeWords(0, 3)],
+    };
+    const props = mapScoreToProps(score, assets);
+    expect(props.scenes[0]!.visualType).toBe("ai_image");
+    // motion="static" should be forced to "zoom_in" on fallback
+    expect(props.scenes[0]!.motion).toBe("zoom_in");
+  });
+
+  it("preserves ai_video type when asset is a video file", () => {
+    const score: DirectorScore = {
+      ...baseScore,
+      scenes: [
+        {
+          visual_type: "ai_video",
+          visual_prompt: "Rocket launch",
+          motion: "static",
+          script_line: "Watch the launch.",
+        },
+      ],
+    };
+    const assets: ResolvedAssets = {
+      ...baseAssets,
+      sceneAssets: ["/videos/scene-0-ai-video.mp4"],
+      sceneWords: [makeWords(0, 3)],
+      sceneSourceDurations: [6],
+    };
+    const props = mapScoreToProps(score, assets);
+    expect(props.scenes[0]!.visualType).toBe("ai_video");
+    expect(props.scenes[0]!.motion).toBe("static");
+  });
 });
 
 describe("getTotalDurationInFrames", () => {

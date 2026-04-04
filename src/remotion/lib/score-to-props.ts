@@ -53,21 +53,27 @@ export function mapScoreToProps(
     const durationSeconds = Math.max(voiceoverDuration + 0.5, 2);
     const durationInFrames = Math.round(durationSeconds * fps);
 
-    // Detect AI fallback: if the score says stock but the asset is a PNG,
-    // the adaptive resolver fell back to AI image generation.
+    // Detect AI fallback: if the score says stock/ai_video but the asset is a PNG,
+    // the resolver fell back to AI image generation.
     const assetSrc = assets.sceneAssets[i] ?? null;
     let visualType = scene.visual_type;
+    let motion = scene.motion;
     if (
-      (visualType === "stock_video" || visualType === "stock_image") &&
+      (visualType === "stock_video" || visualType === "stock_image" || visualType === "ai_video") &&
       assetSrc?.endsWith("-ai.png")
     ) {
       visualType = "ai_image";
+      // ai_video scenes use motion="static" since the video provides motion.
+      // On fallback to still image, force Ken Burns zoom so it's not completely static.
+      if (motion === "static") {
+        motion = "zoom_in";
+      }
     }
 
     return {
       visualType,
       assetSrc,
-      motion: scene.motion,
+      motion,
       visualPrompt: scene.visual_prompt,
       durationInFrames,
       words, // per-scene words kept for scene duration calc, not used for captions
@@ -111,6 +117,15 @@ export function getTotalDurationInFrames(props: CompositionProps, fps: number = 
   const lastScene = props.scenes[props.scenes.length - 1];
   if (adjusted < minFrames && lastScene) {
     const deficit = minFrames - adjusted;
+    // Guard: don't extend ai_video scenes past their source duration to prevent looping.
+    // AI-generated video clips create visible seams when looped, unlike stock footage.
+    if (lastScene.visualType === "ai_video" && lastScene.sourceDurationInSeconds) {
+      const maxFrames = Math.ceil(lastScene.sourceDurationInSeconds * fps);
+      const originalDuration = lastScene.durationInFrames;
+      const cappedDuration = Math.min(originalDuration + deficit, maxFrames);
+      lastScene.durationInFrames = cappedDuration;
+      return sceneDuration - transitionOverlap + (cappedDuration - originalDuration);
+    }
     lastScene.durationInFrames += deficit;
     return minFrames;
   }

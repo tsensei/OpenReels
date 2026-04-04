@@ -87,7 +87,7 @@ export interface ActualCostBreakdown {
 }
 
 export interface DirectorScoreScene {
-  visual_type: "ai_image" | "stock_image" | "stock_video" | "text_card";
+  visual_type: "ai_image" | "ai_video" | "stock_image" | "stock_video" | "text_card";
   visual_prompt: string;
   motion: "zoom_in" | "zoom_out" | "pan_right" | "pan_left" | "static";
   script_line: string;

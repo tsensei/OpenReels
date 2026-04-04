@@ -21,6 +21,7 @@ import type { CompositionProps, SceneProps } from "../lib/score-to-props";
 
 const BEAT_COMPONENTS: Record<string, React.FC<SceneProps>> = {
   ai_image: AIImageBeat,
+  ai_video: StockVideoBeat,
   stock_image: StockImageBeat,
   stock_video: StockVideoBeat,
   text_card: TextCardBeat,
