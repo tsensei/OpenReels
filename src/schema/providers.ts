@@ -1,10 +1,12 @@
 import type { z } from "zod";
+import type { MusicMood } from "./director-score.js";
 
 export type LLMProviderKey = "anthropic" | "openai" | "gemini";
 export type TTSProviderKey = "elevenlabs" | "inworld" | "kokoro" | "gemini-tts" | "openai-tts";
 export type ImageProviderKey = "gemini" | "openai";
 export type StockProviderKey = "pexels" | "pixabay";
 export type VideoProviderKey = "gemini" | "fal";
+export type MusicProviderKey = "bundled" | "lyria";
 
 export interface LLMUsage {
   inputTokens: number;
@@ -79,4 +81,14 @@ export interface VideoProvider {
 export interface VideoResult {
   filePath: string;
   durationSeconds: number;
+}
+
+export interface MusicProvider {
+  generate(prompt: string, mood: MusicMood): Promise<MusicResult>;
+}
+
+export interface MusicResult {
+  filePath: string;
+  durationSeconds?: number;
+  metadata?: Record<string, unknown>;
 }
