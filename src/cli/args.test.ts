@@ -66,4 +66,47 @@ describe("CLIOptions type", () => {
     };
     expect(opts.provider).toBe("gemini");
   });
+
+  it("accepts pacing tier as optional field", () => {
+    const opts: CLIOptions = {
+      topic: "test",
+      provider: "anthropic",
+      imageProvider: "gemini",
+      ttsProvider: "elevenlabs",
+      pacing: "fast",
+      platform: "youtube",
+      dryRun: false,
+      preview: false,
+      output: "./output",
+      yes: false,
+      musicProvider: "bundled",
+      noMusic: false,
+      stockVerify: true,
+      stockConfidence: 0.6,
+      stockMaxAttempts: 4,
+      noVideo: false,
+    };
+    expect(opts.pacing).toBe("fast");
+  });
+
+  it("pacing is undefined by default", () => {
+    const opts: CLIOptions = {
+      topic: "test",
+      provider: "anthropic",
+      imageProvider: "gemini",
+      ttsProvider: "elevenlabs",
+      platform: "youtube",
+      dryRun: false,
+      preview: false,
+      output: "./output",
+      yes: false,
+      musicProvider: "bundled",
+      noMusic: false,
+      stockVerify: true,
+      stockConfidence: 0.6,
+      stockMaxAttempts: 4,
+      noVideo: false,
+    };
+    expect(opts.pacing).toBeUndefined();
+  });
 });

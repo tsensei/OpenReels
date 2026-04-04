@@ -36,6 +36,24 @@ describe("getArchetype", () => {
     expect(config.visualColorPalette.length).toBe(5);
   });
 
+  it("has a valid scenePacing tier for all archetypes", () => {
+    const validTiers = ["fast", "moderate", "cinematic"];
+    for (const name of listArchetypes()) {
+      const config = getArchetype(name);
+      expect(validTiers).toContain(config.scenePacing);
+    }
+  });
+
+  it("classifies archetypes into expected tiers", () => {
+    expect(getArchetype("infographic").scenePacing).toBe("fast");
+    expect(getArchetype("bold_illustration").scenePacing).toBe("fast");
+    expect(getArchetype("comic_book").scenePacing).toBe("fast");
+    expect(getArchetype("editorial_caricature").scenePacing).toBe("moderate");
+    expect(getArchetype("warm_editorial").scenePacing).toBe("moderate");
+    expect(getArchetype("cinematic_documentary").scenePacing).toBe("cinematic");
+    expect(getArchetype("warm_narrative").scenePacing).toBe("cinematic");
+  });
+
   it("has valid transition defaults for all archetypes", () => {
     const validTransitions = ["none", "crossfade", "slide_left", "slide_right", "wipe", "flip"];
     for (const name of listArchetypes()) {
