@@ -2,6 +2,26 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.11.0] - 2026-04-04
+
+### Added
+- AI-generated background music via Google Lyria 3 Pro (`--music-provider lyria`). Replaces random bundled track selection with scene-synced scoring that matches the video's emotional arc.
+- LLM music prompter agent that translates scene narratives, mood, and emotional arc into detailed Lyria prompts with per-scene timestamp sections and instrument direction.
+- `--music-provider` CLI flag with `bundled` (default, free) and `lyria` ($0.08/track) options.
+- `--provider google` convenience flag now sets all providers to Google: LLM, image, TTS, video, and music.
+- Music generation runs in parallel with visual asset resolution for zero additional pipeline latency.
+- Automatic fallback from Lyria to bundled tracks on API failure, with safety filter retry (strips intense adjectives and retries once before falling back).
+- Music cost estimation and actual cost tracking in both CLI and web UI.
+- Music provider dropdown in web UI with Lyria 3 Pro and Bundled options.
+- Audio preview player in the completed panel of the web UI.
+- Music generation metadata (prompt, provider, Lyria response) persisted to log.json and meta.json for debugging.
+
+### Fixed
+- `--provider google` now correctly sets TTS to `gemini-tts` (was defaulting to elevenlabs, requiring an ElevenLabs key).
+- Gemini TTS pricing updated from $0 (preview) to $0.02/1K chars (GA pricing).
+- Stock footage verification with Gemini now works correctly (`GOOGLE_API_KEY` passed to Vercel AI SDK which expects `GOOGLE_GENERATIVE_AI_API_KEY`).
+- Lyria temp files cleaned up after copy to prevent /tmp disk fill on servers.
+
 ## [0.10.0] - 2026-04-04
 
 ### Added

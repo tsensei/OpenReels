@@ -72,10 +72,6 @@
   **Priority:** P3
   Deferred from plan: Background Music Library (CEO review: underspecified, risky, rarely fires)
 
-- [ ] **Archetype-aware music mood preferences** — Add `musicMoodPreference: MusicMood[]` to each archetype config for a three-tier selection cascade. Currently using two-tier (enum + random fallback). Revisit if LLM mood mismatches become a problem in practice.
-  **Priority:** P3
-  Deferred from plan: Background Music Library (CEO review: simplified per outside voice)
-
 ## Stock Verification
 
 - [ ] **Global scene quality pass** — After all assets resolve, score each scene's visual quality and re-try weak ones with reallocated budget (stock savings → more AI attempts on hard scenes). Scene-level optimization where the pipeline currently optimizes each scene independently.
