@@ -7,35 +7,56 @@
       "visual_type": "text_card",
       "visual_prompt": "5 Stoic Lessons That Changed My Life",
       "motion": "static",
-      "script_line": "Marcus Aurelius ruled the Roman Empire for nearly two decades, and he left behind a journal that was never meant to be published.",
+      "script_line": "Marcus Aurelius ruled Rome for two decades.",
       "transition": "crossfade"
     },
     {
       "visual_type": "ai_image",
-      "visual_prompt": "Marcus Aurelius sitting alone in a dimly lit Roman tent, writing in a leather journal by candlelight, dramatic chiaroscuro lighting, oil painting style",
+      "visual_prompt": "Marcus Aurelius sitting alone in a dimly lit Roman tent, writing in a leather journal by candlelight",
       "motion": "zoom_in",
-      "script_line": "His private meditations became one of the most influential philosophy books ever written.",
+      "script_line": "His private journal became one of history's greatest philosophy books.",
       "transition": "slide_left"
     },
     {
       "visual_type": "stock_video",
       "visual_prompt": "sunrise over ancient Roman ruins columns",
       "motion": "static",
-      "script_line": "Lesson one. You have power over your mind, not outside events. Realize this, and you will find strength.",
+      "script_line": "Lesson one. You have power over your mind, not outside events.",
       "transition": "wipe"
     },
     {
-      "visual_type": "ai_image",
-      "visual_prompt": "A stoic philosopher standing calm amid a raging storm, dramatic lighting, bold illustration style with deep shadows",
-      "motion": "pan_right",
-      "script_line": "Most of what we suffer is not from the event itself, but from our judgment about it.",
+      "visual_type": "text_card",
+      "visual_prompt": "Control Your Mind, Not Events",
+      "motion": "static",
+      "script_line": "Realize this and you will find strength.",
       "transition": "crossfade"
     },
     {
+      "visual_type": "ai_image",
+      "visual_prompt": "A stoic philosopher standing calm amid a raging storm, dramatic lighting, bold illustration style",
+      "motion": "pan_right",
+      "script_line": "Lesson two. We suffer not from events, but from our judgment of them.",
+      "transition": "slide_left"
+    },
+    {
       "visual_type": "stock_image",
+      "visual_prompt": "ancient Roman marble bust sculpture dramatic lighting",
+      "motion": "zoom_in",
+      "script_line": "Lesson three. The obstacle is the way.",
+      "transition": "wipe"
+    },
+    {
+      "visual_type": "stock_video",
       "visual_prompt": "person meditating on mountain peak at golden hour",
+      "motion": "static",
+      "script_line": "Every challenge is a chance to practice virtue.",
+      "transition": "crossfade"
+    },
+    {
+      "visual_type": "ai_image",
+      "visual_prompt": "A glowing journal surrounded by golden light, with Marcus Aurelius quotes floating around it",
       "motion": "zoom_out",
-      "script_line": "The obstacle is the way. Start practicing today, and your life will never be the same."
+      "script_line": "Start practicing today. Your life will never be the same."
     }
   ]
 }

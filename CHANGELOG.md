@@ -2,6 +2,24 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.12.0] - 2026-04-05
+
+### Added
+- Archetype-driven scene pacing tiers. Each of the 14 visual archetypes now has a `scenePacing` field (fast, moderate, or cinematic) that controls how many scenes the creative director generates and how words are distributed across them.
+  - **Fast** (infographic, bold_illustration, comic_book): 8-12 scenes, 8-12 words per scene, punchy cuts.
+  - **Moderate** (warm_editorial, editorial_caricature, anime_illustration, vintage_snapshot, surreal_dreamscape, gothic_fantasy): 7-10 scenes, 10-16 words per scene.
+  - **Cinematic** (cinematic_documentary, moody_cinematic, studio_realism, warm_narrative, pastoral_watercolor): 5-8 scenes, 15-22 words per scene, deliberate pacing.
+- `--pacing fast|moderate|cinematic` CLI flag to override the archetype's default pacing tier. Explicit pacing always wins, even if it contradicts the archetype.
+- Web UI pacing dropdown (Auto Pace / Fast / Moderate / Cinematic) in the controls row alongside style and platform selectors.
+- Critic agent now evaluates pacing against tier-specific thresholds instead of a fixed "5-7 scenes" standard. Derives the tier from the score's archetype or from the explicit `--pacing` override.
+- Creative director unit tests (new file: `creative-director.test.ts`) covering all three pacing injection paths, word budget math, and fallback prompt behavior.
+
+### Changed
+- DirectorScore schema max scenes increased from 10 to 16. DirectorScoreRaw (LLM-facing schema) now also has `.min(3).max(16)` bounds to prevent token waste on overshoot.
+- Creative director prompt rewritten with a pacing tier table. When no archetype is specified, the LLM receives the full tier lookup table to self-select after choosing an archetype.
+- Critic and playbook pacing rubric updated to reference tier-specific ranges instead of hardcoded "5-7 scenes".
+- `buildDefaultPrompt()` fallback no longer hardcodes "4-7 scenes", instead references archetype's recommended pacing.
+
 ## [0.11.0] - 2026-04-04
 
 ### Added

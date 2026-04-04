@@ -7,37 +7,61 @@
       "visual_type": "text_card",
       "visual_prompt": "OpenAI Just Killed Sora",
       "motion": "static",
-      "script_line": "OpenAI just shut down Sora, their most hyped product ever. Here is why."
+      "script_line": "OpenAI just shut down Sora."
     },
     {
       "visual_type": "ai_image",
-      "visual_prompt": "A glowing AI neural network being unplugged, wires disconnecting, dark futuristic server room, neon blue and red lighting",
+      "visual_prompt": "A glowing AI neural network being unplugged, dark futuristic server room, neon lighting",
       "motion": "zoom_in",
-      "script_line": "Sora was supposed to be the future of video generation. They teased it for over a year."
+      "script_line": "Their most hyped product ever, gone."
     },
     {
       "visual_type": "stock_video",
-      "visual_prompt": "robotics lab with robot arms moving",
+      "visual_prompt": "data center server racks with blinking lights",
       "motion": "static",
-      "script_line": "But running Sora was burning through compute like nothing else. We are talking billions of dollars in GPU costs."
+      "script_line": "Sora was burning billions in GPU costs."
     },
     {
       "visual_type": "text_card",
-      "visual_prompt": "The Real Reason",
+      "visual_prompt": "$4B+ Annual Compute Cost",
       "motion": "static",
-      "script_line": "The real reason? OpenAI is pivoting hard into robotics. And robots need that compute way more than video generation does."
+      "script_line": "Four billion dollars a year, just to run it."
+    },
+    {
+      "visual_type": "stock_image",
+      "visual_prompt": "humanoid robot in a lab",
+      "motion": "pan_right",
+      "script_line": "The real reason? Robots need that compute more."
     },
     {
       "visual_type": "ai_image",
-      "visual_prompt": "Humanoid robot walking through a modern office, photorealistic, cinematic lighting, slight lens flare",
-      "motion": "pan_right",
-      "script_line": "Sam Altman bet that physical AI is worth more than digital content creation."
+      "visual_prompt": "Humanoid robot walking through a modern office, photorealistic, cinematic lighting",
+      "motion": "zoom_in",
+      "script_line": "OpenAI is pivoting hard into physical AI."
+    },
+    {
+      "visual_type": "stock_video",
+      "visual_prompt": "robotics assembly line automated factory",
+      "motion": "static",
+      "script_line": "Sam Altman bet robots beat video generation."
+    },
+    {
+      "visual_type": "text_card",
+      "visual_prompt": "Physical AI > Digital Content",
+      "motion": "static",
+      "script_line": "Physical AI over digital content. That is the bet."
     },
     {
       "visual_type": "stock_image",
       "visual_prompt": "futuristic city skyline at night with AI holographic displays",
       "motion": "zoom_out",
-      "script_line": "Whether he is right or not, one thing is clear. The AI video generation race just lost its biggest player."
+      "script_line": "The AI video race just lost its biggest player."
+    },
+    {
+      "visual_type": "ai_image",
+      "visual_prompt": "Empty throne with a crown on the seat, dark dramatic lighting, symbolic illustration",
+      "motion": "zoom_in",
+      "script_line": "Who fills the gap? Follow to find out."
     }
   ]
 }
