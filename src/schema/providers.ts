@@ -1,7 +1,7 @@
 import type { z } from "zod";
 
 export type LLMProviderKey = "anthropic" | "openai" | "gemini";
-export type TTSProviderKey = "elevenlabs" | "inworld";
+export type TTSProviderKey = "elevenlabs" | "inworld" | "kokoro" | "gemini-tts" | "openai-tts";
 export type ImageProviderKey = "gemini" | "openai";
 export type StockProviderKey = "pexels" | "pixabay";
 export type VideoProviderKey = "gemini" | "fal";

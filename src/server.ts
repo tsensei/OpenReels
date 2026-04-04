@@ -90,6 +90,9 @@ app.get("/api/v1/providers", async () => ({
   tts: [
     { key: "elevenlabs", label: "ElevenLabs" },
     { key: "inworld", label: "Inworld" },
+    { key: "kokoro", label: "Kokoro (Local)" },
+    { key: "gemini-tts", label: "Gemini TTS" },
+    { key: "openai-tts", label: "OpenAI TTS" },
   ],
   image: [
     { key: "gemini", label: "Google Gemini" },

@@ -23,6 +23,7 @@ async function main(): Promise<void> {
     image: opts.imageProvider,
     video: opts.videoProvider,
     videoModel: opts.videoModel,
+    kokoroVoice: opts.kokoroVoice,
   });
 
   // Create CLI callbacks for terminal progress display

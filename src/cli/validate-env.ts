@@ -24,13 +24,17 @@ export function validateEnv(opts: {
       key: "OPENAI_API_KEY",
       provider: "OpenAI (LLM/Image)",
       signupUrl: "https://platform.openai.com/api-keys",
-      required: opts.provider === "openai" || opts.imageProvider === "openai",
+      required: opts.provider === "openai" || opts.imageProvider === "openai" || opts.ttsProvider === "openai-tts",
     },
     {
       key: "GOOGLE_API_KEY",
-      provider: "Google Gemini (LLM/Image/Video)",
+      provider: "Google Gemini (LLM/Image/Video/TTS)",
       signupUrl: "https://aistudio.google.com/apikey",
-      required: opts.provider === "gemini" || opts.imageProvider === "gemini" || opts.videoProvider === "gemini",
+      required:
+        opts.provider === "gemini" ||
+        opts.imageProvider === "gemini" ||
+        opts.videoProvider === "gemini" ||
+        opts.ttsProvider === "gemini-tts",
     },
     {
       key: "ELEVENLABS_API_KEY",

@@ -57,8 +57,13 @@ const PRICING = {
     perInputToken: 0.10 / 1_000_000, // $0.10 per 1M input tokens (Gemini 2.5 Flash)
     perOutputToken: 0.40 / 1_000_000, // $0.40 per 1M output tokens (Gemini 2.5 Flash)
   },
-  elevenLabsPerChar: 0.00018, // $0.18 per 1K chars (avg of Creator $0.20 and Pro $0.17, Multilingual v2)
-  inworldPerChar: 0.00001, // $0.01 per 1K chars (Inworld TTS-1.5 Max: $10/1M chars)
+  ttsPerChar: {
+    elevenlabs: 0.00018, // $0.18 per 1K chars (avg of Creator $0.20 and Pro $0.17, Multilingual v2)
+    inworld: 0.00001, // $0.01 per 1K chars (Inworld TTS-1.5 Max: $10/1M chars)
+    kokoro: 0, // Free — local inference
+    "gemini-tts": 0, // Free tier (Gemini 2.5 Flash TTS preview)
+    "openai-tts": 0.00005, // ~$0.05 per 1K chars (gpt-4o-mini-tts: $0.60/1M text tokens in + $12/1M audio tokens out)
+  } satisfies Record<TTSProviderKey, number>,
   // Gemini 3.1 Flash Image Preview: $60/M output tokens
   // 1080x1920 (>1024px, <=2048px) = 1680 tokens = $0.101/image
   // Plus input tokens at $0.50/M for the prompt text (~200 tokens avg = ~$0.0001)
@@ -103,7 +108,7 @@ export function estimateCost(
     callCost(TOKEN_ESTIMATES.creativeDirector) +
     callCost(TOKEN_ESTIMATES.critic) +
     aiImages * callCost(TOKEN_ESTIMATES.imagePrompter);
-  const ttsPerChar = ttsProvider === "inworld" ? PRICING.inworldPerChar : PRICING.elevenLabsPerChar;
+  const ttsPerChar = PRICING.ttsPerChar[ttsProvider];
   const ttsCost = ttsCharacters * ttsPerChar;
   const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
   const imageCost = aiImages * perImage;
@@ -191,7 +196,7 @@ export function computeActualLLMCost(
   const totalOutputTokens = usages.reduce((sum, u) => sum + u.outputTokens, 0);
 
   const llmCost = totalInputTokens * p.perInputToken + totalOutputTokens * p.perOutputToken;
-  const ttsPerChar = ttsProvider === "inworld" ? PRICING.inworldPerChar : PRICING.elevenLabsPerChar;
+  const ttsPerChar = PRICING.ttsPerChar[ttsProvider];
   const ttsCost = nonLlm.ttsCharacters * ttsPerChar;
   const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
   const imageCost = nonLlm.aiImages * perImage;

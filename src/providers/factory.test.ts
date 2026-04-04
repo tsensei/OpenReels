@@ -7,8 +7,12 @@ import { GeminiLLM } from "./llm/gemini.js";
 import { OpenAILLM } from "./llm/openai.js";
 import { PexelsStock } from "./stock/pexels.js";
 import { PixabayStock } from "./stock/pixabay.js";
+import { AlignedTTSProvider } from "./tts/aligned-tts-provider.js";
 import { ElevenLabsTTS } from "./tts/elevenlabs.js";
+import { GeminiTTS } from "./tts/gemini.js";
 import { InworldTTS } from "./tts/inworld.js";
+import { KokoroTTS } from "./tts/kokoro.js";
+import { OpenAITTS } from "./tts/openai.js";
 
 vi.mock("./llm/anthropic.js", () => ({
   AnthropicLLM: vi.fn().mockImplementation(() => ({ id: "anthropic", generate: vi.fn() })),
@@ -24,6 +28,21 @@ vi.mock("./tts/elevenlabs.js", () => ({
 }));
 vi.mock("./tts/inworld.js", () => ({
   InworldTTS: vi.fn().mockImplementation(() => ({ generate: vi.fn() })),
+}));
+vi.mock("./tts/kokoro.js", () => ({
+  KokoroTTS: vi.fn().mockImplementation(() => ({ generate: vi.fn() })),
+}));
+vi.mock("./tts/gemini.js", () => ({
+  GeminiTTS: vi.fn().mockImplementation(() => ({ generate: vi.fn() })),
+}));
+vi.mock("./tts/openai.js", () => ({
+  OpenAITTS: vi.fn().mockImplementation(() => ({ generate: vi.fn() })),
+}));
+vi.mock("./tts/aligned-tts-provider.js", () => ({
+  AlignedTTSProvider: vi.fn().mockImplementation((inner) => ({ generate: vi.fn(), _inner: inner })),
+}));
+vi.mock("./tts/whisper-aligner.js", () => ({
+  WhisperAligner: vi.fn().mockImplementation(() => ({ align: vi.fn() })),
 }));
 vi.mock("./image/gemini.js", () => ({
   GeminiImage: vi.fn().mockImplementation(() => ({ generate: vi.fn() })),
@@ -152,5 +171,66 @@ describe("createProviders", () => {
     });
 
     expect(GeminiLLM).toHaveBeenCalledWith(undefined, "test-goog-key");
+  });
+
+  it("wraps KokoroTTS in AlignedTTSProvider", () => {
+    const providers = createProviders({
+      llm: "anthropic",
+      tts: "kokoro",
+      image: "gemini",
+    });
+
+    expect(KokoroTTS).toHaveBeenCalled();
+    expect(AlignedTTSProvider).toHaveBeenCalled();
+    expect(providers.tts).toBeDefined();
+  });
+
+  it("passes kokoroVoice to KokoroTTS constructor", () => {
+    createProviders({
+      llm: "anthropic",
+      tts: "kokoro",
+      image: "gemini",
+      kokoroVoice: "bf_emma",
+    });
+
+    expect(KokoroTTS).toHaveBeenCalledWith("bf_emma");
+  });
+
+  it("wraps GeminiTTS in AlignedTTSProvider", () => {
+    const providers = createProviders({
+      llm: "anthropic",
+      tts: "gemini-tts",
+      image: "gemini",
+      keys: { GOOGLE_API_KEY: "test-goog-key" },
+    });
+
+    expect(GeminiTTS).toHaveBeenCalled();
+    expect(AlignedTTSProvider).toHaveBeenCalled();
+    expect(providers.tts).toBeDefined();
+  });
+
+  it("wraps OpenAITTS in AlignedTTSProvider", () => {
+    const providers = createProviders({
+      llm: "anthropic",
+      tts: "openai-tts",
+      image: "gemini",
+      keys: { OPENAI_API_KEY: "test-openai-key" },
+    });
+
+    expect(OpenAITTS).toHaveBeenCalled();
+    expect(AlignedTTSProvider).toHaveBeenCalled();
+    expect(providers.tts).toBeDefined();
+  });
+
+  it("does not wrap ElevenLabs in AlignedTTSProvider", () => {
+    vi.mocked(AlignedTTSProvider).mockClear();
+    createProviders({
+      llm: "anthropic",
+      tts: "elevenlabs",
+      image: "gemini",
+    });
+
+    expect(ElevenLabsTTS).toHaveBeenCalled();
+    expect(AlignedTTSProvider).not.toHaveBeenCalled();
   });
 });

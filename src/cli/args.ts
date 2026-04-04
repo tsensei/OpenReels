@@ -12,6 +12,7 @@ export interface CLIOptions {
   ttsProvider: TTSProviderKey;
   videoProvider?: VideoProviderKey;
   videoModel?: string;
+  kokoroVoice?: string;
   noVideo: boolean;
   archetype?: string;
   platform: string;
@@ -36,7 +37,7 @@ export function parseArgs(): CLIOptions {
     .argument("<topic>", "The topic for your video")
     .addOption(
       new Option("-p, --provider <provider>", "LLM provider (use 'google' to set LLM+image+video to Gemini)")
-        .choices(["anthropic", "openai", "gemini", "google"])
+        .choices(["anthropic", "openai", "gemini", "google", "local"])
         .default("anthropic"),
     )
     .addOption(
@@ -46,9 +47,10 @@ export function parseArgs(): CLIOptions {
     )
     .addOption(
       new Option("--tts-provider <provider>", "TTS provider")
-        .choices(["elevenlabs", "inworld"])
+        .choices(["elevenlabs", "inworld", "kokoro", "gemini-tts", "openai-tts"])
         .default("elevenlabs"),
     )
+    .option("--kokoro-voice <voice>", "Kokoro voice preset (e.g. af_heart, bf_emma, am_fenrir)", "af_heart")
     .option("-a, --archetype <archetype>", "Visual archetype override")
     .option("--platform <platform>", "Target platform (youtube, tiktok, instagram)", "youtube")
     .option("--dry-run", "Output DirectorScore JSON without generating assets", false)
@@ -76,8 +78,9 @@ export function parseArgs(): CLIOptions {
   const opts = program.opts();
 
   // --provider google is a convenience alias that sets LLM+image+video to Gemini.
-  // Explicit per-provider flags take precedence over the meta-flag.
-  // After this block, opts["provider"] is always a valid LLMProviderKey ("google" is rewritten to "gemini").
+  // --provider local sets TTS to Kokoro (free local inference, no API key needed).
+  // Explicit per-provider flags take precedence over meta-flags.
+  // After this block, opts["provider"] is always a valid LLMProviderKey.
   if (opts["provider"] === "google") {
     opts["provider"] = "gemini";
     const imageSource = program.getOptionValueSource("imageProvider");
@@ -88,6 +91,12 @@ export function parseArgs(): CLIOptions {
     if (!videoSource || videoSource === "default") {
       opts["videoProvider"] = "gemini";
     }
+  } else if (opts["provider"] === "local") {
+    opts["provider"] = "anthropic"; // LLM defaults unchanged
+    const ttsSource = program.getOptionValueSource("ttsProvider");
+    if (!ttsSource || ttsSource === "default") {
+      opts["ttsProvider"] = "kokoro";
+    }
   }
 
   return {
@@ -97,6 +106,7 @@ export function parseArgs(): CLIOptions {
     ttsProvider: opts["ttsProvider"] as TTSProviderKey,
     videoProvider: opts["videoProvider"] as VideoProviderKey | undefined,
     videoModel: opts["videoModel"] as string | undefined,
+    kokoroVoice: opts["kokoroVoice"] as string | undefined,
     noVideo: opts["video"] === false,
     archetype: opts["archetype"] as string | undefined,
     platform: opts["platform"] as string,

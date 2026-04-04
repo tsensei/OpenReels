@@ -21,8 +21,13 @@ import { GeminiLLM } from "./llm/gemini.js";
 import { OpenAILLM } from "./llm/openai.js";
 import { PexelsStock } from "./stock/pexels.js";
 import { PixabayStock } from "./stock/pixabay.js";
+import { AlignedTTSProvider } from "./tts/aligned-tts-provider.js";
 import { ElevenLabsTTS } from "./tts/elevenlabs.js";
+import { GeminiTTS } from "./tts/gemini.js";
 import { InworldTTS } from "./tts/inworld.js";
+import { KokoroTTS } from "./tts/kokoro.js";
+import { OpenAITTS } from "./tts/openai.js";
+import { WhisperAligner } from "./tts/whisper-aligner.js";
 import { GeminiVideo } from "./video/gemini.js";
 import { FalVideo } from "./video/fal.js";
 
@@ -33,6 +38,7 @@ export interface ProviderConfig {
   stock?: StockProviderKey;
   video?: VideoProviderKey;
   videoModel?: string;
+  kokoroVoice?: string;
   keys?: Record<string, string>;
 }
 
@@ -54,10 +60,28 @@ export function createProviders(config: ProviderConfig): Providers {
         ? new GeminiLLM(undefined, k["GOOGLE_API_KEY"])
         : new AnthropicLLM(undefined, k["ANTHROPIC_API_KEY"]);
 
-  const tts: TTSProvider =
-    config.tts === "inworld"
-      ? new InworldTTS(undefined, undefined, k["INWORLD_TTS_API_KEY"])
-      : new ElevenLabsTTS(undefined, k["ELEVENLABS_API_KEY"]);
+  // Providers that lack native timestamps get wrapped with the alignment decorator.
+  // The aligner is shared (lazy singleton) so the Whisper model loads only once.
+  const aligner = new WhisperAligner();
+
+  let tts: TTSProvider;
+  switch (config.tts) {
+    case "kokoro":
+      tts = new AlignedTTSProvider(new KokoroTTS(config.kokoroVoice), aligner);
+      break;
+    case "gemini-tts":
+      tts = new AlignedTTSProvider(new GeminiTTS(undefined, k["GOOGLE_API_KEY"]), aligner);
+      break;
+    case "openai-tts":
+      tts = new AlignedTTSProvider(new OpenAITTS(undefined, k["OPENAI_API_KEY"]), aligner);
+      break;
+    case "inworld":
+      tts = new InworldTTS(undefined, undefined, k["INWORLD_TTS_API_KEY"]);
+      break;
+    default:
+      tts = new ElevenLabsTTS(undefined, k["ELEVENLABS_API_KEY"]);
+      break;
+  }
 
   const imageGen: ImageProvider =
     config.image === "openai"
