@@ -1,6 +1,6 @@
 import { createRequire } from "node:module";
 import { Command, Option } from "commander";
-import type { ImageProviderKey, LLMProviderKey, TTSProviderKey } from "../schema/providers.js";
+import type { ImageProviderKey, LLMProviderKey, TTSProviderKey, VideoProviderKey } from "../schema/providers.js";
 
 const require = createRequire(import.meta.url);
 const { version } = require("../../package.json") as { version: string };
@@ -10,6 +10,9 @@ export interface CLIOptions {
   provider: LLMProviderKey;
   imageProvider: ImageProviderKey;
   ttsProvider: TTSProviderKey;
+  videoProvider?: VideoProviderKey;
+  videoModel?: string;
+  noVideo: boolean;
   archetype?: string;
   platform: string;
   dryRun: boolean;
@@ -57,6 +60,12 @@ export function parseArgs(): CLIOptions {
     .option("--stock-confidence <n>", "Min confidence threshold for stock verification (0-1)", parseFloat, 0.6)
     .option("--stock-max-attempts <n>", "Max stock API calls per scene", parseInt, 4)
     .option("--verification-model <model>", "Model override for stock verification VLM")
+    .addOption(
+      new Option("--video-provider <provider>", "Video generation provider")
+        .choices(["gemini", "fal"])
+    )
+    .option("--video-model <model>", "Video model override (e.g. veo-3.1-lite-preview, fal-ai/kling-video/v2.1/standard/image-to-video)")
+    .option("--video", "Enable AI video generation (use --no-video to disable)", true)
     .parse();
 
   const topic = program.args[0] ?? "";
@@ -71,6 +80,9 @@ export function parseArgs(): CLIOptions {
     provider: opts["provider"] as LLMProviderKey,
     imageProvider: opts["imageProvider"] as ImageProviderKey,
     ttsProvider: opts["ttsProvider"] as TTSProviderKey,
+    videoProvider: opts["videoProvider"] as VideoProviderKey | undefined,
+    videoModel: opts["videoModel"] as string | undefined,
+    noVideo: opts["video"] === false,
     archetype: opts["archetype"] as string | undefined,
     platform: opts["platform"] as string,
     dryRun: opts["dryRun"] as boolean,

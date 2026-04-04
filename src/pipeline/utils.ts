@@ -10,6 +10,8 @@ import type {
   StockProvider,
   TTSProvider,
   TTSProviderKey,
+  VideoProvider,
+  VideoProviderKey,
   WordTimestamp,
 } from "../schema/providers.js";
 
@@ -56,6 +58,9 @@ export interface PipelineOptions {
   stockConfidence?: number;
   stockMaxAttempts?: number;
   verifyModel?: LanguageModel;
+  videoProviders?: VideoProvider[];
+  videoProvider?: VideoProviderKey;
+  noVideo?: boolean;
 }
 
 export interface PipelineResult {

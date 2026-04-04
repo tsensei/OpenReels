@@ -11,6 +11,7 @@ import type {
   LLMProviderKey,
   StockProviderKey,
   TTSProviderKey,
+  VideoProviderKey,
 } from "./schema/providers.js";
 
 const REDIS_URL = process.env["REDIS_URL"] ?? "redis://localhost:6379";
@@ -37,11 +38,14 @@ interface JobData {
   platform: string;
   dryRun: boolean;
   noMusic?: boolean;
+  noVideo?: boolean;
   providers: {
     llm: string;
     tts: string;
     image: string;
     stock: string;
+    video?: string;
+    videoModel?: string;
   };
   keys: Record<string, string>;
   jobsDir: string;
@@ -76,7 +80,7 @@ function writeMeta(jobDir: string, meta: JobMeta) {
 const worker = new Worker<JobData>(
   "openreels",
   async (job: Job<JobData>) => {
-    const { topic, archetype, platform, dryRun, noMusic, providers, keys } = job.data;
+    const { topic, archetype, platform, dryRun, noMusic, noVideo, providers, keys } = job.data;
     const jobDir = path.join(JOBS_DIR, job.id!);
     fs.mkdirSync(jobDir, { recursive: true });
 
@@ -102,6 +106,8 @@ const worker = new Worker<JobData>(
       tts: providers.tts as TTSProviderKey,
       image: providers.image as ImageProviderKey,
       stock: providers.stock as StockProviderKey,
+      video: providers.video as VideoProviderKey | undefined,
+      videoModel: providers.videoModel,
       keys,
     });
 
@@ -200,6 +206,9 @@ const worker = new Worker<JobData>(
         imageGen: providerInstances.imageGen,
         imageProvider: providers.image as ImageProviderKey,
         stock: providerInstances.stock,
+        videoProviders: noVideo ? [] : providerInstances.videoProviders,
+        videoProvider: providers.video as VideoProviderKey | undefined,
+        noVideo: noVideo === true,
         archetype,
         platform,
         dryRun,

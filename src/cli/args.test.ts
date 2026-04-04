@@ -19,6 +19,7 @@ describe("CLIOptions type", () => {
       stockVerify: true,
       stockConfidence: 0.6,
       stockMaxAttempts: 4,
+      noVideo: false,
     };
     expect(opts.yes).toBe(true);
   });
@@ -38,6 +39,7 @@ describe("CLIOptions type", () => {
       stockVerify: true,
       stockConfidence: 0.6,
       stockMaxAttempts: 4,
+      noVideo: false,
     };
     expect(opts.yes).toBe(false);
   });

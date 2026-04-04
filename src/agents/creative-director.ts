@@ -34,7 +34,7 @@ export async function generateDirectorScore(
   llm: LLMProvider,
   topic: string,
   researchContext: ResearchResult,
-  options?: { archetype?: string },
+  options?: { archetype?: string; videoEnabled?: boolean },
 ): Promise<DirectorScoreOutput> {
   let systemPrompt = buildDefaultPrompt();
 
@@ -57,6 +57,14 @@ export async function generateDirectorScore(
     ? `Use the "${options.archetype}" archetype.`
     : `Choose from: ${archetypes.join(", ")}`;
 
+  const videoEnabled = options?.videoEnabled ?? false;
+  const visualTypes = videoEnabled
+    ? "all 5 visual types (ai_image, ai_video, stock_image, stock_video, text_card)"
+    : "all 4 visual types (ai_image, stock_image, stock_video, text_card)";
+  const videoGuidance = videoEnabled
+    ? "\nai_video: Use for 1-3 scenes where MOTION is the story (explosions, flowing water, launches, transformations). ai_video costs ~$0.30/scene vs ~$0.04 for ai_image. Use selectively. Set motion to 'static' for ai_video scenes (the video model handles motion)."
+    : "";
+
   const userMessage = `Topic: ${topic}
 
 Research context:
@@ -69,7 +77,7 @@ Mood: ${researchContext.mood}
 
 ${archetypeInstruction}
 
-Create a DirectorScore with 4-7 scenes. Use all 4 visual types (ai_image, stock_image, stock_video, text_card).
+Create a DirectorScore with 4-7 scenes. Use ${visualTypes}.${videoGuidance}
 CRITICAL RULE: Never use the same visual_type more than 2 times in a row.
 Every scene MUST have a script_line (the voiceover text).
 The first scene should be a strong hook.

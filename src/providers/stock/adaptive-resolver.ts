@@ -255,7 +255,7 @@ export async function resolveStockAdaptive(
         sceneIndex,
         totalScenes,
         config.archetype,
-        rejectionContext,
+        { rejectionContext },
       );
       prompt = optimized.prompt;
       llmUsages.push(optimized.usage);

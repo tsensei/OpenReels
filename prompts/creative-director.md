@@ -11,7 +11,7 @@ Output a JSON object with:
 - **scenes**: Array of 4-7 scenes
 
 Each scene has:
-- **visual_type**: One of "ai_image", "stock_image", "stock_video", "text_card"
+- **visual_type**: One of "ai_image", "ai_video", "stock_image", "stock_video", "text_card"
 - **visual_prompt**: For ai_image: describe the desired scene (subject, setting, action, emotional tone). A downstream prompt optimizer will expand this into a detailed image generation prompt using the archetype's style bible. Focus on WHAT to show, not HOW to prompt an image generator. For stock_image/stock_video: a 3-5 word search query. For text_card: the display text.
 - **motion**: Camera motion - "zoom_in", "zoom_out", "pan_right", "pan_left", or "static". Ignored for stock_video.
 - **script_line**: The voiceover narration for this scene. REQUIRED for every scene.
@@ -30,6 +30,7 @@ Choose the best visual_type for each scene based on what serves the content:
 
 - **stock_video / stock_image**: Prefer when the scene depicts something real, concrete, and likely to have good stock results (landmarks, animals, everyday actions, nature, well-known objects). Stock footage grounds the video in reality.
 - **ai_image**: Use when the scene is abstract, fantastical, hyper-specific, or unlikely to have quality stock matches. Also use when you need precise visual storytelling that stock can't deliver.
+- **ai_video**: AI-generated video clip animated from an AI image. Use when MOTION is the story — explosions, flowing water, rocket launches, walking, flying, transformations, dynamic action. More expensive than ai_image (~$0.30/scene vs ~$0.04/scene). Use selectively: 1-3 scenes per Short where motion truly adds value, not as a default upgrade. Set motion to "static" for ai_video scenes (the video model controls motion, not Ken Burns).
 - **text_card**: Use for punchy stats, key takeaways, or rhetorical questions that hit harder as text.
 
 Mixing visual types makes the video feel produced rather than generated - but don't force variety where it doesn't fit. If the topic is best served by mostly AI images (e.g., speculative sci-fi) or mostly stock (e.g., travel destinations), lean into that. Let the content drive the choice.

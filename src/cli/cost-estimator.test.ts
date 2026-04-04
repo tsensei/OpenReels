@@ -69,7 +69,43 @@ describe("estimateCost", () => {
       { visual_type: "text_card", script_line: "Test" },
     ]);
     const result = estimateCost(score);
-    expect(result.totalCost).toBeCloseTo(result.llmCost + result.ttsCost + result.imageCost);
+    expect(result.totalCost).toBeCloseTo(result.llmCost + result.ttsCost + result.imageCost + result.videoCost);
+  });
+
+  it("counts ai_video scenes for video cost and Phase 1 image cost", () => {
+    const score = makeScore([
+      { visual_type: "ai_video", script_line: "Rocket launch" },
+      { visual_type: "ai_image", script_line: "Still image" },
+      { visual_type: "ai_video", script_line: "Another video" },
+    ]);
+    const result = estimateCost(score);
+    // 2 ai_video + 1 ai_image = 3 Phase 1 images
+    expect(result.details.aiImages).toBe(3);
+    expect(result.details.aiVideos).toBe(2);
+    expect(result.videoCost).toBeGreaterThan(0);
+    // LLM calls: 3 base + 1 ai_image prompt + 2*2 ai_video (image + motion prompt)
+    expect(result.details.llmCalls).toBe(8);
+  });
+
+  it("includes per-scene cost breakdown", () => {
+    const score = makeScore([
+      { visual_type: "ai_video", script_line: "Video scene" },
+      { visual_type: "stock_video", script_line: "Free stock" },
+      { visual_type: "text_card", script_line: "Free text" },
+    ]);
+    const result = estimateCost(score);
+    expect(result.perScene).toHaveLength(3);
+    expect(result.perScene![0]!.type).toBe("ai_video");
+    expect(result.perScene![0]!.cost).toBeGreaterThan(0);
+    expect(result.perScene![1]!.cost).toBe(0);
+    expect(result.perScene![2]!.cost).toBe(0);
+  });
+
+  it("uses fal pricing when fal video provider specified", () => {
+    const score = makeScore([{ visual_type: "ai_video", script_line: "Video" }]);
+    const gemini = estimateCost(score, "gemini", "elevenlabs", undefined);
+    const fal = estimateCost(score, "gemini", "elevenlabs", "fal");
+    expect(fal.videoCost).toBeGreaterThan(gemini.videoCost);
   });
 });
 
@@ -87,6 +123,17 @@ describe("formatCostEstimate", () => {
     expect(formatted).toContain("Images:");
     expect(formatted).toContain("Stock:  free");
   });
+
+  it("includes video line when ai_video scenes present", () => {
+    const score = makeScore([
+      { visual_type: "ai_video", script_line: "Video scene" },
+      { visual_type: "ai_image", script_line: "Image scene" },
+    ]);
+    const formatted = formatCostEstimate(estimateCost(score));
+    expect(formatted).toContain("Video:");
+    expect(formatted).toContain("1 AI videos");
+    expect(formatted).toContain("Per-scene:");
+  });
 });
 
 describe("computeActualLLMCost", () => {
@@ -99,7 +146,22 @@ describe("computeActualLLMCost", () => {
     expect(result.details.totalInputTokens).toBe(3000);
     expect(result.details.totalOutputTokens).toBe(1500);
     expect(result.totalCost).toBeGreaterThan(0);
-    expect(result.totalCost).toBeCloseTo(result.llmCost + result.ttsCost + result.imageCost);
+    expect(result.totalCost).toBeCloseTo(result.llmCost + result.ttsCost + result.imageCost + result.videoCost);
+  });
+
+  it("includes video cost in actual cost computation", () => {
+    const usages: LLMUsage[] = [{ inputTokens: 100, outputTokens: 50 }];
+    const result = computeActualLLMCost(
+      usages,
+      { aiImages: 1, ttsCharacters: 0, aiVideos: 2 },
+      "anthropic",
+      "gemini",
+      "elevenlabs",
+      "gemini",
+    );
+    expect(result.details.aiVideos).toBe(2);
+    expect(result.videoCost).toBeGreaterThan(0);
+    expect(result.totalCost).toBeCloseTo(result.llmCost + result.ttsCost + result.imageCost + result.videoCost);
   });
 
   it("uses openai pricing when specified", () => {

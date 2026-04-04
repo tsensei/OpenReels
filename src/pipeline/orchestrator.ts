@@ -9,6 +9,7 @@ import { evaluate } from "../agents/critic.js";
 import { optimizeImagePrompt } from "../agents/image-prompter.js";
 import { research } from "../agents/research.js";
 import { resolveStockAdaptive, type StockResolution } from "../providers/stock/adaptive-resolver.js";
+import { resolveAIVideo, type VideoResolution } from "../providers/video/video-resolver.js";
 import type { CostBreakdown } from "../cli/cost-estimator.js";
 import {
   computeActualLLMCost,
@@ -108,6 +109,7 @@ interface RunLog {
   stages: { name: string; duration: number; status: string; error?: string }[];
   totalCost?: { estimated: number; actual?: number };
   stockResolutions?: StockResolution[];
+  videoResolutions?: VideoResolution[];
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -119,6 +121,7 @@ interface VisualAssetResult {
   usage: LLMUsage | null;
   durationSeconds: number | null;
   stockResolution?: StockResolution;
+  videoResolution?: VideoResolution;
 }
 
 /** Generate an AI image with optional rejection context from failed stock searches */
@@ -192,6 +195,43 @@ async function resolveVisualAsset(
         usage: result.usage,
         durationSeconds: result.durationSeconds,
         stockResolution: result.resolution,
+      };
+    }
+
+    case "ai_video": {
+      // If no video providers available, fall back to ai_image silently
+      if (!opts.videoProviders?.length) {
+        return generateAIImage(opts, scene.visual_prompt, scene.script_line, index, totalScenes, archetype, assetsDir);
+      }
+      // Phase 1: Generate AI image (first frame)
+      const imageStart = Date.now();
+      const imgResult = await generateAIImage(opts, scene.visual_prompt, scene.script_line, index, totalScenes, archetype, assetsDir);
+      const imageGenTimeMs = Date.now() - imageStart;
+      const imageBuffer = fs.readFileSync(imgResult.path!);
+
+      // Phase 2: Animate with video provider via resolver
+      const videoResult = await resolveAIVideo(scene, {
+        path: imgResult.path!,
+        buffer: imageBuffer,
+        usage: imgResult.usage,
+      }, index, assetsDir, {
+        videoProviders: opts.videoProviders,
+        llm: opts.llm,
+        archetype,
+        callbacks: cb,
+        totalScenes,
+      });
+
+      // Adjust imageGenTimeMs in the resolution metadata
+      if (videoResult.videoResolution) {
+        videoResult.videoResolution.imageGenTimeMs = imageGenTimeMs;
+      }
+
+      return {
+        path: videoResult.path,
+        usage: videoResult.usage,
+        durationSeconds: videoResult.durationSeconds,
+        videoResolution: videoResult.videoResolution,
       };
     }
 
@@ -309,8 +349,10 @@ function buildPipelineWorkflow(
 
       cb.onStageStart?.("director");
       const start = Date.now();
+      const videoEnabled = !opts.noVideo && (opts.videoProviders?.length ?? 0) > 0;
       const cdOutput = await generateDirectorScore(opts.llm, opts.topic, inputData, {
         archetype: opts.archetype,
+        videoEnabled,
       });
       // Store on shared context via closure
       directorResult.score = cdOutput.data;
@@ -340,7 +382,7 @@ function buildPipelineWorkflow(
       }
 
       // Cost estimation
-      const costBreakdown = estimateCost(cdOutput.data, opts.imageProvider, opts.ttsProvider);
+      const costBreakdown = estimateCost(cdOutput.data, opts.imageProvider, opts.ttsProvider, opts.videoProvider);
       directorResult.costBreakdown = costBreakdown;
       log.totalCost = { estimated: costBreakdown.totalCost };
 
@@ -428,6 +470,14 @@ function buildPipelineWorkflow(
         .filter((sr): sr is StockResolution => sr != null);
       if (stockResolutions.length > 0) {
         log.stockResolutions = stockResolutions;
+      }
+
+      // Collect video resolution metadata for log.json
+      const videoResolutions = sceneResults
+        .map((r) => r.videoResolution)
+        .filter((vr): vr is VideoResolution => vr != null);
+      if (videoResolutions.length > 0) {
+        log.videoResolutions = videoResolutions;
       }
 
       const dur = (Date.now() - start) / 1000;
@@ -692,17 +742,23 @@ export async function runPipeline(
     // Compute and report actual cost (only if we got past director stage)
     if (directorResult.score && directorResult.costBreakdown) {
       const score = directorResult.score;
-      // Count actual AI images produced (includes stock→AI fallbacks)
-      const aiImages = visualsResult.sceneAssets.filter(
+      // Count actual AI images produced (includes stock→AI fallbacks + ai_video Phase 1)
+      const aiImageFiles = visualsResult.sceneAssets.filter(
         (a) => a != null && a.endsWith("-ai.png"),
       ).length;
+      // ai_video scenes also generate a Phase 1 AI image even when video succeeds
+      const aiVideoScenes = visualsResult.sceneAssets.filter(
+        (a) => a != null && a.endsWith("-ai-video.mp4"),
+      ).length;
+      const aiImages = aiImageFiles + aiVideoScenes;
       const ttsCharacters = score.scenes.reduce((sum, s) => sum + s.script_line.length, 0);
       const actualCost = computeActualLLMCost(
         llmUsages,
-        { aiImages, ttsCharacters },
+        { aiImages, ttsCharacters, aiVideos: aiVideoScenes },
         opts.llm.id,
         opts.imageProvider,
         opts.ttsProvider,
+        opts.videoProvider,
       );
       log.totalCost = {
         estimated: directorResult.costBreakdown.totalCost,

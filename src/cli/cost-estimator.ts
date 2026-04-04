@@ -4,30 +4,36 @@ import type {
   LLMProviderKey,
   LLMUsage,
   TTSProviderKey,
+  VideoProviderKey,
 } from "../schema/providers.js";
 
 export interface CostBreakdown {
   llmCost: number;
   ttsCost: number;
   imageCost: number;
+  videoCost: number;
   totalCost: number;
   details: {
     llmCalls: number;
     ttsCharacters: number;
     aiImages: number;
+    aiVideos: number;
   };
+  perScene?: { type: string; cost: number }[];
 }
 
 export interface ActualCostBreakdown {
   llmCost: number;
   ttsCost: number;
   imageCost: number;
+  videoCost: number;
   totalCost: number;
   details: {
     totalInputTokens: number;
     totalOutputTokens: number;
     ttsCharacters: number;
     aiImages: number;
+    aiVideos: number;
   };
 }
 
@@ -56,6 +62,9 @@ const PRICING = {
   // GPT Image 1.5 (high quality, 1024x1536): $0.167/image
   // Source: platform.openai.com/docs/pricing — high quality portrait
   openaiPerImage: 0.167,
+  // Video generation pricing (per second of generated video)
+  veoLitePerSecond: 0.05, // Veo 3.1 Lite ($0.30 for 6s clip)
+  falKlingPerSecond: 0.07, // Kling v2.1 via fal.ai ($0.35 for 5s clip)
 };
 
 // Per-call-type token estimates for pre-run cost prediction
@@ -70,10 +79,15 @@ export function estimateCost(
   score: DirectorScore,
   imageProvider: ImageProviderKey = "gemini",
   ttsProvider: TTSProviderKey = "elevenlabs",
+  videoProvider?: VideoProviderKey,
 ): CostBreakdown {
-  const aiImages = score.scenes.filter((s) => s.visual_type === "ai_image").length;
+  const aiImageScenes = score.scenes.filter((s) => s.visual_type === "ai_image").length;
+  const aiVideoScenes = score.scenes.filter((s) => s.visual_type === "ai_video").length;
+  // ai_video scenes also generate a Phase 1 AI image
+  const aiImages = aiImageScenes + aiVideoScenes;
   const ttsCharacters = score.scenes.reduce((sum, s) => sum + s.script_line.length, 0);
-  const llmCalls = 3 + aiImages; // research + CD + critic + 1 per ai_image
+  // research + CD + critic + 1 per ai_image + 2 per ai_video (image prompt + motion prompt)
+  const llmCalls = 3 + aiImageScenes + aiVideoScenes * 2;
 
   const p = PRICING.anthropic; // conservative estimate
   const callCost = (est: { input: number; output: number }) =>
@@ -88,9 +102,40 @@ export function estimateCost(
   const ttsCost = ttsCharacters * ttsPerChar;
   const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
   const imageCost = aiImages * perImage;
-  const totalCost = llmCost + ttsCost + imageCost;
 
-  return { llmCost, ttsCost, imageCost, totalCost, details: { llmCalls, ttsCharacters, aiImages } };
+  // Video generation cost: ~6 seconds per clip at provider rate
+  const videoPerSecond = videoProvider === "fal" ? PRICING.falKlingPerSecond : PRICING.veoLitePerSecond;
+  const videoCost = aiVideoScenes * 6 * videoPerSecond;
+
+  const totalCost = llmCost + ttsCost + imageCost + videoCost;
+
+  // Per-scene cost breakdown
+  const perScene = score.scenes.map((s) => {
+    let cost = 0;
+    switch (s.visual_type) {
+      case "ai_image":
+        cost = perImage + callCost(TOKEN_ESTIMATES.imagePrompter);
+        break;
+      case "ai_video":
+        // Phase 1 image + image prompt + motion prompt + video gen
+        cost = perImage + callCost(TOKEN_ESTIMATES.imagePrompter) * 2 + 6 * videoPerSecond;
+        break;
+      case "stock_image":
+      case "stock_video":
+        cost = 0; // free (Pexels/Pixabay)
+        break;
+      case "text_card":
+        cost = 0;
+        break;
+    }
+    return { type: s.visual_type, cost };
+  });
+
+  return {
+    llmCost, ttsCost, imageCost, videoCost, totalCost,
+    details: { llmCalls, ttsCharacters, aiImages, aiVideos: aiVideoScenes },
+    perScene,
+  };
 }
 
 export function formatCostEstimate(
@@ -104,11 +149,23 @@ export function formatCostEstimate(
     `  LLM:    $${breakdown.llmCost.toFixed(4)} (${breakdown.details.llmCalls} calls)`,
     `  TTS:    $${breakdown.ttsCost.toFixed(4)} (${breakdown.details.ttsCharacters} chars)`,
     `  Images: $${breakdown.imageCost.toFixed(4)} (${breakdown.details.aiImages} AI images @ $${perImage.toFixed(3)}/ea)`,
-    `  Stock:  free`,
   ];
+  if (breakdown.details.aiVideos > 0) {
+    lines.push(`  Video:  $${breakdown.videoCost.toFixed(4)} (${breakdown.details.aiVideos} AI videos)`);
+  }
+  lines.push(`  Stock:  free`);
   if (stockSceneCount && stockSceneCount > 0) {
     const maxAdditional = stockSceneCount * perImage;
     lines.push(`  Max additional if stock falls back: +$${maxAdditional.toFixed(3)} (${stockSceneCount} stock scenes × $${perImage.toFixed(3)}/ea)`);
+  }
+  // Per-scene breakdown
+  if (breakdown.perScene && breakdown.perScene.length > 0) {
+    lines.push(`  Per-scene:`);
+    for (let i = 0; i < breakdown.perScene.length; i++) {
+      const s = breakdown.perScene[i]!;
+      const costStr = s.cost > 0 ? `$${s.cost.toFixed(3)}` : "free";
+      lines.push(`    Scene ${i + 1} (${s.type}): ${costStr}`);
+    }
   }
   return lines.join("\n");
 }
@@ -118,10 +175,11 @@ export function formatCostEstimate(
  */
 export function computeActualLLMCost(
   usages: LLMUsage[],
-  nonLlm: { aiImages: number; ttsCharacters: number },
+  nonLlm: { aiImages: number; ttsCharacters: number; aiVideos?: number },
   provider: LLMProviderKey = "anthropic",
   imageProvider: ImageProviderKey = "gemini",
   ttsProvider: TTSProviderKey = "elevenlabs",
+  videoProvider?: VideoProviderKey,
 ): ActualCostBreakdown {
   const p = PRICING[provider];
   const totalInputTokens = usages.reduce((sum, u) => sum + u.inputTokens, 0);
@@ -132,27 +190,36 @@ export function computeActualLLMCost(
   const ttsCost = nonLlm.ttsCharacters * ttsPerChar;
   const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
   const imageCost = nonLlm.aiImages * perImage;
-  const totalCost = llmCost + ttsCost + imageCost;
+  const videoPerSecond = videoProvider === "fal" ? PRICING.falKlingPerSecond : PRICING.veoLitePerSecond;
+  const aiVideos = nonLlm.aiVideos ?? 0;
+  const videoCost = aiVideos * 6 * videoPerSecond;
+  const totalCost = llmCost + ttsCost + imageCost + videoCost;
 
   return {
     llmCost,
     ttsCost,
     imageCost,
+    videoCost,
     totalCost,
     details: {
       totalInputTokens,
       totalOutputTokens,
       ttsCharacters: nonLlm.ttsCharacters,
       aiImages: nonLlm.aiImages,
+      aiVideos,
     },
   };
 }
 
 export function formatActualCost(breakdown: ActualCostBreakdown): string {
-  return [
+  const lines = [
     `Actual cost: $${breakdown.totalCost.toFixed(4)}`,
     `  LLM:    $${breakdown.llmCost.toFixed(4)} (${breakdown.details.totalInputTokens.toLocaleString()} in / ${breakdown.details.totalOutputTokens.toLocaleString()} out tokens)`,
     `  TTS:    $${breakdown.ttsCost.toFixed(4)} (${breakdown.details.ttsCharacters} chars)`,
     `  Images: $${breakdown.imageCost.toFixed(4)} (${breakdown.details.aiImages} AI images)`,
-  ].join("\n");
+  ];
+  if (breakdown.details.aiVideos > 0) {
+    lines.push(`  Video:  $${breakdown.videoCost.toFixed(4)} (${breakdown.details.aiVideos} AI videos)`);
+  }
+  return lines.join("\n");
 }

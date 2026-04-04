@@ -16,10 +16,12 @@ async function main(): Promise<void> {
   });
 
   // Initialize providers via factory
-  const { llm, tts, imageGen, stock } = createProviders({
+  const { llm, tts, imageGen, stock, videoProviders } = createProviders({
     llm: opts.provider,
     tts: opts.ttsProvider,
     image: opts.imageProvider,
+    video: opts.videoProvider,
+    videoModel: opts.videoModel,
   });
 
   // Create CLI callbacks for terminal progress display
@@ -47,6 +49,9 @@ async function main(): Promise<void> {
       outputDir: opts.output,
       yes: opts.yes,
       noMusic: opts.noMusic,
+      videoProviders: opts.noVideo ? [] : videoProviders,
+      videoProvider: opts.videoProvider,
+      noVideo: opts.noVideo,
       stockVerify: opts.stockVerify,
       stockConfidence: opts.stockConfidence,
       stockMaxAttempts: opts.stockMaxAttempts,

@@ -79,7 +79,8 @@ describe("createCliCallbacks", () => {
         ttsCost: 0,
         imageCost: 0,
         totalCost: 0.1,
-        details: { llmCalls: 3, ttsCharacters: 500, aiImages: 2 },
+        videoCost: 0,
+        details: { llmCalls: 3, ttsCharacters: 500, aiImages: 2, aiVideos: 0 },
       },
       "gemini",
     );

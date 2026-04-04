@@ -15,6 +15,11 @@ export interface ImagePromptOutput {
   usage: LLMUsage;
 }
 
+export interface ImagePromptOptions {
+  mode?: "image" | "video";
+  rejectionContext?: string;
+}
+
 export async function optimizeImagePrompt(
   llm: LLMProvider,
   visualPrompt: string,
@@ -22,13 +27,22 @@ export async function optimizeImagePrompt(
   sceneIndex: number,
   totalScenes: number,
   archetype: ArchetypeConfig,
-  rejectionContext?: string,
+  opts?: ImagePromptOptions,
 ): Promise<ImagePromptOutput> {
+  const mode = opts?.mode ?? "image";
+  const rejectionContext = opts?.rejectionContext;
+
   let systemPrompt =
-    "You are a visual prompt engineer for AI image generation. Transform scene descriptions into detailed, image-generator-friendly prompts. Return the optimized prompt in the optimized_prompt field.";
+    mode === "video"
+      ? "You are a motion prompt engineer for AI video generation. Transform scene descriptions into detailed, video-generator-friendly prompts that emphasize temporal motion, camera movement, and dynamic action. Describe what MOVES, how it moves, and how the camera follows. Return the optimized prompt in the optimized_prompt field."
+      : "You are a visual prompt engineer for AI image generation. Transform scene descriptions into detailed, image-generator-friendly prompts. Return the optimized prompt in the optimized_prompt field.";
 
   try {
     systemPrompt = fs.readFileSync(SYSTEM_PROMPT_PATH, "utf-8");
+    if (mode === "video") {
+      systemPrompt +=
+        "\n\nIMPORTANT: This prompt is for AI VIDEO generation, not still images. Focus on motion, camera movement, and temporal dynamics. Describe what changes over the 5-second clip.";
+    }
   } catch {
     // Use default
   }
@@ -53,7 +67,10 @@ Narration: ${scriptLine}`;
     userMessage += `\n\n## CONTEXT FROM STOCK SEARCH\n${rejectionContext}`;
   }
 
-  userMessage += `\n\nGenerate an optimized image generation prompt for this scene.`;
+  userMessage +=
+    mode === "video"
+      ? `\n\nGenerate an optimized video generation prompt for this scene. Focus on motion and camera movement.`
+      : `\n\nGenerate an optimized image generation prompt for this scene.`;
 
   const result = await llm.generate({
     systemPrompt,

@@ -94,6 +94,10 @@ app.get("/api/v1/providers", async () => ({
     { key: "gemini", label: "Google Gemini" },
     { key: "openai", label: "OpenAI (GPT Image)" },
   ],
+  video: [
+    { key: "gemini", label: "Google Veo" },
+    { key: "fal", label: "fal.ai (Kling, Wan, etc.)" },
+  ],
 }));
 
 // --- Job creation ---
@@ -103,17 +107,20 @@ interface CreateJobBody {
   platform?: string;
   dryRun?: boolean;
   noMusic?: boolean;
+  noVideo?: boolean;
   providers?: {
     llm?: string;
     tts?: string;
     image?: string;
     stock?: string;
+    video?: string;
+    videoModel?: string;
   };
   keys?: Record<string, string>;
 }
 
 app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
-  const { topic, archetype, platform, dryRun, noMusic, providers, keys } = request.body ?? {};
+  const { topic, archetype, platform, dryRun, noMusic, noVideo, providers, keys } = request.body ?? {};
 
   if (!topic || typeof topic !== "string" || topic.trim().length === 0) {
     return reply.status(400).send({ error: "topic is required" });
@@ -145,11 +152,14 @@ app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
     platform: platform ?? "youtube",
     dryRun: dryRun ?? false,
     noMusic: noMusic === true,
+    noVideo: noVideo === true,
     providers: {
       llm: providers?.llm ?? "anthropic",
       tts: providers?.tts ?? "elevenlabs",
       image: providers?.image ?? "gemini",
       stock: providers?.stock ?? "pexels",
+      video: providers?.video,
+      videoModel: providers?.videoModel,
     },
     keys: keys ?? {},
     jobsDir: JOBS_DIR,
