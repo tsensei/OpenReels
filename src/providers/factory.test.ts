@@ -3,6 +3,7 @@ import { createProviders } from "./factory.js";
 import { GeminiImage } from "./image/gemini.js";
 import { OpenAIImage } from "./image/openai.js";
 import { AnthropicLLM } from "./llm/anthropic.js";
+import { GeminiLLM } from "./llm/gemini.js";
 import { OpenAILLM } from "./llm/openai.js";
 import { PexelsStock } from "./stock/pexels.js";
 import { PixabayStock } from "./stock/pixabay.js";
@@ -11,6 +12,9 @@ import { InworldTTS } from "./tts/inworld.js";
 
 vi.mock("./llm/anthropic.js", () => ({
   AnthropicLLM: vi.fn().mockImplementation(() => ({ id: "anthropic", generate: vi.fn() })),
+}));
+vi.mock("./llm/gemini.js", () => ({
+  GeminiLLM: vi.fn().mockImplementation(() => ({ id: "gemini", generate: vi.fn() })),
 }));
 vi.mock("./llm/openai.js", () => ({
   OpenAILLM: vi.fn().mockImplementation(() => ({ id: "openai", generate: vi.fn() })),
@@ -137,5 +141,16 @@ describe("createProviders", () => {
     });
 
     expect(AnthropicLLM).toHaveBeenCalledWith(undefined, undefined);
+  });
+
+  it("creates GeminiLLM when llm config is gemini", () => {
+    createProviders({
+      llm: "gemini",
+      tts: "elevenlabs",
+      image: "gemini",
+      keys: { GOOGLE_API_KEY: "test-goog-key" },
+    });
+
+    expect(GeminiLLM).toHaveBeenCalledWith(undefined, "test-goog-key");
   });
 });

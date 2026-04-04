@@ -107,6 +107,15 @@ describe("estimateCost", () => {
     const fal = estimateCost(score, "gemini", "elevenlabs", "fal");
     expect(fal.videoCost).toBeGreaterThan(gemini.videoCost);
   });
+
+  it("uses gemini LLM pricing when llmProvider is gemini", () => {
+    const score = makeScore([{ visual_type: "ai_image", script_line: "Test" }]);
+    const anthropic = estimateCost(score, "gemini", "elevenlabs", undefined, "anthropic");
+    const geminiLlm = estimateCost(score, "gemini", "elevenlabs", undefined, "gemini");
+    // Gemini is ~30x cheaper than Anthropic for LLM
+    expect(geminiLlm.llmCost).toBeLessThan(anthropic.llmCost);
+    expect(geminiLlm.llmCost).toBeGreaterThan(0);
+  });
 });
 
 describe("formatCostEstimate", () => {
@@ -169,6 +178,14 @@ describe("computeActualLLMCost", () => {
     const anthropic = computeActualLLMCost(usages, { aiImages: 0, ttsCharacters: 0 }, "anthropic");
     const openai = computeActualLLMCost(usages, { aiImages: 0, ttsCharacters: 0 }, "openai");
     expect(anthropic.llmCost).toBeGreaterThan(openai.llmCost);
+  });
+
+  it("uses gemini pricing when specified", () => {
+    const usages: LLMUsage[] = [{ inputTokens: 1_000_000, outputTokens: 1_000_000 }];
+    const anthropic = computeActualLLMCost(usages, { aiImages: 0, ttsCharacters: 0 }, "anthropic");
+    const gemini = computeActualLLMCost(usages, { aiImages: 0, ttsCharacters: 0 }, "gemini");
+    expect(gemini.llmCost).toBeLessThan(anthropic.llmCost);
+    expect(gemini.llmCost).toBeGreaterThan(0);
   });
 
   it("uses Inworld TTS pricing when specified", () => {

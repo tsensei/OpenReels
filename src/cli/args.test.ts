@@ -43,4 +43,24 @@ describe("CLIOptions type", () => {
     };
     expect(opts.yes).toBe(false);
   });
+
+  it("accepts gemini as provider", () => {
+    const opts: CLIOptions = {
+      topic: "test",
+      provider: "gemini",
+      imageProvider: "gemini",
+      ttsProvider: "elevenlabs",
+      platform: "youtube",
+      dryRun: false,
+      preview: false,
+      output: "./output",
+      yes: false,
+      noMusic: false,
+      stockVerify: true,
+      stockConfidence: 0.6,
+      stockMaxAttempts: 4,
+      noVideo: false,
+    };
+    expect(opts.provider).toBe("gemini");
+  });
 });

@@ -89,6 +89,31 @@ describe("validateEnv", () => {
     delete process.env["GOOGLE_API_KEY"];
   });
 
+  it("requires GOOGLE_API_KEY when --provider gemini", () => {
+    delete process.env["GOOGLE_API_KEY"];
+    process.env["ELEVENLABS_API_KEY"] = "test";
+
+    validateEnv({ provider: "gemini", ttsProvider: "elevenlabs", imageProvider: "gemini" });
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const output = errorSpy.mock.calls.flat().join("");
+    expect(output).toContain("GOOGLE_API_KEY");
+
+    delete process.env["ELEVENLABS_API_KEY"];
+  });
+
+  it("passes when --provider gemini and GOOGLE_API_KEY is set", () => {
+    process.env["GOOGLE_API_KEY"] = "test";
+    process.env["ELEVENLABS_API_KEY"] = "test";
+
+    validateEnv({ provider: "gemini", ttsProvider: "elevenlabs", imageProvider: "gemini" });
+
+    expect(exitSpy).not.toHaveBeenCalled();
+
+    delete process.env["GOOGLE_API_KEY"];
+    delete process.env["ELEVENLABS_API_KEY"];
+  });
+
   it("does not require optional PEXELS_API_KEY or PIXABAY_API_KEY", () => {
     process.env["ANTHROPIC_API_KEY"] = "test";
     process.env["ELEVENLABS_API_KEY"] = "test";
