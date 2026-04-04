@@ -5,6 +5,7 @@ import fastifyStatic from "@fastify/static";
 import { Queue, QueueEvents } from "bullmq";
 import Fastify from "fastify";
 import IORedis from "ioredis";
+import { PACING_CONFIG } from "./agents/creative-director.js";
 import { getArchetype, listArchetypes } from "./config/archetype-registry.js";
 import { PLATFORMS } from "./config/platforms.js";
 
@@ -145,7 +146,7 @@ app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
   }
 
   // Validate pacing tier if provided
-  const validPacingTiers = ["fast", "moderate", "cinematic"];
+  const validPacingTiers = Object.keys(PACING_CONFIG);
   if (pacing && !validPacingTiers.includes(pacing)) {
     return reply
       .status(400)
@@ -188,6 +189,7 @@ app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
     id: job.id,
     topic: topic.trim(),
     archetype,
+    pacing,
     status: "queued",
     createdAt: new Date().toISOString(),
     stages: Object.fromEntries(

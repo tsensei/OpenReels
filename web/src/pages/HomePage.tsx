@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import {
   ArrowRight,
+  Gauge,
   MonitorPlay,
   Palette,
   SlidersHorizontal,
@@ -153,7 +154,7 @@ export function HomePage() {
               {/* Pacing selector */}
               <Select value={pacing} onValueChange={(v) => setPacing(v ?? "")}>
                 <SelectTrigger size="sm" className="h-auto gap-1.5 rounded-[8px] border-[#334155] bg-transparent px-3 py-1.5 text-xs font-medium text-[#94A3B8]">
-                  <SlidersHorizontal className="size-3.5 text-[#64748B]" />
+                  <Gauge className="size-3.5 text-[#64748B]" />
                   <SelectValue placeholder="Auto Pace" />
                 </SelectTrigger>
                 <SelectContent>
