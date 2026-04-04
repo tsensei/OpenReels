@@ -26,6 +26,7 @@ export class ProgressDisplay {
   private hasRendered: boolean = false;
   private tickInterval: ReturnType<typeof setInterval> | null = null;
   private spinnerFrame: number = 0;
+  private extraLines: number = 0;
 
   addStage(name: string): number {
     const index = this.stages.length;
@@ -89,10 +90,17 @@ export class ProgressDisplay {
     }
   }
 
+  /** Call after printing extra output (e.g. cost estimate) between renders
+   *  so the next render moves the cursor past those lines too. */
+  addExtraLines(count: number): void {
+    this.extraLines += count;
+  }
+
   private render(): void {
     // Move cursor up to overwrite previous output (only after first render)
     if (this.hasRendered) {
-      const lines = this.stages.length;
+      const lines = this.stages.length + this.extraLines;
+      this.extraLines = 0;
       if (lines > 0) {
         process.stdout.write(`\x1b[${lines}A`);
       }

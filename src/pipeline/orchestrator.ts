@@ -85,15 +85,23 @@ export function createCliCallbacks(yes: boolean): {
       progress.fail(idx(stage), error);
     },
     async onCostEstimate(estimate, imageProvider, stockSceneCount) {
-      console.log(`\n${formatCostEstimate(estimate, imageProvider, stockSceneCount)}`);
+      const output = `\n${formatCostEstimate(estimate, imageProvider, stockSceneCount)}`;
+      console.log(output);
+      // Tell progress display about the extra lines so the next render
+      // moves the cursor past the cost estimate instead of overwriting it.
+      const lineCount = output.split("\n").length;
+      progress.addExtraLines(lineCount);
       if (shouldAutoConfirm(yes)) return true;
       return confirm("Proceed with generation?");
     },
     onActualCost(cost) {
-      console.log(`\n${formatActualCost(cost)}`);
+      const output = `\n${formatActualCost(cost)}`;
+      console.log(output);
+      progress.addExtraLines(output.split("\n").length);
     },
     onLog(message) {
       console.log(message);
+      progress.addExtraLines(message.split("\n").length);
     },
   };
 
