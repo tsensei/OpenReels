@@ -4,9 +4,9 @@ import type { TTSProvider, TTSResult } from "../../schema/providers.js";
 /**
  * OpenAI TTS provider.
  *
- * Uses gpt-4o-mini-tts via the OpenAI SDK. Returns MP3 audio natively.
- * Word-level timestamps are NOT available from this API — the
- * AlignedTTSProvider decorator handles alignment via Whisper.
+ * Uses gpt-4o-mini-tts via the OpenAI SDK. Returns WAV audio so the
+ * AlignedTTSProvider decorator can run Whisper alignment (which requires
+ * WAV/PCM input), then transcode to MP3.
  *
  * Reuses the existing OPENAI_API_KEY. No additional API key needed.
  */
@@ -33,7 +33,7 @@ export class OpenAITTS implements TTSProvider {
         model: this.model,
         voice: this.voice as "alloy",
         input: text,
-        response_format: "mp3",
+        response_format: "wav",
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

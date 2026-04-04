@@ -63,7 +63,7 @@ describe("OpenAITTS", () => {
         model: "gpt-4o-mini-tts",
         voice: "alloy",
         input: "Hello world",
-        response_format: "mp3",
+        response_format: "wav",
       });
     });
 

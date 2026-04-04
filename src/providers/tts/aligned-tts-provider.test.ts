@@ -7,7 +7,7 @@ import type { WhisperAligner } from "./whisper-aligner.js";
 vi.mock("node:child_process", () => ({
   execFile: vi.fn((_cmd: string, _args: string[], _opts: object, cb: Function) => {
     // Simulate successful ffmpeg by writing a fake MP3 file
-    const outputPath = _args[_args.indexOf("-q:a") + 2]; // mp3 output path
+    const outputPath = _args[_args.length - 1]; // mp3 output path (always last arg)
     if (outputPath) {
       const fs = require("node:fs");
       fs.writeFileSync(outputPath, Buffer.from("fake-mp3-data"));
