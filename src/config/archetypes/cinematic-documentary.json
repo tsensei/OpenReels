@@ -1,4 +1,5 @@
 {
+  "scenePacing": "cinematic",
   "defaultTransition": "crossfade",
   "transitionDurationFrames": 18,
   "captionStyle": "clean",

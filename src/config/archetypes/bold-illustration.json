@@ -1,4 +1,5 @@
 {
+  "scenePacing": "fast",
   "defaultTransition": "slide_left",
   "transitionDurationFrames": 12,
   "captionStyle": "color_highlight",

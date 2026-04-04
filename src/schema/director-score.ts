@@ -44,7 +44,7 @@ export const DirectorScore = z
     emotional_arc: z.string().min(1),
     archetype: z.string().min(1),
     music_mood: MusicMood,
-    scenes: z.array(Scene).min(3).max(10),
+    scenes: z.array(Scene).min(3).max(16),
   })
   .refine(
     (score) => {

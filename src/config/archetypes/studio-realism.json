@@ -1,4 +1,5 @@
 {
+  "scenePacing": "cinematic",
   "defaultTransition": "slide_left",
   "transitionDurationFrames": 10,
   "captionStyle": "clean",

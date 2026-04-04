@@ -1,4 +1,5 @@
 {
+  "scenePacing": "moderate",
   "defaultTransition": "wipe",
   "transitionDurationFrames": 15,
   "captionStyle": "block_impact",

@@ -1,4 +1,5 @@
 {
+  "scenePacing": "fast",
   "defaultTransition": "slide_left",
   "transitionDurationFrames": 10,
   "captionStyle": "block_impact",

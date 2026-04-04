@@ -1,6 +1,10 @@
 import type { TransitionType } from "./director-score.js";
 
+export type ScenePacing = "fast" | "moderate" | "cinematic";
+
 export interface ArchetypeConfig {
+  // Pacing tier — controls scene count range and per-scene word budget
+  scenePacing: ScenePacing;
   // Rendering fields
   captionStyle:
     | "bold_outline"
