@@ -384,7 +384,7 @@ function buildPipelineWorkflow(
       }
 
       // Cost estimation
-      const costBreakdown = estimateCost(cdOutput.data, opts.imageProvider, opts.ttsProvider, opts.videoProvider);
+      const costBreakdown = estimateCost(cdOutput.data, opts.imageProvider, opts.ttsProvider, opts.videoProvider, opts.llm.id);
       directorResult.costBreakdown = costBreakdown;
       log.totalCost = { estimated: costBreakdown.totalCost };
 

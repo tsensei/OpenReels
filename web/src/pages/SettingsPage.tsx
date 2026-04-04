@@ -4,9 +4,12 @@ import { cn } from "@/lib/utils";
 
 const API_KEY_FIELDS = [
   { key: "ANTHROPIC_API_KEY", label: "Anthropic (LLM)" },
+  { key: "OPENAI_API_KEY", label: "OpenAI (LLM/Image)" },
+  { key: "GOOGLE_API_KEY", label: "Google Gemini (LLM/Image/Video)" },
   { key: "ELEVENLABS_API_KEY", label: "ElevenLabs (TTS)" },
-  { key: "GEMINI_API_KEY", label: "Google Gemini (Image)" },
+  { key: "INWORLD_TTS_API_KEY", label: "Inworld (TTS)" },
   { key: "PEXELS_API_KEY", label: "Pexels (Stock)" },
+  { key: "PIXABAY_API_KEY", label: "Pixabay (Stock)" },
 ];
 
 interface HealthData {

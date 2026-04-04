@@ -1,5 +1,6 @@
 import type { LanguageModel } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import type {
   ImageProvider,
@@ -16,6 +17,7 @@ import type {
 import { GeminiImage } from "./image/gemini.js";
 import { OpenAIImage } from "./image/openai.js";
 import { AnthropicLLM } from "./llm/anthropic.js";
+import { GeminiLLM } from "./llm/gemini.js";
 import { OpenAILLM } from "./llm/openai.js";
 import { PexelsStock } from "./stock/pexels.js";
 import { PixabayStock } from "./stock/pixabay.js";
@@ -48,7 +50,9 @@ export function createProviders(config: ProviderConfig): Providers {
   const llm: LLMProvider =
     config.llm === "openai"
       ? new OpenAILLM(undefined, k["OPENAI_API_KEY"])
-      : new AnthropicLLM(undefined, k["ANTHROPIC_API_KEY"]);
+      : config.llm === "gemini"
+        ? new GeminiLLM(undefined, k["GOOGLE_API_KEY"])
+        : new AnthropicLLM(undefined, k["ANTHROPIC_API_KEY"]);
 
   const tts: TTSProvider =
     config.tts === "inworld"
@@ -101,6 +105,10 @@ export function createVerificationModel(
   if (provider === "openai") {
     const openai = apiKey ? createOpenAI({ apiKey }) : createOpenAI();
     return openai(model ?? "gpt-4o");
+  }
+  if (provider === "gemini") {
+    const google = apiKey ? createGoogleGenerativeAI({ apiKey }) : createGoogleGenerativeAI();
+    return google(model ?? "gemini-2.5-flash");
   }
   const anthropic = apiKey ? createAnthropic({ apiKey }) : createAnthropic();
   return anthropic(model ?? "claude-sonnet-4-6");

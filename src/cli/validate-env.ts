@@ -27,9 +27,9 @@ export function validateEnv(opts: {
     },
     {
       key: "GOOGLE_API_KEY",
-      provider: "Google Gemini (Image)",
+      provider: "Google Gemini (LLM/Image/Video)",
       signupUrl: "https://aistudio.google.com/apikey",
-      required: opts.imageProvider === "gemini",
+      required: opts.provider === "gemini" || opts.imageProvider === "gemini",
     },
     {
       key: "ELEVENLABS_API_KEY",

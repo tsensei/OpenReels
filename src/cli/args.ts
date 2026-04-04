@@ -35,8 +35,8 @@ export function parseArgs(): CLIOptions {
     .version(version)
     .argument("<topic>", "The topic for your video")
     .addOption(
-      new Option("-p, --provider <provider>", "LLM provider")
-        .choices(["anthropic", "openai"])
+      new Option("-p, --provider <provider>", "LLM provider (use 'google' to set LLM+image+video to Gemini)")
+        .choices(["anthropic", "openai", "gemini", "google"])
         .default("anthropic"),
     )
     .addOption(
@@ -74,6 +74,20 @@ export function parseArgs(): CLIOptions {
   }
 
   const opts = program.opts();
+
+  // --provider google is a convenience alias that sets LLM+image+video to Gemini.
+  // Explicit per-provider flags take precedence over the meta-flag.
+  if (opts["provider"] === "google") {
+    opts["provider"] = "gemini";
+    const imageSource = program.getOptionValueSource("imageProvider");
+    if (!imageSource || imageSource === "default") {
+      opts["imageProvider"] = "gemini";
+    }
+    const videoSource = program.getOptionValueSource("videoProvider");
+    if (!videoSource || videoSource === "default") {
+      opts["videoProvider"] = "gemini";
+    }
+  }
 
   return {
     topic,

@@ -189,7 +189,10 @@ const worker = new Worker<JobData>(
     };
 
     // Create verification model with per-job API keys
-    const llmKey = providers.llm === "openai" ? keys["OPENAI_API_KEY"] : keys["ANTHROPIC_API_KEY"];
+    const llmKey =
+      providers.llm === "openai" ? keys["OPENAI_API_KEY"]
+      : providers.llm === "gemini" ? keys["GOOGLE_API_KEY"]
+      : keys["ANTHROPIC_API_KEY"];
     const verifyModel = createVerificationModel(
       providers.llm as LLMProviderKey,
       undefined,

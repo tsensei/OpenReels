@@ -85,6 +85,7 @@ app.get("/api/v1/providers", async () => ({
   llm: [
     { key: "anthropic", label: "Anthropic (Claude)" },
     { key: "openai", label: "OpenAI (GPT)" },
+    { key: "gemini", label: "Google Gemini" },
   ],
   tts: [
     { key: "elevenlabs", label: "ElevenLabs" },

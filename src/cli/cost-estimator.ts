@@ -53,6 +53,10 @@ const PRICING = {
     perInputToken: 2 / 1_000_000, // $2 per 1M input tokens
     perOutputToken: 8 / 1_000_000, // $8 per 1M output tokens
   },
+  gemini: {
+    perInputToken: 0.10 / 1_000_000, // $0.10 per 1M input tokens (Gemini 3 Flash)
+    perOutputToken: 0.40 / 1_000_000, // $0.40 per 1M output tokens
+  },
   elevenLabsPerChar: 0.00018, // $0.18 per 1K chars (avg of Creator $0.20 and Pro $0.17, Multilingual v2)
   inworldPerChar: 0.00001, // $0.01 per 1K chars (Inworld TTS-1.5 Max: $10/1M chars)
   // Gemini 3.1 Flash Image Preview: $60/M output tokens
@@ -80,6 +84,7 @@ export function estimateCost(
   imageProvider: ImageProviderKey = "gemini",
   ttsProvider: TTSProviderKey = "elevenlabs",
   videoProvider?: VideoProviderKey,
+  llmProvider: LLMProviderKey = "anthropic",
 ): CostBreakdown {
   const aiImageScenes = score.scenes.filter((s) => s.visual_type === "ai_image").length;
   const aiVideoScenes = score.scenes.filter((s) => s.visual_type === "ai_video").length;
@@ -89,7 +94,7 @@ export function estimateCost(
   // research + CD + critic + 1 per ai_image + 2 per ai_video (image prompt + motion prompt)
   const llmCalls = 3 + aiImageScenes + aiVideoScenes * 2;
 
-  const p = PRICING.anthropic; // conservative estimate
+  const p = PRICING[llmProvider];
   const callCost = (est: { input: number; output: number }) =>
     est.input * p.perInputToken + est.output * p.perOutputToken;
 
