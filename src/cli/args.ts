@@ -1,5 +1,6 @@
 import { createRequire } from "node:module";
 import { Command, Option } from "commander";
+import { PACING_CONFIG } from "../agents/creative-director.js";
 import type { ImageProviderKey, LLMProviderKey, MusicProviderKey, TTSProviderKey, VideoProviderKey } from "../schema/providers.js";
 
 const require = createRequire(import.meta.url);
@@ -56,7 +57,7 @@ export function parseArgs(): CLIOptions {
     .option("-a, --archetype <archetype>", "Visual archetype override")
     .addOption(
       new Option("--pacing <tier>", "Pacing tier override (overrides archetype default)")
-        .choices(["fast", "moderate", "cinematic"]),
+        .choices(Object.keys(PACING_CONFIG)),
     )
     .option("--platform <platform>", "Target platform (youtube, tiktok, instagram)", "youtube")
     .option("--dry-run", "Output DirectorScore JSON without generating assets", false)
