@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { api } from "@/hooks/useApi";
+import { api, type StatsResponse } from "@/hooks/useApi";
 import { cn } from "@/lib/utils";
+import { Film, DollarSign, CheckCircle, XCircle, BarChart3 } from "lucide-react";
 
 const API_KEY_FIELDS = [
   { key: "ANTHROPIC_API_KEY", label: "Anthropic (LLM)" },
@@ -20,21 +21,71 @@ interface HealthData {
 
 export function SettingsPage() {
   const [health, setHealth] = useState<HealthData | null>(null);
+  const [stats, setStats] = useState<StatsResponse | null>(null);
 
   useEffect(() => {
     api
       .getHealth()
       .then((data) => setHealth(data as unknown as HealthData))
       .catch(() => {});
+    api
+      .getStats()
+      .then(setStats)
+      .catch(() => {});
   }, []);
 
+  const avgCost =
+    stats && stats.completedJobs > 0
+      ? stats.totalCost / stats.completedJobs
+      : null;
+
   return (
-    <div className="py-8 px-10">
+    <div className="py-8 px-4 sm:px-10">
       <h1 className="mb-8 text-2xl font-bold">Settings</h1>
 
-      <div className="max-w-[560px]">
+      <div className="max-w-[560px] flex flex-col gap-8">
+        {/* Usage Statistics */}
+        {stats && stats.totalJobs > 0 && (
+          <section>
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-[#E2E8F0]">
+              <BarChart3 className="size-4 text-[#64748B]" />
+              Usage Statistics
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <StatBox
+                icon={<Film className="size-4" />}
+                label="Total Videos"
+                value={String(stats.totalJobs)}
+              />
+              <StatBox
+                icon={<CheckCircle className="size-4 text-[#22C55E]" />}
+                label="Completed"
+                value={String(stats.completedJobs)}
+                color="text-[#22C55E]"
+              />
+              <StatBox
+                icon={<XCircle className="size-4 text-[#EF4444]" />}
+                label="Failed"
+                value={String(stats.failedJobs)}
+                color="text-[#EF4444]"
+              />
+              <StatBox
+                icon={<DollarSign className="size-4 text-[#22D3EE]" />}
+                label="Total Spend"
+                value={`$${stats.totalCost.toFixed(2)}`}
+                color="text-[#22D3EE]"
+              />
+            </div>
+            {avgCost != null && (
+              <p className="mt-2 text-[11px] text-[#64748B]">
+                Average cost per video: ${avgCost.toFixed(2)}
+              </p>
+            )}
+          </section>
+        )}
+
         {/* System Status */}
-        <section className="mb-8">
+        <section>
           <h2 className="mb-4 text-sm font-semibold text-[#E2E8F0]">
             System Status
           </h2>
@@ -43,7 +94,13 @@ export function SettingsPage() {
               <span className="text-[13px] text-[#94A3B8]">API Server</span>
               <StatusDot
                 ok={health?.status === "healthy"}
-                label={health ? (health.status === "healthy" ? "Connected" : health.status) : "Checking..."}
+                label={
+                  health
+                    ? health.status === "healthy"
+                      ? "Connected"
+                      : health.status
+                    : "Checking..."
+                }
               />
             </div>
             <div className="border-t border-border" />
@@ -51,7 +108,13 @@ export function SettingsPage() {
               <span className="text-[13px] text-[#94A3B8]">Redis Queue</span>
               <StatusDot
                 ok={health?.redis === "connected"}
-                label={health ? (health.redis === "connected" ? "Connected" : health.redis) : "Checking..."}
+                label={
+                  health
+                    ? health.redis === "connected"
+                      ? "Connected"
+                      : health.redis
+                    : "Checking..."
+                }
               />
             </div>
           </div>
@@ -72,7 +135,12 @@ export function SettingsPage() {
                 <div key={field.key}>
                   {i > 0 && <div className="border-t border-border" />}
                   <div className="flex items-center justify-between px-5 py-3.5">
-                    <code className="font-mono text-[13px] text-[#94A3B8]">{field.key}</code>
+                    <div className="flex flex-col gap-0.5">
+                      <code className="font-mono text-[13px] text-[#94A3B8]">
+                        {field.key}
+                      </code>
+                      <span className="text-[11px] text-[#475569]">{field.label}</span>
+                    </div>
                     {isSet !== null ? (
                       <StatusDot
                         ok={isSet}
@@ -106,14 +174,41 @@ function StatusDot({
   colorBad?: string;
 }) {
   return (
-    <span className={cn("flex items-center gap-2 text-sm font-medium", ok ? colorOk : colorBad)}>
+    <span
+      className={cn(
+        "flex items-center gap-2 text-sm font-medium",
+        ok ? colorOk : colorBad,
+      )}
+    >
       <span
         className={cn(
           "inline-block size-2 rounded-full",
-          ok ? "bg-emerald-400" : "bg-current"
+          ok ? "bg-emerald-400" : "bg-current",
         )}
       />
       {label}
     </span>
+  );
+}
+
+function StatBox({
+  icon,
+  label,
+  value,
+  color,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  color?: string;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1 rounded-[10px] border border-[#334155] bg-[#1E293B] py-3 px-2">
+      <div className="text-[#64748B]">{icon}</div>
+      <span className={cn("text-lg font-bold", color ?? "text-[#F1F5F9]")}>
+        {value}
+      </span>
+      <span className="text-[10px] text-[#64748B]">{label}</span>
+    </div>
   );
 }

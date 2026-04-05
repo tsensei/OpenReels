@@ -66,6 +66,20 @@ describe("LyriaMusic", () => {
     );
   });
 
+  it("throws descriptive error for finishReason OTHER without retrying", async () => {
+    mockGenerateContent.mockResolvedValue({
+      candidates: [{ finishReason: "OTHER", content: { parts: [] } }],
+    });
+
+    await expect(lyria.generate("test", "epic_cinematic" as MusicMood)).rejects.toThrow(
+      "finishReason: OTHER",
+    );
+    // Should NOT retry — OTHER is an opaque catch-all from the Gemini API.
+    // Could be transient, could be content filter. Adjective sanitization
+    // won't help since we don't know the cause.
+    expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+  });
+
   it("throws with finishReason when candidate has no parts", async () => {
     mockGenerateContent.mockResolvedValue({
       candidates: [{ finishReason: "SAFETY", content: { parts: [] } }],

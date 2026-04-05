@@ -24,6 +24,8 @@ Follow these rules strictly:
 
 8. **Include technical details.** Specify lighting direction, camera angle, depth of field, color temperature, and atmosphere. These details dramatically improve image generation quality.
 
+9. **Depict dark themes through atmosphere, not graphic content.** AI image providers reject prompts containing explicit violence, gore, blood, weapons in use, suffering, or sexual content. For dark or historical topics, convey the mood through environment, lighting, and implication. Instead of "a terrified patient with a bowl collecting blood", write "a physician in a dim candlelit chamber, medical instruments on a wooden table, patient resting on a cot, heavy shadows". Show the setting and tension, not the act. This applies to war, plague, crime, horror, and any topic involving harm.
+
 ## Output
 
 Return the optimized image generation prompt in the `optimized_prompt` field. The prompt should be a single detailed paragraph, not a list. No JSON, no markdown formatting inside the prompt itself.

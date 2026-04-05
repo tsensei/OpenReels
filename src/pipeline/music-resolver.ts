@@ -62,6 +62,8 @@ export async function resolveMusic(
   // AI music generation (Lyria)
   cb?.onProgress?.("visuals", { type: "music_generating", provider: opts.musicProviderKey });
 
+  let lyriaPrompt: string | undefined;
+
   try {
     // Compute total duration with cap
     const totalRawDuration = sceneDurations.reduce((sum, d) => sum + d, 0);
@@ -78,6 +80,8 @@ export async function resolveMusic(
       sceneNarratives: score.scenes.map((s) => s.script_line),
       totalDurationSeconds: totalDuration,
     });
+
+    lyriaPrompt = promptResult.prompt;
 
     // Step 2: Lyria generates audio
     const result = await opts.musicProvider.generate(promptResult.prompt, mood);
@@ -98,13 +102,22 @@ export async function resolveMusic(
     };
   } catch (err) {
     console.warn(`[music-resolver] AI music generation failed, falling back to bundled: ${err}`);
+    if (lyriaPrompt) {
+      console.warn(`[music-resolver] Rejected prompt was:\n${lyriaPrompt}`);
+    }
     cb?.onProgress?.("visuals", {
       type: "music_fallback",
       reason: String(err),
+      rejectedPrompt: lyriaPrompt,
     });
 
-    // Fallback to bundled
-    return fallbackToBundled(mood);
+    // Fallback to bundled — preserve the rejected prompt for debugging
+    const fallback = await fallbackToBundled(mood);
+    if (fallback && lyriaPrompt) {
+      fallback.prompt = lyriaPrompt;
+      fallback.metadata = { ...fallback.metadata, lyriaError: String(err) };
+    }
+    return fallback;
   }
 }
 

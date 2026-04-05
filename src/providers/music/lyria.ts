@@ -38,6 +38,13 @@ export class LyriaMusic implements MusicProvider {
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
 
+        // finishReason: OTHER is an opaque catch-all from the Gemini API.
+        // Don't retry — we can't determine the cause, and adjective sanitization
+        // is unlikely to help (the prompt may be perfectly clean).
+        if (isFinishReasonOther(lastError)) {
+          break;
+        }
+
         // On safety filter rejection, retry with sanitized prompt
         if (attempt < MAX_RETRIES && isSafetyFilterError(lastError)) {
           console.warn(`[lyria] Safety filter triggered, retrying with sanitized prompt`);
@@ -73,7 +80,20 @@ export class LyriaMusic implements MusicProvider {
 
     const parts = candidate?.content?.parts;
     if (!parts || parts.length === 0) {
-      // Include finishReason so the caller can distinguish safety vs other failures
+      if (finishReason === "OTHER") {
+        // finishReason: OTHER from the Gemini API is an opaque catch-all.
+        // Google documents it as "unknown reason." In practice it can mean:
+        //   - Non-configurable content filter (PII, artist names, sensitive content)
+        //   - Transient model capacity/load issue on the preview service
+        //   - Prompt structure the model couldn't process
+        // We can't distinguish these cases from the API response alone.
+        // See: https://discuss.ai.google.dev/t/gemini-2-5-flash-returning-finishreason-other-and-no-explanation-or-candidates/103858
+        throw new Error(
+          "Lyria returned empty response (finishReason: OTHER). " +
+          "This can be a transient issue with the preview API or a non-configurable " +
+          "content filter. Check the rejected prompt in the logs for content issues.",
+        );
+      }
       const reason = finishReason ? ` (finishReason: ${finishReason})` : "";
       throw new Error(`Lyria returned no content${reason}`);
     }
@@ -117,6 +137,13 @@ export class LyriaMusic implements MusicProvider {
 
     return { filePath: tmpPath, metadata };
   }
+}
+
+/** Check if the error is a finishReason: OTHER response from the Gemini API.
+ *  This is an opaque catch-all. Retrying with adjective sanitization won't help
+ *  because we don't know the actual cause. */
+function isFinishReasonOther(err: Error): boolean {
+  return err.message.includes("finishReason: OTHER");
 }
 
 /** Check if an error is a safety filter rejection (not rate limits or network) */
