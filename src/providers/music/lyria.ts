@@ -62,9 +62,20 @@ export class LyriaMusic implements MusicProvider {
       },
     });
 
-    const parts = response.candidates?.[0]?.content?.parts;
+    // Check prompt-level blocking first
+    const blockReason = response.promptFeedback?.blockReason;
+    if (blockReason) {
+      throw new Error(`Lyria prompt blocked: ${blockReason}`);
+    }
+
+    const candidate = response.candidates?.[0];
+    const finishReason = candidate?.finishReason;
+
+    const parts = candidate?.content?.parts;
     if (!parts || parts.length === 0) {
-      throw new Error("Lyria returned no content");
+      // Include finishReason so the caller can distinguish safety vs other failures
+      const reason = finishReason ? ` (finishReason: ${finishReason})` : "";
+      throw new Error(`Lyria returned no content${reason}`);
     }
 
     // Extract audio and text metadata from response parts
@@ -115,6 +126,8 @@ function isSafetyFilterError(err: Error): boolean {
     msg.includes("safety") ||
     msg.includes("harm") ||
     msg.includes("content policy") ||
+    msg.includes("blocklist") ||
+    msg.includes("prohibited") ||
     (msg.includes("blocked") && (msg.includes("safety") || msg.includes("harm") || msg.includes("content")))
   );
 }

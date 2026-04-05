@@ -2,6 +2,12 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.12.1] - 2026-04-05
+
+### Fixed
+- Lyria music generation now detects safety-filtered responses that return empty content instead of throwing. Previously, the Google GenAI API could return `finishReason: "SAFETY"` or `promptFeedback.blockReason` with empty parts, silently bypassing the sanitize-and-retry logic. The error message now includes the actual rejection reason for debugging.
+- `isSafetyFilterError` now matches `BLOCKLIST` and `PROHIBITED_CONTENT` rejection types, ensuring all content-safety related Lyria failures trigger the prompt sanitization retry.
+
 ## [0.12.0] - 2026-04-05
 
 ### Added

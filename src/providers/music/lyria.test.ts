@@ -66,6 +66,31 @@ describe("LyriaMusic", () => {
     );
   });
 
+  it("throws with finishReason when candidate has no parts", async () => {
+    mockGenerateContent.mockResolvedValue({
+      candidates: [{ finishReason: "SAFETY", content: { parts: [] } }],
+    });
+
+    await expect(lyria.generate("test", "dark_cinematic" as MusicMood)).rejects.toThrow(
+      "finishReason: SAFETY",
+    );
+    // Should retry once because finishReason: SAFETY triggers safety retry
+    expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+  });
+
+  it("throws with blockReason when prompt is blocked", async () => {
+    mockGenerateContent.mockResolvedValue({
+      promptFeedback: { blockReason: "SAFETY" },
+      candidates: [],
+    });
+
+    await expect(lyria.generate("test", "dark_cinematic" as MusicMood)).rejects.toThrow(
+      "Lyria prompt blocked: SAFETY",
+    );
+    // Should retry once because error message contains "safety"
+    expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+  });
+
   it("throws when no audio parts in response", async () => {
     mockGenerateContent.mockResolvedValue({
       candidates: [{ content: { parts: [{ text: "only text" }] } }],
