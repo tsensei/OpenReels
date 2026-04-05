@@ -1,59 +1,86 @@
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { Outlet } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Clapperboard, PlusCircle, LayoutGrid, Settings } from "lucide-react";
+import { api, type StatsResponse } from "@/hooks/useApi";
+import { Sidebar } from "./Sidebar";
+import { BottomNav } from "./BottomNav";
 
-const NAV_ITEMS = [
-  { path: "/", label: "New Short", icon: PlusCircle },
-  { path: "/gallery", label: "Gallery", icon: LayoutGrid },
-  { path: "/settings", label: "Settings", icon: Settings },
-];
+const COLLAPSED_KEY = "openreels_sidebar_collapsed";
+
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia(query).matches : false,
+  );
+
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, [query]);
+
+  return matches;
+}
 
 export function Layout() {
-  const location = useLocation();
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(COLLAPSED_KEY) === "true";
+  });
+  const [stats, setStats] = useState<StatsResponse | null>(null);
 
-  const isActive = (path: string) => {
-    if (path === "/") return location.pathname === "/" || location.pathname.startsWith("/jobs");
-    return location.pathname.startsWith(path);
-  };
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem(COLLAPSED_KEY, String(next));
+      return next;
+    });
+  }, []);
+
+  // Fetch stats on mount and poll every 30s
+  useEffect(() => {
+    let active = true;
+    const load = () => {
+      api
+        .getStats()
+        .then((s) => { if (active) setStats(s); })
+        .catch(() => {});
+    };
+    load();
+    const interval = setInterval(load, 30_000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  if (!isDesktop) {
+    return (
+      <div className="flex min-h-screen flex-col pb-14">
+        <main className="flex-1">
+          <Outlet />
+        </main>
+        <BottomNav stats={stats} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 flex w-[240px] flex-col bg-sidebar">
-        {/* Logo */}
-        <div className="flex items-center gap-2.5 px-5 pt-8 pb-0">
-          <Clapperboard className="size-6 text-primary" />
-          <span className="text-lg font-bold tracking-tight text-foreground">
-            OpenReels
-          </span>
-        </div>
-
-        {/* Navigation */}
-        <nav className="mt-8 flex flex-col gap-1 px-5">
-          {NAV_ITEMS.map((item) => {
-            const active = isActive(item.path);
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "flex items-center gap-2.5 rounded-[10px] px-3.5 py-2.5 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                )}
-              >
-                <item.icon className="size-5" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
-      <div className="fixed inset-y-0 left-[240px] z-30 w-px bg-[#1E293B]" />
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={toggleCollapsed}
+        stats={stats}
+      />
 
       {/* Main content */}
-      <main className="ml-[240px] flex-1">
+      <main
+        className={cn(
+          "flex-1 transition-[margin-left] duration-200",
+          collapsed ? "ml-16" : "ml-[240px]",
+        )}
+      >
         <Outlet />
       </main>
     </div>
