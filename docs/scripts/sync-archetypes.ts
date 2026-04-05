@@ -17,6 +17,12 @@ const REQUIRED_FIELDS = [
 	"lighting",
 	"captionStyle",
 	"defaultTransition",
+	"transitionDurationFrames",
+	"motionIntensity",
+	"textCardFont",
+	"compositionRules",
+	"mood",
+	"visualColorPalette",
 ];
 
 const files = fs

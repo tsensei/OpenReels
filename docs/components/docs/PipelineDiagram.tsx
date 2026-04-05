@@ -5,7 +5,7 @@ const stages = [
 		color: "bg-blue-500",
 	},
 	{
-		name: "Script",
+		name: "Director",
 		desc: "Scene breakdowns + arc",
 		color: "bg-purple-500",
 	},
@@ -16,8 +16,13 @@ const stages = [
 	},
 	{
 		name: "Visuals",
-		desc: "Images + video + stock + music",
+		desc: "AI images, video + stock",
 		color: "bg-orange-500",
+	},
+	{
+		name: "Music",
+		desc: "AI + bundled score",
+		color: "bg-pink-500",
 	},
 	{
 		name: "Assembly",

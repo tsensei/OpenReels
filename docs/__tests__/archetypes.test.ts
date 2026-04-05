@@ -79,24 +79,18 @@ describe("archetype configs", () => {
 describe("sync script output", () => {
 	const SYNCED_DIR = path.resolve(import.meta.dirname, "../src/data/archetypes");
 
-	it("synced directory should exist after prebuild", () => {
-		// This test validates the prebuild script ran correctly
-		// In CI, prebuild runs before tests via pnpm build
-		if (!fs.existsSync(SYNCED_DIR)) {
-			// If synced dir doesn't exist, run the sync manually for test
-			return;
-		}
+	const hasSyncedDir = fs.existsSync(SYNCED_DIR);
+
+	it.skipIf(!hasSyncedDir)("synced directory has all 14 archetype JSONs", () => {
 		const syncedFiles = fs
 			.readdirSync(SYNCED_DIR)
 			.filter((f) => f.endsWith(".json"));
 		expect(syncedFiles).toHaveLength(14);
 	});
 
-	it("barrel file exports all archetypes", () => {
-		if (!fs.existsSync(SYNCED_DIR)) return;
-
+	it.skipIf(!hasSyncedDir)("barrel file exports all archetypes", () => {
 		const indexPath = path.join(SYNCED_DIR, "index.ts");
-		if (!fs.existsSync(indexPath)) return;
+		expect(fs.existsSync(indexPath)).toBe(true);
 
 		const content = fs.readFileSync(indexPath, "utf-8");
 		expect(content).toContain("export const archetypes");
