@@ -1,0 +1,88 @@
+---
+title: Quickstart
+description: Get OpenReels running in under 5 minutes with Docker or local development.
+---
+
+## Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) and Docker Compose (recommended)
+- Or: Node.js 22+, [pnpm](https://pnpm.io/installation), and ffprobe (for local dev)
+
+## Clone the repository
+
+```bash
+git clone https://github.com/tsensei/OpenReels.git
+cd OpenReels
+```
+
+## Set up environment variables
+
+Copy the example env file and fill in your API keys. See [API Keys](/docs/getting-started/api-keys) for details on which keys you need.
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` in your editor and add at least one LLM key and one TTS key (or use Kokoro for free local TTS).
+
+## Docker Compose (recommended)
+
+This starts Redis, the API server, and the background worker. The web UI is available at `http://localhost:3000`.
+
+```bash
+docker compose up
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser. Type a topic, pick your providers, and hit **Generate**. See the [Web UI guide](/docs/getting-started/web-ui) for a walkthrough.
+
+### Docker CLI (single run)
+
+If you just want to render one video without the web UI:
+
+```bash
+docker run --env-file .env --shm-size=2gb -v ./output:/output \
+  ghcr.io/tsensei/openreels "5 stoic lessons that changed my life"
+```
+
+Or through Docker Compose:
+
+```bash
+docker compose run worker npx tsx src/index.ts --yes "5 stoic lessons that changed my life"
+```
+
+The `--yes` flag auto-confirms the cost estimation prompt, which is required in non-interactive environments like Docker.
+
+## Local development
+
+Install dependencies and run the pipeline directly:
+
+```bash
+pnpm install
+```
+
+```bash
+# Full pipeline with Google providers (LLM, image, TTS, video, music)
+pnpm start "the fall of the Roman Empire" --provider google
+
+# Free local TTS, no API spend on voiceover
+pnpm start "5 stoic lessons" --provider local
+
+# Dry run — outputs the DirectorScore JSON without generating any assets
+pnpm start "your topic" --dry-run
+```
+
+See [CLI Usage](/docs/getting-started/cli) for all available flags.
+
+## What happens next
+
+Once you submit a topic, the pipeline runs through these stages:
+
+1. **Research** — Web search grounds the script in real facts
+2. **Director** — Writes a short-form script with scene breakdowns and visual direction
+3. **Voiceover** — Generates TTS audio with word-level timestamps
+4. **Visuals** — AI images, AI video clips, and stock footage
+5. **Music** — AI-generated or bundled background score
+6. **Assembly** — Composites everything into a vertical MP4 via Remotion
+7. **Critic** — AI scores the output; re-runs if quality is below threshold
+
+The final MP4 lands in the `./output` directory (CLI) or is downloadable from the web UI.

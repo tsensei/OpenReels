@@ -1,0 +1,96 @@
+---
+title: Video Providers
+description: Configure AI video generation — Google Veo and fal.ai Kling — with cross-provider fallback and image-to-video workflow.
+---
+
+The video provider generates short AI video clips from a source image and a motion prompt. Video generation is optional — disable it with `--no-video` to use only static images and stock footage.
+
+## Supported providers
+
+| Provider | Default model | Env var | Flag value | Cost |
+|----------|--------------|---------|------------|------|
+| Google Veo | `veo-3.1-lite-generate-preview` | `GOOGLE_API_KEY` | `gemini` | ~$0.05/sec ($0.30/6s clip) |
+| fal.ai Kling | `kling-video/v2.1/standard/image-to-video` | `FAL_API_KEY` | `fal` | ~$0.07/sec ($0.35/5s clip) |
+
+## Usage
+
+```bash
+pnpm start "topic" --video-provider gemini
+pnpm start "topic" --video-provider fal
+```
+
+If no `--video-provider` is specified, the pipeline auto-detects based on available API keys: it prefers Gemini if `GOOGLE_API_KEY` is set, otherwise falls back to fal.ai if `FAL_API_KEY` is set.
+
+You can override the specific model with `--video-model`:
+
+```bash
+pnpm start "topic" --video-provider gemini --video-model veo-3.1-lite-generate-preview
+```
+
+## How video generation works
+
+AI video uses an **image-to-video** workflow:
+
+1. **Source image** — The image provider generates a still frame from the scene's visual prompt
+2. **Motion prompt** — The LLM's Image Prompter agent generates a motion-aware prompt describing camera movement and action
+3. **Video generation** — The source image + motion prompt are sent to the video provider
+4. **Polling** — The pipeline polls for completion (Veo uses explicit polling; fal.ai's subscribe handles it automatically)
+5. **Download** — The finished clip is downloaded to a temp file and copied to the assets directory
+
+### Timing
+
+Video generation is the slowest stage in the pipeline. Expect:
+
+- **Google Veo** — 60-120 seconds per clip, with a 180-second timeout
+- **fal.ai Kling** — 60-120 seconds per clip via queue + polling
+
+The pipeline generates video clips concurrently (up to 3 at a time) to minimize total wait time.
+
+### Duration selection
+
+Each provider supports specific clip durations:
+
+| Provider | Supported durations |
+|----------|-------------------|
+| Google Veo | 4s, 6s, 8s |
+| fal.ai Kling | 5s, 10s |
+
+The pipeline picks the smallest supported duration that is >= the target scene duration. If the target exceeds all supported durations, it picks the maximum (clips are trimmed during assembly, never looped).
+
+## Cross-provider fallback
+
+If both `GOOGLE_API_KEY` and `FAL_API_KEY` are available, the pipeline constructs both video providers and tries them in order:
+
+1. **Primary** — The provider set by `--video-provider` (or auto-detected)
+2. **Secondary** — The other available provider
+
+If the primary provider fails (API error, timeout, safety filter), the pipeline automatically tries the secondary provider before falling through to the image fallback.
+
+### Image fallback
+
+If all video providers fail for a scene, the pipeline falls back to using the source image as a static visual. The scene still works — it just shows a still image with Ken Burns-style motion applied by Remotion instead of an AI-generated video clip. The fallback is logged with the failure reason.
+
+```
+[video] Scene 2 primary provider failed: Veo video generation timed out
+[video] Scene 2 secondary provider failed: fal.ai returned no video URL
+→ Falls back to static image for scene 2
+```
+
+## Disabling video
+
+To skip AI video generation entirely:
+
+```bash
+pnpm start "topic" --no-video
+```
+
+With `--no-video`, scenes that would have used `ai_video` will use AI-generated images instead. This significantly reduces both cost and generation time.
+
+## Cost comparison
+
+| Provider | 5s clip | 6s clip | Per second |
+|----------|---------|---------|------------|
+| Google Veo 3.1 Lite | $0.25 | $0.30 | $0.05 |
+| fal.ai Kling v2.1 | $0.35 | $0.42 | $0.07 |
+
+For a video with 2 AI video scenes at 6 seconds each, Veo costs $0.60 and Kling costs $0.84. Video generation is typically the most expensive single line item in a run.

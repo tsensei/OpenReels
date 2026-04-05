@@ -1,0 +1,124 @@
+---
+title: TTS Providers
+description: Configure text-to-speech for voiceover generation — ElevenLabs, Inworld, Kokoro (free local), Gemini TTS, and OpenAI TTS.
+---
+
+The TTS provider generates the voiceover audio and word-level timestamps that drive karaoke-style animated captions. Every TTS provider in OpenReels produces both an audio file and a `WordTimestamp[]` array mapping each word to its start/end time in the audio.
+
+## Supported providers
+
+| Provider | Default model/voice | Env var | Flag value | Cost |
+|----------|-------------------|---------|------------|------|
+| ElevenLabs | Multilingual v2 | `ELEVENLABS_API_KEY` | `elevenlabs` | ~$0.18/1K chars |
+| Inworld | TTS-1.5 Max, "Dennis" | `INWORLD_TTS_API_KEY` | `inworld` | ~$0.01/1K chars |
+| Kokoro | 82M local model, "af_heart" | none | `kokoro` | Free |
+| Gemini TTS | gemini-2.5-flash-preview-tts, "Kore" | `GOOGLE_API_KEY` | `gemini-tts` | ~$0.02/1K chars |
+| OpenAI TTS | gpt-4o-mini-tts, "alloy" | `OPENAI_API_KEY` | `openai-tts` | ~$0.05/1K chars |
+
+## Usage
+
+```bash
+pnpm start "topic" --tts-provider elevenlabs
+pnpm start "topic" --tts-provider inworld
+pnpm start "topic" --tts-provider kokoro
+pnpm start "topic" --tts-provider gemini-tts
+pnpm start "topic" --tts-provider openai-tts
+```
+
+The `--provider local` shortcut sets TTS to Kokoro automatically:
+
+```bash
+pnpm start "topic" --provider local
+```
+
+## Timestamps and the alignment system
+
+Animated captions require word-level timestamps — the exact start and end time of every word in the voiceover audio. Providers handle this differently:
+
+**Native timestamps** (no extra processing):
+- **ElevenLabs** — Returns character-level timestamps with the audio. OpenReels aggregates these into word timestamps.
+- **Inworld** — Returns word-level timestamps directly via `WORD` timestamp mode.
+
+**Whisper alignment** (automatic post-processing):
+- **Kokoro**, **Gemini TTS**, and **OpenAI TTS** do not return timestamps. These providers are wrapped in the `AlignedTTSProvider` decorator, which:
+  1. Generates the audio from the inner provider
+  2. Runs the audio through a local Whisper model (`whisper-small.en_timestamped`) for automatic speech recognition
+  3. Aligns the Whisper output to the known transcript using greedy window matching with substring fallback
+  4. Transcodes WAV audio to MP3 (the pipeline's standard format)
+
+The Whisper model (~460MB) auto-downloads from HuggingFace on first use. Alignment adds a few seconds of processing time per voiceover but produces reliable word-level timestamps.
+
+If Whisper produces zero usable words, the pipeline **hard fails** rather than producing broken captions. This is intentional — interpolated timestamps without anchor points create unwatchable results.
+
+## Provider details
+
+### ElevenLabs
+
+The highest quality option. Uses the Multilingual v2 model with character-level timestamp alignment built in. Supports multiple languages.
+
+- **Audio format:** MP3
+- **Timestamps:** Native (character-level, aggregated to words)
+- **Voice:** Configurable via voice ID (default: `yl2ZDV1MzN4HbQJbMihG`)
+- **Limit:** No hard character limit
+
+```bash
+ELEVENLABS_API_KEY=your-key-here
+```
+
+### Inworld
+
+Low-cost option with native word timestamps. Uses the TTS-1.5 Max model.
+
+- **Audio format:** MP3
+- **Timestamps:** Native (word-level)
+- **Voice:** "Dennis" (configurable)
+- **Limit:** 2,000 characters per request. Longer scripts need a different provider.
+
+```bash
+INWORLD_TTS_API_KEY=your-key-here
+```
+
+### Kokoro (free, local)
+
+Zero-cost local TTS using the Kokoro 82M model via [kokoro-js](https://github.com/hexgrad/kokoro). Runs entirely on your machine — no API key, no network calls. The model (~86MB) auto-downloads from HuggingFace on first run.
+
+Kokoro runs in a subprocess to avoid ONNX runtime conflicts. The `AlignedTTSProvider` decorator handles timestamp extraction via Whisper.
+
+- **Audio format:** WAV (transcoded to MP3)
+- **Timestamps:** Whisper alignment
+- **Voice:** Configurable with `--kokoro-voice` (default: `af_heart`)
+- **Quality:** Good for English. Not as natural as ElevenLabs but entirely free.
+
+```bash
+pnpm start "topic" --tts-provider kokoro --kokoro-voice af_heart
+```
+
+### Gemini TTS
+
+Uses the Gemini 2.5 Flash TTS model. Reuses your existing `GOOGLE_API_KEY` — no additional key needed. Included automatically when using `--provider google`.
+
+- **Audio format:** WAV (raw 24kHz 16-bit mono PCM, transcoded to MP3)
+- **Timestamps:** Whisper alignment
+- **Voice:** "Kore" (hardcoded)
+
+### OpenAI TTS
+
+Uses gpt-4o-mini-tts. Reuses your existing `OPENAI_API_KEY`.
+
+- **Audio format:** WAV (transcoded to MP3)
+- **Timestamps:** Whisper alignment
+- **Voice:** "alloy" (hardcoded)
+
+## Cost comparison
+
+For a typical 800-character script:
+
+| Provider | Cost | Quality |
+|----------|------|---------|
+| Kokoro | Free | Good (English) |
+| Inworld | ~$0.008 | Good |
+| Gemini TTS | ~$0.016 | Good |
+| OpenAI TTS | ~$0.040 | Very good |
+| ElevenLabs | ~$0.144 | Excellent |
+
+ElevenLabs costs roughly 18x more than Inworld but delivers noticeably more natural-sounding speech. Kokoro is the only option that costs nothing.

@@ -1,0 +1,132 @@
+---
+title: Archetypes
+description: How archetype configs control visual style, pacing, captions, transitions, and the image prompter's style bible.
+---
+
+An archetype is a complete visual identity for a video. It controls everything from color palette and art style to pacing tier, caption style, and default transitions. OpenReels ships with 14 archetypes, and you can create custom ones by adding JSON files.
+
+## The 14 built-in archetypes
+
+| Archetype | Pacing | Caption Style | Default Transition | Feel |
+|-----------|--------|--------------|-------------------|------|
+| `cinematic_documentary` | cinematic | clean | crossfade | Grounded, authoritative, documentary |
+| `moody_cinematic` | cinematic | clean | crossfade | Dark, atmospheric, tension |
+| `studio_realism` | cinematic | clean | crossfade | Polished, photographic |
+| `warm_narrative` | cinematic | clean | crossfade | Intimate, story-driven |
+| `pastoral_watercolor` | cinematic | gradient_rise | crossfade | Soft, painterly, nostalgic |
+| `warm_editorial` | moderate | color_highlight | slide_left | Magazine editorial warmth |
+| `editorial_caricature` | moderate | color_highlight | slide_left | Expressive, satirical |
+| `anime_illustration` | moderate | bold_outline | flip | Intense, dynamic, anime |
+| `vintage_snapshot` | moderate | bold_outline | wipe | Retro, nostalgic |
+| `surreal_dreamscape` | moderate | gradient_rise | crossfade | Ethereal, otherworldly |
+| `gothic_fantasy` | moderate | karaoke_sweep | crossfade | Dark, ornate, dramatic |
+| `infographic` | fast | block_impact | slide_left | Clean, data-driven, rapid |
+| `bold_illustration` | fast | bold_outline | slide_left | Graphic, punchy |
+| `comic_book` | fast | bold_outline | wipe | Panel-style, energetic |
+
+## Config format
+
+Each archetype is a JSON file in `src/config/archetypes/`. Here is the full schema with what each field controls:
+
+### Pacing and rendering fields
+
+```json
+{
+  "scenePacing": "cinematic",
+  "defaultTransition": "crossfade",
+  "transitionDurationFrames": 18,
+  "captionStyle": "clean",
+  "colorPalette": {
+    "background": "#1a1a14",
+    "accent": "#c8a96e",
+    "text": "#e8e0d0"
+  },
+  "textCardFont": "Inter",
+  "motionIntensity": 0.9
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `scenePacing` | `"fast"` \| `"moderate"` \| `"cinematic"` | Controls scene count and word budget. See [Pacing](/docs/configuration/pacing). |
+| `defaultTransition` | `TransitionType` | Applied when the Creative Director omits a per-scene transition. |
+| `transitionDurationFrames` | number | How many frames the transition animation lasts (at 30fps, 15 frames = 0.5s). |
+| `captionStyle` | string | Which caption component renders. See [Captions](/docs/configuration/captions). |
+| `colorPalette.background` | hex string | Background color for text cards. |
+| `colorPalette.accent` | hex string | Accent color for text card glow, accent bars. |
+| `colorPalette.text` | hex string | Text color for text cards. |
+| `textCardFont` | string | Font family for text cards. Available: `"Inter"`, `"Merriweather"`, `"Space Grotesk"`. |
+| `motionIntensity` | number | Multiplier for Ken Burns zoom/pan distance. 0.8 is subtle, 1.4 is aggressive. |
+
+### Creative/visual fields (style bible)
+
+These fields are injected into the Image Prompter agent's system prompt as a "style bible" that every generated image must follow:
+
+```json
+{
+  "artStyle": "Photorealistic documentary photography with cinematic framing...",
+  "lighting": "Natural side lighting with soft shadows. Golden hour warmth...",
+  "compositionRules": "Rule of thirds with subject at power points...",
+  "culturalMarkers": "Context-appropriate architecture with weathered textures...",
+  "mood": "Grounded, authoritative, contemplative.",
+  "antiArtifactGuidance": "Crisp sharp focus on subject with natural bokeh...",
+  "visualColorPalette": [
+    "muted earth tones",
+    "warm amber",
+    "deep forest green",
+    "soft cream",
+    "charcoal gray"
+  ]
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `artStyle` | Primary visual direction. Describes the rendering approach, detail level, and overall aesthetic. |
+| `lighting` | Lighting setup for all scenes. Direction, quality, temperature. |
+| `compositionRules` | Framing rules. Camera angles, depth layers, subject placement. |
+| `culturalMarkers` | Environmental and period details that ground scenes in reality. |
+| `mood` | Emotional tone descriptors that guide image generation atmosphere. |
+| `antiArtifactGuidance` | Specific instructions to avoid common AI image artifacts (waxy skin, blurred edges, broken perspective). |
+| `visualColorPalette` | Descriptive color names the image model should use. Different from the hex `colorPalette` used for rendering. |
+
+## How archetypes are used
+
+Archetypes flow through the pipeline in three ways:
+
+1. **Creative Director** -- selects or receives the archetype, which determines pacing tier and scene count constraints
+2. **Image Prompter** -- receives the full style bible (artStyle, lighting, compositionRules, culturalMarkers, mood, antiArtifactGuidance, visualColorPalette) as part of its system prompt
+3. **Score-to-props mapper** -- reads rendering fields (colorPalette, captionStyle, motionIntensity, textCardFont, defaultTransition, transitionDurationFrames) to configure Remotion components
+
+## Creating a custom archetype
+
+To add a custom archetype:
+
+1. Create a JSON file in `src/config/archetypes/` following the schema above (all fields are required)
+2. Import and register it in `src/config/archetype-registry.ts`:
+
+```ts
+import myCustom from "./archetypes/my-custom.json" with { type: "json" };
+
+const ARCHETYPES: Record<string, ArchetypeConfig> = {
+  // ... existing archetypes
+  my_custom: myCustom as ArchetypeConfig,
+};
+```
+
+3. Use it with `--archetype my_custom` on the CLI or select it in the web UI
+
+Tips for writing style bible fields:
+
+- **artStyle**: Be specific about the rendering technique. "Photorealistic documentary photography" produces very different results from "Modern anime illustration with sharp detailed linework."
+- **antiArtifactGuidance**: Call out the specific artifacts your art style is prone to. Photorealistic styles need guidance on skin texture and perspective. Anime styles need guidance on linework consistency and color boundaries.
+- **visualColorPalette**: Use descriptive names ("warm amber", "deep forest green") rather than hex codes. Image generation models respond better to natural language color descriptions.
+- **motionIntensity**: Start at 1.0 and adjust. Documentary styles work well around 0.9. Action/anime styles can go up to 1.4.
+
+## Source files
+
+| File | Role |
+|------|------|
+| `src/config/archetype-registry.ts` | Loads and exposes all archetypes |
+| `src/config/archetypes/*.json` | Individual archetype config files |
+| `src/schema/archetype.ts` | TypeScript interface for `ArchetypeConfig` |

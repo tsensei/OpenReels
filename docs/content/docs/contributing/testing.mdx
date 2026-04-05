@@ -1,0 +1,268 @@
+---
+title: Testing
+description: How tests are structured, how to run them, and how to write new tests.
+---
+
+OpenReels uses [Vitest](https://vitest.dev/) as its test runner with colocated test files throughout the source tree. The test suite runs entirely in-process with mocked external dependencies — no API keys or Redis required.
+
+## Running Tests
+
+```bash
+# Run the full suite
+pnpm test
+
+# Watch mode (re-runs on file changes)
+pnpm test:watch
+
+# Run a specific test file
+npx vitest run src/schema/director-score.test.ts
+
+# Run tests matching a pattern
+npx vitest run -t "golden rule"
+```
+
+---
+
+## Configuration
+
+The Vitest config lives at `vitest.config.ts`:
+
+```typescript
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: "node",
+    include: ["src/**/*.test.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov"],
+    },
+  },
+});
+```
+
+Key settings:
+- **`globals: true`** — `describe`, `it`, `expect`, `vi` are available globally without imports (though many test files import them explicitly for clarity)
+- **`environment: "node"`** — tests run in a Node.js environment
+- **`include: ["src/**/*.test.ts"]`** — test files are colocated with source files using the `.test.ts` suffix
+
+---
+
+## Test File Location
+
+Tests live next to the code they test:
+
+```
+src/
+  schema/
+    director-score.ts
+    director-score.test.ts       # tests for the schema
+  providers/
+    factory.ts
+    factory.test.ts              # tests for the factory
+    llm/
+      base.ts
+      base.test.ts               # tests for BaseLLM
+      anthropic.ts
+      anthropic.test.ts          # tests for AnthropicLLM
+    tts/
+      aligned-tts-provider.ts
+      aligned-tts-provider.test.ts
+  pipeline/
+    orchestrator.ts
+    orchestrator-callbacks.test.ts
+    orchestrator-progress.test.ts
+```
+
+This convention makes it easy to find tests for any module and keeps related code close together.
+
+---
+
+## Test Patterns
+
+### Schema Validation
+
+Tests for Zod schemas use `safeParse` to check both valid and invalid inputs:
+
+```typescript
+import { describe, expect, it } from "vitest";
+import { DirectorScore } from "./director-score.js";
+
+describe("DirectorScore schema", () => {
+  it("accepts a valid score with mixed visual types", () => {
+    const result = DirectorScore.safeParse({
+      emotional_arc: "curiosity-to-wisdom",
+      archetype: "editorial_caricature",
+      music_mood: "epic_cinematic",
+      scenes: [
+        { visual_type: "text_card", visual_prompt: "intro", motion: "static", script_line: "Hello.", transition: null },
+        { visual_type: "ai_image", visual_prompt: "test", motion: "zoom_in", script_line: "World.", transition: null },
+        { visual_type: "stock_video", visual_prompt: "test", motion: "static", script_line: "End.", transition: null },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects 3 consecutive scenes of the same visual type", () => {
+    const result = DirectorScore.safeParse({
+      // ... score with 3 consecutive ai_image scenes
+    });
+    expect(result.success).toBe(false);
+  });
+});
+```
+
+### Provider Factory
+
+Tests for the provider factory mock all provider constructors and verify the correct instances are created based on configuration:
+
+```typescript
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { createProviders } from "./factory.js";
+import { AnthropicLLM } from "./llm/anthropic.js";
+
+vi.mock("./llm/anthropic.js", () => ({
+  AnthropicLLM: vi.fn().mockImplementation(() => ({
+    id: "anthropic",
+    generate: vi.fn(),
+  })),
+}));
+
+describe("createProviders", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("creates default providers with BYOK keys", () => {
+    const providers = createProviders({
+      llm: "anthropic",
+      tts: "elevenlabs",
+      image: "gemini",
+      keys: { PEXELS_API_KEY: "test-pex" },
+    });
+
+    expect(providers.llm).toBeDefined();
+    expect(AnthropicLLM).toHaveBeenCalled();
+  });
+});
+```
+
+### Mocking External Dependencies
+
+Provider tests extensively use `vi.mock()` to avoid real API calls:
+
+```typescript
+// Mock the entire module
+vi.mock("./llm/anthropic.js", () => ({
+  AnthropicLLM: vi.fn().mockImplementation(() => ({
+    id: "anthropic",
+    generate: vi.fn(),
+  })),
+}));
+
+// Mock specific functions
+vi.mock("../agents/research.js", () => ({
+  research: vi.fn().mockResolvedValue({
+    summary: "Test summary",
+    key_facts: ["fact 1"],
+    mood: "epic_cinematic",
+  }),
+}));
+```
+
+### Testing Async Code
+
+```typescript
+it("generates audio with word timestamps", async () => {
+  const result = await tts.generate("Hello world");
+  expect(result.audio).toBeInstanceOf(Buffer);
+  expect(result.words).toHaveLength(2);
+  expect(result.words[0].word).toBe("Hello");
+});
+```
+
+---
+
+## Writing New Tests
+
+### 1. Create the test file
+
+Place it next to the source file with a `.test.ts` suffix:
+
+```
+src/providers/tts/my-provider.ts
+src/providers/tts/my-provider.test.ts
+```
+
+### 2. Structure with describe/it
+
+```typescript
+import { describe, expect, it, vi } from "vitest";
+import { MyProvider } from "./my-provider.js";
+
+describe("MyProvider", () => {
+  it("handles the happy path", () => {
+    // ...
+  });
+
+  it("throws on invalid input", () => {
+    expect(() => new MyProvider("")).toThrow();
+  });
+});
+```
+
+### 3. Mock external calls
+
+Never make real API calls in tests. Mock HTTP clients, SDK constructors, or the entire module:
+
+```typescript
+vi.mock("@ai-sdk/anthropic", () => ({
+  createAnthropic: vi.fn(() => vi.fn(() => "mock-model")),
+}));
+```
+
+### 4. Test edge cases
+
+- Invalid inputs and error handling
+- Boundary conditions (min/max values)
+- Empty arrays and missing fields
+- Concurrent operations
+
+### 5. Run and verify
+
+```bash
+npx vitest run src/providers/tts/my-provider.test.ts
+```
+
+---
+
+## Coverage
+
+Generate a coverage report:
+
+```bash
+npx vitest run --coverage
+```
+
+Coverage uses the V8 provider and outputs both `text` (terminal) and `lcov` (CI integration) formats.
+
+---
+
+## Test Categories
+
+| Category | Files | What they test |
+|----------|-------|---------------|
+| Schema validation | `director-score.test.ts` | Zod schema acceptance/rejection |
+| Provider factory | `factory.test.ts` | Provider wiring, BYOK keys, fallback arrays |
+| LLM providers | `anthropic.test.ts`, `openai.test.ts`, `gemini.test.ts`, `base.test.ts` | Model creation, structured output, web search two-pass |
+| TTS providers | `elevenlabs.test.ts`, `kokoro.test.ts`, `gemini.test.ts`, etc. | Audio generation, word timestamps, alignment |
+| Stock providers | `adaptive-resolver.test.ts`, `query-reformer.test.ts`, `stock-verifier.test.ts` | Multi-provider fallback, query rewriting, VLM verification |
+| Video providers | `gemini.test.ts`, `fal.test.ts`, `video-resolver.test.ts` | Video generation, multi-provider fallback |
+| Music | `bundled.test.ts`, `bundled-adapter.test.ts`, `lyria.test.ts`, `manifest-integrity.test.ts` | Music selection, generation, manifest validation |
+| Pipeline | `orchestrator-callbacks.test.ts`, `orchestrator-progress.test.ts`, `orchestrator-docker.test.ts` | Stage execution, callback firing, Docker compatibility |
+| Agents | `creative-director.test.ts`, `critic.test.ts`, `music-prompter.test.ts` | Agent LLM calls, output parsing |
+| CLI | `args.test.ts`, `cost-estimator.test.ts`, `progress.test.ts`, `validate-env.test.ts` | Argument parsing, cost calculation, env validation |
+| Remotion | `score-to-props.test.ts`, `caption-utils.test.ts` | Score-to-props mapping, caption timing |
+| Config | `archetype-registry.test.ts`, `playbook.test.ts` | Archetype loading, config validation |

@@ -1,0 +1,107 @@
+---
+title: Creative Director Agent
+description: How the Creative Director generates a DirectorScore with scene breakdowns, archetype selection, and visual direction.
+---
+
+The Creative Director is the most consequential stage in the pipeline. It takes the research output and produces a **DirectorScore** -- the complete production plan that every downstream stage executes from. The quality of the final video is largely determined here.
+
+## What it produces
+
+The DirectorScore contains four top-level fields:
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `emotional_arc` | Journey descriptor that shapes music and pacing | `"curiosity-to-wisdom"` |
+| `archetype` | Visual style key (one of 14 options) | `"cinematic_documentary"` |
+| `music_mood` | One of 8 mood tags for music selection | `"mysterious_ambient"` |
+| `scenes` | Array of 3-16 scene objects | See below |
+
+Each scene object drives a single visual beat in the video:
+
+```ts
+interface Scene {
+  visual_type: "ai_image" | "ai_video" | "stock_image" | "stock_video" | "text_card";
+  visual_prompt: string;
+  motion: "zoom_in" | "zoom_out" | "pan_right" | "pan_left" | "static";
+  script_line: string;
+  transition: TransitionType | null;
+}
+```
+
+## Archetype selection
+
+The Director either uses a user-specified archetype (`--archetype cinematic_documentary`) or picks one from the 14 available options based on the topic and research mood.
+
+The full archetype list: `editorial_caricature`, `warm_narrative`, `studio_realism`, `infographic`, `anime_illustration`, `pastoral_watercolor`, `comic_book`, `gothic_fantasy`, `vintage_snapshot`, `surreal_dreamscape`, `warm_editorial`, `cinematic_documentary`, `moody_cinematic`, `bold_illustration`.
+
+Each archetype maps to a pacing tier that constrains scene count and word budget. See [Pacing](/docs/configuration/pacing) for the tier details.
+
+## Pacing tiers
+
+The pacing tier is resolved through a three-level cascade:
+
+1. **Explicit `--pacing` flag** -- always wins if provided
+2. **Archetype config** -- each archetype JSON has a `scenePacing` field (`"fast"`, `"moderate"`, or `"cinematic"`)
+3. **Lookup table** -- if no archetype is specified, a full tier table is injected into the prompt so the LLM can pick
+
+The pacing tier controls:
+
+| Tier | Scenes | Words/Scene | Total Words |
+|------|--------|-------------|-------------|
+| fast | 8-12 | 8-12 | 90-120 |
+| moderate | 7-10 | 10-16 | 100-140 |
+| cinematic | 5-8 | 15-22 | 90-130 |
+
+## Visual type selection
+
+The Director chooses the visual type for each scene based on content suitability:
+
+- **stock_video / stock_image** -- real, concrete subjects likely to have good stock results (landmarks, animals, nature)
+- **ai_image** -- abstract, fantastical, or hyper-specific scenes where stock won't match
+- **ai_video** -- scenes where motion is the story (explosions, flowing water, launches). Limited to 1-3 per video due to cost (~$0.30 vs ~$0.04 for ai_image). Script lines for `ai_video` scenes must stay under 18 words because clips max out at 8 seconds
+- **text_card** -- punchy stats, key takeaways, or rhetorical questions
+
+The **golden rule** enforced by Zod validation: no more than 2 consecutive scenes of the same `visual_type`. This prevents the "AI slideshow" feel where every scene looks the same.
+
+## Video-aware generation
+
+When video providers are configured (`--video-provider`), the Director is told about `ai_video` as a fifth visual type. Without video providers, only the four non-video types are offered. For `ai_video` scenes, motion is set to `"static"` because the video generation model controls motion rather than the Ken Burns effect.
+
+## Transitions
+
+Each scene can specify how it flows into the next scene:
+
+| Transition | Use case |
+|-----------|----------|
+| `crossfade` | Reflective moments, emotional continuity |
+| `slide_left` | Forward progression, building momentum |
+| `slide_right` | Contrast, flashback, "but actually" moments |
+| `wipe` | Clean topic changes, new chapter energy |
+| `flip` | Dramatic reveals (use sparingly) |
+| `none` | Hard cut |
+
+If a scene omits the transition field, the archetype's `defaultTransition` is used. The last scene's transition is always ignored.
+
+## Playbook injection
+
+The full content playbook (`prompts/playbook.md`) is injected into the Creative Director's system prompt. This gives the LLM access to:
+
+- 12 hook patterns with templates and best-fit topic categories
+- 6 narrative arc structures (Stat-Escalation, Myth-Truth, Problem-Solution, Revelation, Countdown, Tension-Release)
+- Pacing rules (3-second hook rule, retention checkpoints, one idea per scene)
+- CTA patterns for the final scene
+- Audience psychology triggers
+
+## Retry logic
+
+The Director has a built-in retry loop (up to 3 attempts). If the LLM output fails Zod validation (wrong field types, golden rule violation, too few scenes), the error message is appended to the next attempt's prompt so the LLM can self-correct. Token usage is accumulated across retries.
+
+## Source files
+
+| File | Role |
+|------|------|
+| `src/agents/creative-director.ts` | Agent implementation with pacing logic |
+| `prompts/creative-director.md` | System prompt with visual type guidance and pacing tiers |
+| `prompts/playbook.md` | Content playbook (hook patterns, narrative arcs, CTA patterns) |
+| `src/schema/director-score.ts` | DirectorScore Zod schema with golden rule refinement |
+| `src/config/archetype-registry.ts` | Archetype loader |

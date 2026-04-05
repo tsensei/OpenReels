@@ -1,0 +1,57 @@
+---
+title: Image Providers
+description: Configure AI image generation for scene visuals — Gemini Imagen and OpenAI DALL-E.
+---
+
+The image provider generates AI images for scenes with `visual_type: "ai_image"` and for the source frames used in AI video generation (`visual_type: "ai_video"`). All images are generated in vertical 9:16 portrait orientation for YouTube Shorts.
+
+## Supported providers
+
+| Provider | Default model | Env var | Flag value | Cost per image |
+|----------|--------------|---------|------------|----------------|
+| Gemini Imagen | `gemini-3.1-flash-image-preview` | `GOOGLE_API_KEY` | `gemini` | $0.101 |
+| OpenAI DALL-E | `gpt-image-1.5` | `OPENAI_API_KEY` | `openai` | $0.167 |
+
+## Usage
+
+```bash
+pnpm start "topic" --image-provider gemini
+pnpm start "topic" --image-provider openai
+```
+
+Gemini is the default. The `--provider google` shortcut also sets images to Gemini.
+
+## How images are generated
+
+Each AI image prompt goes through the Image Prompter agent before reaching the provider. The agent optimizes the raw `visual_prompt` from the DirectorScore by adding archetype-specific style direction, aspect ratio instructions, and explicit "no text, no watermarks" constraints.
+
+### Gemini Imagen
+
+Uses the `gemini-3.1-flash-image-preview` model via the `@google/genai` SDK. Requests `image` + `text` response modalities and extracts the inline image data from the response.
+
+- **Resolution:** 1080x1920 (vertical 9:16)
+- **Output format:** PNG (base64-decoded from API response)
+- **Style control:** Passed as part of the prompt text
+
+### OpenAI DALL-E
+
+Uses the `gpt-image-1.5` model via the OpenAI SDK. Generates at 1024x1536 (2:3 aspect ratio, closest to 9:16 at supported sizes) with high quality.
+
+- **Resolution:** 1024x1536 (portrait 2:3)
+- **Output format:** PNG (base64-decoded)
+- **Quality setting:** `high`
+
+## Cost comparison
+
+| Provider | Per image | 3 images | 5 images |
+|----------|----------|----------|----------|
+| Gemini Imagen | $0.101 | $0.303 | $0.505 |
+| OpenAI DALL-E | $0.167 | $0.501 | $0.835 |
+
+Gemini is about 40% cheaper per image. For a typical 5-scene video with 3 AI images and 2 stock scenes, the image generation difference is roughly $0.20.
+
+Images are often the largest cost component in a run. Stock scenes (`visual_type: "stock_image"` or `"stock_video"`) are free, so the Creative Director's scene type choices directly impact cost. If stock footage fails verification and falls back to AI generation, the additional cost is reflected in the final cost report.
+
+## AI video source images
+
+When a scene uses `visual_type: "ai_video"`, the pipeline first generates an AI image using the image provider, then passes that image to the video provider as the source frame for image-to-video generation. This means AI video scenes cost both an image generation fee and a video generation fee.

@@ -1,0 +1,384 @@
+---
+title: REST API
+description: Complete reference for the OpenReels HTTP API — job management, health checks, and artifact serving.
+---
+
+The OpenReels API server is a Fastify application that manages video generation jobs via a BullMQ queue backed by Redis. All endpoints are prefixed with `/api/v1`.
+
+## Base URL
+
+```
+http://localhost:3000/api/v1
+```
+
+The host and port are configurable via the `HOST` and `PORT` environment variables (defaults: `0.0.0.0:3000`).
+
+---
+
+## Health Check
+
+### `GET /api/v1/health`
+
+Returns the server health status, Redis connectivity, and which API keys are configured.
+
+**Response**
+
+```json
+{
+  "status": "healthy",
+  "redis": "connected",
+  "jobsDir": "exists",
+  "keys": {
+    "ANTHROPIC_API_KEY": true,
+    "OPENAI_API_KEY": false,
+    "GOOGLE_API_KEY": true,
+    "ELEVENLABS_API_KEY": true,
+    "INWORLD_TTS_API_KEY": false,
+    "PEXELS_API_KEY": true,
+    "PIXABAY_API_KEY": false
+  }
+}
+```
+
+The `status` field is `"healthy"` when Redis is connected, `"degraded"` otherwise. The `keys` object shows which API keys are present in the environment (values are booleans, not the actual keys).
+
+---
+
+## Aggregate Stats
+
+### `GET /api/v1/stats`
+
+Returns aggregate statistics across all jobs.
+
+**Response**
+
+```json
+{
+  "totalJobs": 42,
+  "completedJobs": 38,
+  "failedJobs": 2,
+  "activeJobs": 2,
+  "totalCost": 4.57
+}
+```
+
+`totalCost` is the sum of actual costs (or estimated costs as fallback) for all completed jobs, rounded to two decimal places.
+
+---
+
+## Jobs
+
+### `POST /api/v1/jobs`
+
+Creates a new video generation job and adds it to the processing queue.
+
+**Request Body**
+
+```json
+{
+  "topic": "The history of the Roman Colosseum",
+  "archetype": "editorial_caricature",
+  "pacing": "standard",
+  "platform": "youtube",
+  "dryRun": false,
+  "noMusic": false,
+  "noVideo": false,
+  "providers": {
+    "llm": "anthropic",
+    "tts": "elevenlabs",
+    "image": "gemini",
+    "stock": "pexels",
+    "video": "gemini",
+    "videoModel": "veo-3.0-generate-preview",
+    "music": "bundled"
+  },
+  "keys": {
+    "ANTHROPIC_API_KEY": "sk-ant-...",
+    "ELEVENLABS_API_KEY": "..."
+  }
+}
+```
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `topic` | string | Yes | - | The video topic (max 500 characters) |
+| `archetype` | string | No | auto-selected | Visual style archetype |
+| `pacing` | string | No | auto-selected | Pacing tier (`slow`, `standard`, `fast`) |
+| `platform` | string | No | `"youtube"` | Target platform |
+| `dryRun` | boolean | No | `false` | Skip rendering, produce only the DirectorScore |
+| `noMusic` | boolean | No | `false` | Skip music generation/selection |
+| `noVideo` | boolean | No | `false` | Skip AI video generation for scenes |
+| `providers` | object | No | see defaults | Provider selection per category |
+| `keys` | object | No | `{}` | BYOK (Bring Your Own Key) API keys |
+
+**Provider defaults**: `llm: "anthropic"`, `tts: "elevenlabs"`, `image: "gemini"`, `stock: "pexels"`, `music: "bundled"`.
+
+**Response** `201 Created`
+
+```json
+{
+  "id": "1",
+  "topic": "The history of the Roman Colosseum",
+  "archetype": "editorial_caricature",
+  "status": "queued"
+}
+```
+
+**Errors**
+
+| Status | Condition |
+|--------|-----------|
+| `400` | Missing or empty `topic` |
+| `400` | `topic` exceeds 500 characters |
+| `400` | Unknown `archetype` |
+| `400` | Unknown `pacing` tier |
+| `400` | Unknown `platform` |
+
+---
+
+### `GET /api/v1/jobs`
+
+Lists all jobs, sorted by creation time (newest first).
+
+**Query Parameters**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | number | `20` | Max jobs to return (capped at 100) |
+| `offset` | number | `0` | Number of jobs to skip |
+
+**Response**
+
+```json
+{
+  "jobs": [
+    {
+      "id": "3",
+      "topic": "Black holes explained",
+      "status": "completed",
+      "createdAt": "2025-01-15T10:30:00.000Z",
+      "completedAt": "2025-01-15T10:35:00.000Z",
+      "stages": { ... }
+    }
+  ],
+  "total": 42
+}
+```
+
+---
+
+### `GET /api/v1/jobs/:id`
+
+Returns full metadata for a single job including stage statuses, cost estimates, research data, the DirectorScore, and critic review.
+
+**Response**
+
+```json
+{
+  "id": "1",
+  "topic": "The history of the Roman Colosseum",
+  "archetype": "editorial_caricature",
+  "status": "completed",
+  "createdAt": "2025-01-15T10:30:00.000Z",
+  "completedAt": "2025-01-15T10:35:00.000Z",
+  "stages": {
+    "research": { "status": "done", "detail": "5 key facts", "durationSec": 4.2 },
+    "director": { "status": "done", "detail": "8 scenes", "durationSec": 6.1 },
+    "tts": { "status": "done", "detail": "42s audio", "durationSec": 8.3 },
+    "visuals": { "status": "done", "detail": "8 assets", "durationSec": 25.7 },
+    "assembly": { "status": "done", "detail": "final.mp4", "durationSec": 45.2 },
+    "critic": { "status": "done", "detail": "Score: 8.5/10", "durationSec": 3.1 }
+  },
+  "costEstimate": { "totalCost": 0.12 },
+  "actualCost": { "totalCost": 0.11 },
+  "videoPath": "run-20250115-103000/final.mp4",
+  "runDir": "run-20250115-103000",
+  "researchData": {
+    "summary": "...",
+    "key_facts": ["..."],
+    "mood": "epic_cinematic"
+  },
+  "score": { ... },
+  "criticReview": {
+    "score": 8.5,
+    "strengths": ["..."],
+    "weaknesses": ["..."]
+  }
+}
+```
+
+**Stage statuses**: `"pending"`, `"running"`, `"done"`, `"skipped"`, `"error"`
+
+**Job statuses**: `"queued"`, `"running"`, `"completed"`, `"failed"`, `"cancelled"`
+
+**Errors**
+
+| Status | Condition |
+|--------|-----------|
+| `400` | Invalid job ID format |
+| `404` | Job not found |
+
+---
+
+### `GET /api/v1/jobs/:id/events`
+
+Opens a Server-Sent Events (SSE) stream for real-time job progress. See [SSE Events](/docs/api/sse-events) for the full event reference.
+
+**Headers**
+
+```
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+```
+
+The connection sends a `job:snapshot` event immediately with the current job state, then streams progress events until the job completes or fails.
+
+**Errors**
+
+| Status | Condition |
+|--------|-----------|
+| `400` | Invalid job ID format |
+| `404` | Job not found in queue or on disk |
+
+---
+
+### `DELETE /api/v1/jobs/:id`
+
+Deletes a job and all its artifacts from disk. Active or queued jobs cannot be deleted.
+
+**Response**
+
+```json
+{ "status": "deleted" }
+```
+
+**Errors**
+
+| Status | Condition |
+|--------|-----------|
+| `400` | Invalid job ID format |
+| `404` | Job not found |
+| `409` | Job is active or waiting |
+
+---
+
+### `POST /api/v1/jobs/:id/cancel`
+
+Requests cancellation of a running or queued job. The worker checks for the cancel flag between pipeline stages.
+
+**Response**
+
+```json
+{ "status": "cancelled" }
+```
+
+**Errors**
+
+| Status | Condition |
+|--------|-----------|
+| `400` | Invalid job ID format |
+| `404` | Job not found |
+| `409` | Job already completed or failed |
+
+---
+
+## Artifacts
+
+### `GET /api/v1/jobs/:id/artifacts/*`
+
+Serves files from a job's output directory. Path traversal is prevented by validating the resolved path stays within the job directory.
+
+**Examples**
+
+```
+GET /api/v1/jobs/1/artifacts/run-20250115-103000/final.mp4
+GET /api/v1/jobs/1/artifacts/run-20250115-103000/scene-001.png
+```
+
+**Errors**
+
+| Status | Condition |
+|--------|-----------|
+| `400` | Invalid job ID format |
+| `403` | Path traversal attempt |
+| `404` | Artifact not found |
+
+---
+
+## Reference Data
+
+### `GET /api/v1/archetypes`
+
+Returns the list of available visual style archetypes with their configuration.
+
+```json
+[
+  {
+    "name": "editorial_caricature",
+    "captionStyle": "glitch",
+    "artStyle": "editorial caricature with bold outlines",
+    "mood": "satirical",
+    "colorPalette": "high contrast",
+    "scenePacing": "standard",
+    "motionIntensity": "medium"
+  }
+]
+```
+
+### `GET /api/v1/platforms`
+
+Returns available target platforms with their video specifications.
+
+```json
+[
+  {
+    "name": "youtube",
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "maxDurationSeconds": 60
+  }
+]
+```
+
+### `GET /api/v1/providers`
+
+Returns available providers grouped by category.
+
+```json
+{
+  "llm": [
+    { "key": "anthropic", "label": "Anthropic (Claude)" },
+    { "key": "openai", "label": "OpenAI (GPT)" },
+    { "key": "gemini", "label": "Google Gemini" }
+  ],
+  "tts": [
+    { "key": "elevenlabs", "label": "ElevenLabs" },
+    { "key": "inworld", "label": "Inworld" },
+    { "key": "kokoro", "label": "Kokoro (Local)" },
+    { "key": "gemini-tts", "label": "Gemini TTS" },
+    { "key": "openai-tts", "label": "OpenAI TTS" }
+  ],
+  "image": [
+    { "key": "gemini", "label": "Google Gemini" },
+    { "key": "openai", "label": "OpenAI (GPT Image)" }
+  ],
+  "video": [
+    { "key": "gemini", "label": "Google Veo" },
+    { "key": "fal", "label": "fal.ai (Kling, Wan, etc.)" }
+  ]
+}
+```
+
+---
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `REDIS_URL` | `redis://localhost:6379` | Redis connection URL |
+| `PORT` | `3000` | HTTP server port |
+| `HOST` | `0.0.0.0` | HTTP server bind address |
+| `JOBS_DIR` | `./jobs` | Directory for job artifacts |
+| `MAX_JOBS` | `0` (disabled) | Auto-prune completed jobs when count exceeds this limit |

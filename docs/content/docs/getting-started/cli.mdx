@@ -1,0 +1,134 @@
+---
+title: CLI Usage
+description: All CLI flags, usage examples, and common workflows for generating videos from the command line.
+---
+
+## Basic usage
+
+```bash
+pnpm start "<topic>" [flags]
+```
+
+Or via Docker:
+
+```bash
+docker run --env-file .env --shm-size=2gb -v ./output:/output \
+  ghcr.io/tsensei/openreels "<topic>" [flags]
+```
+
+The topic is a required positional argument. Everything else is optional.
+
+## All flags
+
+| Flag | Description | Default |
+|---|---|---|
+| `-p, --provider <name>` | LLM provider: `anthropic`, `openai`, `gemini`, `google`, `local` | `anthropic` |
+| `-i, --image-provider <name>` | Image provider: `gemini`, `openai` | `gemini` |
+| `--tts-provider <name>` | TTS provider: `elevenlabs`, `inworld`, `kokoro`, `gemini-tts`, `openai-tts` | `elevenlabs` |
+| `--music-provider <name>` | Music provider: `bundled`, `lyria` | `bundled` |
+| `--video-provider <name>` | Video provider: `gemini`, `fal` | auto-detect |
+| `--video-model <model>` | Video model override (e.g. `veo-3.1-lite-preview`) | provider default |
+| `-a, --archetype <name>` | Override visual archetype (e.g. `anime_illustration`, `cinematic_documentary`) | LLM chooses |
+| `--pacing <tier>` | Pacing tier override: `fast`, `moderate`, `cinematic` | archetype default |
+| `--platform <name>` | Target platform: `youtube`, `tiktok`, `instagram` | `youtube` |
+| `--dry-run` | Output DirectorScore JSON without generating assets | off |
+| `--preview` | Open Remotion Studio after rendering | off |
+| `-o, --output <dir>` | Output directory | `./output` |
+| `--no-music` | Disable background music | music on |
+| `--no-video` | Disable AI video generation | video on |
+| `--no-stock-verify` | Disable VLM stock footage verification | verify on |
+| `--stock-confidence <n>` | Min confidence for stock verification (0-1) | `0.6` |
+| `--stock-max-attempts <n>` | Max stock API calls per scene | `4` |
+| `--verification-model <model>` | Model override for stock verification VLM | provider default |
+| `--kokoro-voice <voice>` | Kokoro voice preset (e.g. `af_heart`, `bf_emma`, `am_fenrir`) | `af_heart` |
+| `-y, --yes` | Auto-confirm cost estimation prompt (for Docker/CI) | off |
+
+## Provider meta-flags
+
+The `--provider` flag is a convenience shorthand that sets multiple providers at once:
+
+- **`--provider google`** sets LLM to Gemini, images to Imagen, TTS to Gemini TTS, video to Veo, and music to Lyria. Only needs `GOOGLE_API_KEY`.
+- **`--provider local`** sets TTS to Kokoro (free, local inference, no API key). LLM defaults to Anthropic.
+
+Explicit per-provider flags always take precedence. For example, `--provider google --tts-provider elevenlabs` uses Google for everything except TTS.
+
+## Examples
+
+### All-Google pipeline
+
+One API key, full pipeline with AI-generated music and video:
+
+```bash
+pnpm start "the apollo 13 disaster" --provider google
+```
+
+### Free local TTS
+
+Use Kokoro for voiceover with no API cost. Still needs an LLM key and image key:
+
+```bash
+pnpm start "5 stoic lessons that changed my life" --provider local
+```
+
+### Dry run
+
+Preview the DirectorScore (script, scenes, visual direction) without generating any assets or spending money:
+
+```bash
+pnpm start "how coffee changed history" --dry-run
+```
+
+### Specific archetype and provider
+
+Force the anime illustration style with OpenAI as the LLM:
+
+```bash
+pnpm start "top 5 anime betrayals" --archetype anime_illustration --provider openai
+```
+
+### AI music with Lyria
+
+Generate a custom background score instead of using the bundled library:
+
+```bash
+pnpm start "the science of black holes" --music-provider lyria
+```
+
+### Non-interactive mode (Docker/CI)
+
+Skip the cost confirmation prompt:
+
+```bash
+docker run --env-file .env --shm-size=2gb -v ./output:/output \
+  ghcr.io/tsensei/openreels "your topic" --yes
+```
+
+### Custom output directory
+
+```bash
+pnpm start "your topic" -o ./my-videos
+```
+
+### Disable AI video clips
+
+Generate only AI images and stock footage, no AI video:
+
+```bash
+pnpm start "your topic" --no-video
+```
+
+## Cost estimation
+
+Before spending any money, the CLI shows a detailed cost breakdown and asks for confirmation:
+
+```
+Estimated cost: $0.686
+  LLM:    $0.0029 (7 calls)
+  TTS:    $0.0171 (853 chars)
+  Images: $0.3030 (3 AI images @ $0.101/ea)
+  Video:  $0.3000 (1 AI videos)
+  Music:  $0.0802 (Lyria AI generation)
+  Stock:  free
+```
+
+After rendering, actual cost is computed from real token usage. Use `--dry-run` to preview the plan without any spend.

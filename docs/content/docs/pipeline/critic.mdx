@@ -1,0 +1,101 @@
+---
+title: Critic Agent
+description: How the critic evaluates DirectorScore quality using a weighted rubric and flags revision when scores are low.
+---
+
+The Critic is the final stage of the pipeline. It evaluates the DirectorScore against a structured rubric and produces a quality score. If the score falls below the pass threshold, it identifies the weakest scene and provides specific revision instructions.
+
+## What it evaluates
+
+The Critic receives the full DirectorScore JSON, the original topic, and the pacing tier. It evaluates the production plan (not the rendered video) to catch structural issues before they become visual problems.
+
+## Quality rubric
+
+The rubric scores 7 dimensions, each weighted to compute an overall score:
+
+| Dimension | Weight | What it measures |
+|-----------|--------|-----------------|
+| Hook Strength | 20% | Does the first scene grab attention within 3 seconds? |
+| Narrative Arc | 20% | Do scenes follow a coherent storytelling structure? |
+| Pacing | 15% | Are word counts within the tier's budget? Scene count in range? |
+| Visual Variety | 15% | Is there a healthy mix of visual types? Golden rule respected? |
+| Visual-Narration Sync | 10% | Do visual prompts match and enrich the narration? |
+| Style Adherence | 10% | Are scenes consistent with the archetype's visual identity? |
+| CTA Effectiveness | 10% | Does the final scene have a compelling call-to-action? |
+
+**Scoring formula:** `round(Hook*0.20 + Arc*0.20 + Pacing*0.15 + Variety*0.15 + Sync*0.10 + Style*0.10 + CTA*0.10)`
+
+### Score calibration
+
+| Range | Meaning |
+|-------|---------|
+| 9-10 | Exceptional -- would perform well on YouTube/TikTok |
+| 7-8 | Good -- minor improvements possible but shippable |
+| 5-6 | Mediocre -- specific issues need fixing |
+| 1-4 | Poor -- major structural problems |
+
+The pass threshold is **7**.
+
+## Pacing validation
+
+Before scoring, the Critic performs concrete checks against the tier-specific thresholds (not a fixed standard):
+
+1. **Total word count** -- counts all words across `script_line` values, compares against the tier's total word budget, estimates duration at 150 WPM
+2. **Scene count** -- compares against the tier's scene count range
+3. **Per-scene length** -- flags any `script_line` exceeding the tier's words-per-scene range, or a hook scene with more than 15 words
+4. **One idea per scene** -- flags scenes covering multiple distinct facts or events
+5. **Scene balance** -- flags any single scene holding more than 30% of total words
+
+If any check fails, the Pacing score is capped at 5, `revision_needed` is set to true, and `revision_instructions` names the specific violation with a concrete fix.
+
+### Pacing tier thresholds
+
+The thresholds come from the pacing config injected into the user message:
+
+| Tier | Scenes | Words/Scene | Total Words |
+|------|--------|-------------|-------------|
+| fast | 8-12 | 8-12 | 90-120 |
+| moderate | 7-10 | 10-16 | 100-140 |
+| cinematic | 5-8 | 15-22 | 90-130 |
+
+The Critic resolves the pacing tier through the same cascade as the Creative Director: explicit `--pacing` override, then archetype config lookup, defaulting to `"moderate"`.
+
+## Output schema
+
+```ts
+interface CritiqueResult {
+  score: number;                        // overall 1-10
+  strengths: string[];                  // 2-3 things that work well
+  weaknesses: string[];                 // 2-3 things that don't
+  revision_needed: boolean;             // true if score < 7
+  revision_instructions: string | null; // specific fix instructions
+  weakest_scene_index: number | null;   // 0-based index, or null
+}
+```
+
+## When re-runs happen
+
+If `revision_needed` is true and the score is below 7, the Critic logs the weaknesses and notes that revision support is coming in a future release. Currently, the pipeline uses the existing DirectorScore as-is -- the Critic serves as a quality signal rather than triggering automatic re-generation.
+
+The critique results are emitted through the progress callback so the web UI can display the score, strengths, and weaknesses to the user.
+
+## Playbook integration
+
+The Critic's system prompt is augmented with two sections extracted from the playbook (`prompts/playbook.md`):
+
+- **Pacing Rules** -- hard constraints like the 3-second hook rule, retention checkpoints, one idea per scene, and scene duration ranges
+- **Critic Rubric** -- the full weighted scoring rubric with per-dimension score bands
+
+This ensures the Critic evaluates against the same standards the Creative Director was instructed to follow.
+
+## Graceful degradation
+
+If the Critic evaluation fails (LLM error, parsing failure), the stage is skipped rather than crashing the pipeline. The rendered video is still usable -- it just lacks a quality score. The failure is logged in `log.json`.
+
+## Source files
+
+| File | Role |
+|------|------|
+| `src/agents/critic.ts` | Agent implementation with pacing tier resolution |
+| `prompts/critic.md` | System prompt with evaluation instructions |
+| `prompts/playbook.md` | Pacing Rules and Critic Rubric sections |

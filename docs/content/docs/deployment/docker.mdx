@@ -1,0 +1,246 @@
+---
+title: Docker & Docker Compose
+description: Deploy OpenReels with Docker Compose — Redis, API server, and worker in one command.
+---
+
+Docker Compose is the recommended way to run OpenReels. It starts three services: Redis (job queue), the API server (web UI + REST API), and the worker (pipeline execution).
+
+## Quick Start
+
+```bash
+git clone https://github.com/tsensei/OpenReels.git
+cd OpenReels
+cp .env.example .env
+# Edit .env with your API keys
+docker compose up
+```
+
+Open `http://localhost:3000` for the web UI.
+
+---
+
+## Architecture
+
+```
+                 ┌─────────────┐
+  Browser ────►  │  API Server  │  ◄── port 3000
+                 │  (Fastify)   │
+                 └──────┬───────┘
+                        │ BullMQ
+                 ┌──────▼───────┐
+                 │    Redis     │
+                 └──────┬───────┘
+                        │ BullMQ
+                 ┌──────▼───────┐
+                 │    Worker    │  ◄── pipeline execution
+                 │  (Remotion)  │
+                 └──────────────┘
+```
+
+The API server enqueues jobs into Redis via BullMQ. The worker picks them up, runs the 6-stage pipeline, and writes artifacts to the shared `jobs-data` volume.
+
+---
+
+## Services
+
+### `docker-compose.yml`
+
+```yaml
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  api:
+    build: .
+    entrypoint: ["npx", "tsx", "src/server.ts"]
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+    env_file: .env
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - JOBS_DIR=/app/jobs
+    volumes:
+      - jobs-data:/app/jobs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    build: .
+    entrypoint: ["npx", "tsx", "src/worker.ts"]
+    depends_on:
+      - redis
+    env_file: .env
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - JOBS_DIR=/app/jobs
+    shm_size: "2gb"
+    volumes:
+      - jobs-data:/app/jobs
+      - ./output:/output
+      - openreels-cache:/root/.openreels/cache
+    restart: unless-stopped
+
+volumes:
+  jobs-data:
+  openreels-cache:
+```
+
+### Redis
+
+Standard Redis 7 Alpine image. No persistence configuration needed since job state is stored in `meta.json` files on disk. If Redis restarts, queued/active jobs may be lost, but the SSE endpoint gracefully falls back to reading `meta.json` for completed jobs.
+
+### API Server
+
+Runs `src/server.ts` via `tsx`. Serves the Fastify REST API and the pre-built React SPA on port 3000. The health check endpoint at `/api/v1/health` reports Redis connectivity and configured API keys.
+
+### Worker
+
+Runs `src/worker.ts` via `tsx`. Processes one job at a time (concurrency: 1) with a 10-minute lock timeout to accommodate slow Remotion renders.
+
+**The worker requires `shm_size: "2gb"`** because Remotion uses a headless Chrome instance for rendering, and Chrome requires a larger shared memory allocation than Docker's default 64MB.
+
+---
+
+## Volumes
+
+| Volume | Mount | Purpose |
+|--------|-------|---------|
+| `jobs-data` | `/app/jobs` | Shared between API and worker. Stores job metadata and rendered artifacts. |
+| `openreels-cache` | `/root/.openreels/cache` | Caches bundled music and other reusable assets across job runs. |
+| `./output` | `/output` | Bind mount for CLI-mode output (optional for Compose deployments). |
+
+---
+
+## Environment Variables
+
+Create a `.env` file in the project root. Both the API server and worker read from it via `env_file: .env`.
+
+### Required (at least one LLM + one TTS)
+
+| Variable | Provider |
+|----------|----------|
+| `ANTHROPIC_API_KEY` | Anthropic (Claude) |
+| `OPENAI_API_KEY` | OpenAI (GPT, DALL-E, TTS) |
+| `GOOGLE_API_KEY` | Google (Gemini, Veo, Lyria) |
+| `ELEVENLABS_API_KEY` | ElevenLabs TTS |
+
+### Optional
+
+| Variable | Provider |
+|----------|----------|
+| `INWORLD_TTS_API_KEY` | Inworld TTS |
+| `PEXELS_API_KEY` | Pexels stock media |
+| `PIXABAY_API_KEY` | Pixabay stock media |
+| `FAL_API_KEY` | fal.ai video generation |
+
+### Server Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `3000` | API server port |
+| `HOST` | `0.0.0.0` | API server bind address |
+| `REDIS_URL` | `redis://localhost:6379` | Redis connection string |
+| `JOBS_DIR` | `./jobs` | Job artifact directory |
+| `MAX_JOBS` | `0` (disabled) | Auto-prune old completed jobs when count exceeds this |
+
+---
+
+## Dockerfile
+
+The Dockerfile is based on `node:22-bookworm-slim` and includes:
+
+- **ffmpeg** (includes ffprobe) for audio/video processing
+- **Chrome Headless Shell** dependencies for Remotion rendering
+- **pnpm** via Corepack for package management
+- Pre-built web frontend via `vite build`
+
+```dockerfile
+FROM node:22-bookworm-slim
+
+# System dependencies for ffmpeg and Chrome Headless Shell
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg libnss3 libdbus-1-3 libatk1.0-0 libgbm-dev \
+    libasound2 libxrandr2 libxkbcommon-dev libxfixes3 \
+    libxcomposite1 libxdamage1 libatk-bridge2.0-0 libcups2 \
+  && rm -rf /var/lib/apt/lists/*
+
+# Enable pnpm, install deps, install Chrome for Remotion
+RUN corepack enable pnpm
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile --filter=!docs
+RUN npx remotion browser ensure
+
+# Copy source and build frontend
+COPY . .
+RUN cd web && npx vite build
+
+# Default: CLI mode
+ENTRYPOINT ["npx", "tsx", "src/index.ts", "--yes", "-o", "/output"]
+```
+
+The default entrypoint runs CLI mode. Docker Compose overrides this with `entrypoint` for the API and worker services.
+
+---
+
+## CLI Mode via Docker
+
+Run a single video generation without the web UI:
+
+```bash
+docker build -t openreels .
+docker run --env-file .env --shm-size=2gb -v ./output:/output openreels "Your topic here"
+```
+
+Or using Docker Compose to reuse the same image and Redis:
+
+```bash
+docker compose run worker npx tsx src/index.ts --yes "Your topic here"
+```
+
+---
+
+## Scaling
+
+The worker runs with concurrency 1 by default. To run multiple workers:
+
+```yaml
+# docker-compose.override.yml
+services:
+  worker:
+    deploy:
+      replicas: 2
+```
+
+Each worker processes one job at a time. BullMQ handles job distribution across workers automatically.
+
+---
+
+## Troubleshooting
+
+### Chrome crashes in worker
+
+Increase `shm_size`. The default 64MB is insufficient for Remotion's headless Chrome. Set at least `2gb`:
+
+```yaml
+worker:
+  shm_size: "2gb"
+```
+
+### Jobs stuck in "queued" state
+
+Check that the worker container is running and can connect to Redis:
+
+```bash
+docker compose logs worker
+```
+
+### Artifacts not visible in API
+
+Ensure both the API and worker share the same `jobs-data` volume and `JOBS_DIR` environment variable.

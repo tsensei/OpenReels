@@ -1,0 +1,73 @@
+---
+title: Research Agent
+description: How the research stage uses web search to ground video scripts in verifiable facts.
+---
+
+The Research agent is the first stage of the pipeline. It takes a topic string and produces a structured research summary that the Creative Director uses to write an accurate, compelling script.
+
+## What it does
+
+The agent calls the LLM with `enableWebSearch: true`, which activates the model's built-in web search tool (grounding). This lets the LLM pull current information from the web rather than relying solely on its training data.
+
+```ts
+const result = await llm.generate({
+  systemPrompt,
+  userMessage: `Research this topic for a short-form video script: ${topic}`,
+  schema: ResearchResult,
+  enableWebSearch: true,
+});
+```
+
+The web search grounding is critical for topics involving current events, recent statistics, or rapidly changing information where the LLM's training data may be stale.
+
+## Output schema
+
+The agent returns a structured `ResearchResult`:
+
+```ts
+interface ResearchResult {
+  summary: string;      // 2-3 paragraph synthesis of findings
+  key_facts: string[];  // 5-8 specific, verifiable facts
+  mood: string;         // dominant emotional tone (e.g. "awe-inspiring", "shocking")
+  sources: string[];    // URLs of sources found
+}
+```
+
+### How each field is used downstream
+
+- **summary** -- fed to the Creative Director as context for script writing
+- **key_facts** -- the Director incorporates these directly into scene `script_line` values
+- **mood** -- influences the Director's archetype selection and `music_mood` choice
+- **sources** -- recorded for attribution but not used in rendering
+
+## System prompt
+
+The research system prompt (`prompts/researcher.md`) instructs the agent to:
+
+1. Prioritize **recency** -- latest information for current events
+2. Prioritize **specificity** -- "the market grew 23% in Q3" over "the market is growing"
+3. Prioritize **surprise** -- facts that would make someone stop scrolling
+4. Focus on **vivid, lesser-known details** for timeless topics (history, science)
+5. Note when web search returns nothing useful and knowledge is used instead
+
+## Graceful degradation
+
+If web search fails entirely (network error, provider unavailable), the Research stage does not crash the pipeline. Instead it returns a minimal fallback:
+
+```ts
+{
+  summary: `Topic: ${topic}`,
+  key_facts: [],
+  mood: "informative",
+  sources: [],
+}
+```
+
+The Creative Director will still produce a DirectorScore using the topic string and the LLM's own knowledge, but without web-grounded facts. The stage is marked as "skipped" in the run log rather than "failed."
+
+## Source files
+
+| File | Role |
+|------|------|
+| `src/agents/research.ts` | Agent implementation |
+| `prompts/researcher.md` | System prompt |

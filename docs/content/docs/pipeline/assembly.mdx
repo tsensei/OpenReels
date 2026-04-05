@@ -1,0 +1,141 @@
+---
+title: Assembly (Remotion Rendering)
+description: How the score-to-props mapper and Remotion beat components turn a DirectorScore into a rendered MP4.
+---
+
+The Assembly stage takes the DirectorScore, visual assets, voiceover audio, word timestamps, and music track, and renders them into a final MP4 video using [Remotion](https://www.remotion.dev/).
+
+## Score-to-props mapping
+
+The `mapScoreToProps` function transforms the DirectorScore and resolved assets into Remotion `CompositionProps`. This is the bridge between the pipeline's domain model and Remotion's rendering model.
+
+For each scene, the mapper produces a `SceneProps` object:
+
+```ts
+interface SceneProps {
+  visualType: string;           // resolved type (may differ from score if fallback occurred)
+  assetSrc: string | null;      // relative path to asset file
+  motion: string;               // Ken Burns motion direction
+  visualPrompt: string;         // original prompt (for debugging)
+  scriptLine: string;           // voiceover text
+  durationInFrames: number;     // computed from word timings
+  words: WordTimestamp[];        // per-scene word timings
+  colorPalette: { background: string; accent: string; text: string };
+  textCardFont: string;
+  motionIntensity: number;
+  startFrom: number;
+  sourceDurationInSeconds?: number;  // for video looping decisions
+  transition: TransitionType;   // resolved from cascade
+  transitionDurationFrames: number;
+}
+```
+
+### Fallback detection
+
+The mapper detects when a stock or video scene fell back to AI image generation by checking if the asset filename ends with `-ai.png`. When this happens:
+
+- `visualType` is changed to `"ai_image"` so the correct beat component renders
+- If the original motion was `"static"` (as required for `ai_video`), it is forced to `"zoom_in"` to prevent a completely static frame
+
+### Transition cascade
+
+Scene transitions are resolved through a three-level cascade:
+
+1. **Scene-level value** from the DirectorScore (if the Creative Director set one)
+2. **Archetype default** from `defaultTransition` in the archetype config
+3. **Hard cut** (`"none"`) as the final fallback
+
+### Duration calculation
+
+Scene duration in frames is computed from the voiceover word timings:
+
+```
+durationSeconds = max(voiceoverDuration + 0.5, 2)
+durationInFrames = round(durationSeconds * fps)
+```
+
+The total composition duration accounts for transition overlaps (frames saved when two scenes blend). If the overlap-adjusted total is shorter than the voiceover audio, the last scene is extended to prevent black frames at the end. For `ai_video` scenes, this extension is capped at the source video duration to prevent visible looping seams.
+
+## Remotion composition
+
+The main composition is `OpenReelsVideo` in `src/remotion/compositions/OpenReelsVideo.tsx`. It renders four layers stacked in an `AbsoluteFill`:
+
+### 1. Scene beats with transitions
+
+Scenes are rendered inside a Remotion `TransitionSeries` that handles timing and overlaps between scenes. Each scene dispatches to a beat component based on `visualType`:
+
+| Visual type | Beat component | Behavior |
+|------------|----------------|----------|
+| `ai_image` | `AIImageBeat` | Displays image with Ken Burns motion (zoom/pan) |
+| `ai_video` | `StockVideoBeat` | Plays video, no looping for AI clips |
+| `stock_image` | `StockImageBeat` | Displays image with Ken Burns motion |
+| `stock_video` | `StockVideoBeat` | Plays video, loops if shorter than scene |
+| `text_card` | `TextCardBeat` | Renders narration text with spring animation |
+
+Transitions between scenes use Remotion's `@remotion/transitions` library:
+
+| Transition | Remotion function |
+|-----------|-------------------|
+| `crossfade` | `fade()` |
+| `slide_left` | `slide({ direction: "from-right" })` |
+| `slide_right` | `slide({ direction: "from-left" })` |
+| `wipe` | `wipe({ direction: "from-left" })` |
+| `flip` | `flip()` |
+| `none` | No transition element |
+
+### 2. Captions
+
+A single caption component renders at the top level of the composition (not inside per-scene sequences). It uses `allWords` -- the absolute word timestamps from the full TTS voiceover -- and `useCurrentFrame()` to determine which words to display at any given frame.
+
+This timeline-centric approach keeps captions perfectly in sync with the voiceover regardless of scene transitions. The caption style is determined by the archetype's `captionStyle` field. See [Caption Styles](/docs/configuration/captions) for the 6 available styles.
+
+### 3. Voiceover
+
+A single continuous `Audio` component plays the voiceover MP3 from the beginning of the composition.
+
+### 4. Background music
+
+The `MusicTrack` component plays the background music at a fixed volume of 0.15 (15%) with looping enabled. This keeps the music well below the voiceover level.
+
+## Beat components
+
+### AIImageBeat / StockImageBeat
+
+Both image beat components apply Ken Burns motion using Remotion's `interpolate`. The motion direction (zoom_in, zoom_out, pan_left, pan_right, static) and `motionIntensity` from the archetype config control the animation:
+
+- **zoom_in**: Scale from 1.0 to 1.0 + (0.15 * intensity)
+- **zoom_out**: Scale from 1.0 + (0.15 * intensity) to 1.0
+- **pan_left/right**: Fixed 1.15x scale with horizontal translation of 50 * intensity pixels
+
+### StockVideoBeat
+
+Plays video using Remotion's `OffthreadVideo`. If the source video is shorter than the scene duration, it loops -- except for `ai_video` scenes where looping creates visible seams. Videos are always muted since the voiceover track handles audio.
+
+### TextCardBeat
+
+Renders the `scriptLine` as centered text over a gradient background derived from the archetype's `colorPalette`. Uses a spring animation for scale-in. An accent bar appears below the text (above the caption safe zone at bottom 18%).
+
+## Rendering pipeline
+
+The assembly step follows this sequence:
+
+1. **Symlink assets** -- creates a temporary public directory with symlinks to the assets folder, voiceover, and music for Remotion's `staticFile()` to serve
+2. **Bundle** -- runs Remotion's webpack bundler on `src/remotion/index.ts`
+3. **Select composition** -- resolves the `OpenReelsVideo` composition with the mapped props
+4. **Render** -- calls `renderMedia` with the platform's dimensions, FPS, and H.264 codec
+
+The platform config (from `--platform`) controls output dimensions and frame rate. See [Platforms](/docs/configuration/platforms).
+
+## Source files
+
+| File | Role |
+|------|------|
+| `src/remotion/lib/score-to-props.ts` | Score-to-props mapper and duration calculator |
+| `src/remotion/compositions/OpenReelsVideo.tsx` | Main Remotion composition |
+| `src/remotion/beats/AIImageBeat.tsx` | AI image beat with Ken Burns motion |
+| `src/remotion/beats/StockImageBeat.tsx` | Stock image beat with Ken Burns motion |
+| `src/remotion/beats/StockVideoBeat.tsx` | Video beat with looping logic |
+| `src/remotion/beats/TextCardBeat.tsx` | Text card beat with spring animation |
+| `src/remotion/audio/MusicTrack.tsx` | Background music at 15% volume |
+| `src/remotion/audio/VoiceoverTrack.tsx` | Voiceover audio |
+| `src/remotion/lib/fonts.ts` | Font loading for captions and text cards |

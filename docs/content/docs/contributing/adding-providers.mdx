@@ -1,0 +1,354 @@
+---
+title: Adding Providers
+description: How to add a new LLM, TTS, image, stock, video, or music provider to OpenReels.
+---
+
+OpenReels uses a provider abstraction layer so new AI services can be added without modifying the pipeline. Each provider category has a defined interface, and the factory wires implementations together based on configuration.
+
+This guide walks through adding a new provider for each category.
+
+## Overview
+
+The provider system has three layers:
+
+1. **Interface** — defined in `src/schema/providers.ts`
+2. **Implementation** — concrete class in the appropriate `src/providers/<category>/` directory
+3. **Registration** — wired into `src/providers/factory.ts`
+
+---
+
+## Adding an LLM Provider
+
+LLM providers power the research, director, image-prompter, and critic agents.
+
+### 1. Add the provider key
+
+In `src/schema/providers.ts`, add your key to the union type:
+
+```typescript
+export type LLMProviderKey = "anthropic" | "openai" | "gemini" | "your-provider";
+```
+
+### 2. Create the implementation
+
+Create `src/providers/llm/your-provider.ts`. Extend the `BaseLLM` abstract class:
+
+```typescript
+import { type LanguageModel } from "ai";
+import { createYourSDK } from "@ai-sdk/your-provider";
+import { BaseLLM } from "./base.js";
+import type { LLMProviderKey } from "../../schema/providers.js";
+
+export class YourLLM extends BaseLLM {
+  readonly id: LLMProviderKey = "your-provider";
+  private model: string;
+  private apiKey?: string;
+
+  constructor(model?: string, apiKey?: string) {
+    super();
+    this.model = model ?? "default-model-name";
+    this.apiKey = apiKey;
+  }
+
+  protected createLanguageModel(): LanguageModel {
+    const sdk = this.apiKey
+      ? createYourSDK({ apiKey: this.apiKey })
+      : createYourSDK();
+    return sdk(this.model);
+  }
+
+  protected createSearchTools(): Record<string, unknown> {
+    // Return provider-specific web search tools, or empty object
+    return {};
+  }
+}
+```
+
+`BaseLLM` handles the two generation paths (direct structured output and two-pass web search) automatically. You only need to provide the AI SDK `LanguageModel` and optional search tools.
+
+### 3. Register in the factory
+
+In `src/providers/factory.ts`, import your class and add it to the LLM switch:
+
+```typescript
+import { YourLLM } from "./llm/your-provider.js";
+
+// In createProviders():
+const llm: LLMProvider =
+  config.llm === "your-provider"
+    ? new YourLLM(undefined, k["YOUR_API_KEY"])
+    : config.llm === "openai"
+      ? new OpenAILLM(undefined, k["OPENAI_API_KEY"])
+      // ... existing providers
+```
+
+### 4. Add to the server provider list
+
+In `src/server.ts`, add the new option to the `GET /api/v1/providers` response:
+
+```typescript
+llm: [
+  // ... existing providers
+  { key: "your-provider", label: "Your Provider" },
+],
+```
+
+---
+
+## Adding a TTS Provider
+
+TTS providers generate voiceover audio with word-level timestamps for caption synchronization.
+
+### 1. Add the provider key
+
+```typescript
+export type TTSProviderKey = "elevenlabs" | "inworld" | "kokoro" | "gemini-tts" | "openai-tts" | "your-tts";
+```
+
+### 2. Implement the interface
+
+Create `src/providers/tts/your-tts.ts`:
+
+```typescript
+import type { TTSProvider, TTSResult, WordTimestamp } from "../../schema/providers.js";
+
+export class YourTTS implements TTSProvider {
+  constructor(private apiKey?: string) {}
+
+  async generate(text: string): Promise<TTSResult> {
+    // Call your TTS API
+    const response = await callYourAPI(text, this.apiKey);
+
+    return {
+      audio: Buffer.from(response.audioData),
+      words: response.timestamps.map((t) => ({
+        word: t.word,
+        start: t.startMs / 1000,  // seconds
+        end: t.endMs / 1000,
+      })),
+    };
+  }
+}
+```
+
+**Important**: The `words` array must contain word-level timestamps in seconds. If your TTS API does not provide word timestamps natively, wrap your provider in `AlignedTTSProvider`:
+
+```typescript
+// In factory.ts
+case "your-tts":
+  tts = new AlignedTTSProvider(new YourTTS(k["YOUR_TTS_KEY"]), aligner);
+  break;
+```
+
+`AlignedTTSProvider` uses the `WhisperAligner` to derive word timestamps from the audio after generation. ElevenLabs and Inworld provide native timestamps and do not need this wrapper.
+
+### 3. Register in the factory
+
+Add the case to the TTS switch in `createProviders()`.
+
+---
+
+## Adding an Image Provider
+
+Image providers generate visuals from text prompts.
+
+### 1. Add the provider key
+
+```typescript
+export type ImageProviderKey = "gemini" | "openai" | "your-image";
+```
+
+### 2. Implement the interface
+
+Create `src/providers/image/your-image.ts`:
+
+```typescript
+import type { ImageProvider } from "../../schema/providers.js";
+
+export class YourImage implements ImageProvider {
+  constructor(private model?: string, private apiKey?: string) {}
+
+  async generate(prompt: string, style?: string): Promise<Buffer> {
+    // Call your image generation API
+    // Return the image as a Buffer (PNG or JPEG)
+    const response = await callYourAPI(prompt, style);
+    return Buffer.from(response.imageData);
+  }
+}
+```
+
+### 3. Register in the factory
+
+```typescript
+const imageGen: ImageProvider =
+  config.image === "your-image"
+    ? new YourImage(undefined, k["YOUR_IMAGE_KEY"])
+    : config.image === "openai"
+      ? new OpenAIImage(undefined, k["OPENAI_API_KEY"])
+      : new GeminiImage(undefined, k["GOOGLE_API_KEY"]);
+```
+
+---
+
+## Adding a Stock Provider
+
+Stock providers search for and download stock images and videos.
+
+### 1. Add the provider key
+
+```typescript
+export type StockProviderKey = "pexels" | "pixabay" | "your-stock";
+```
+
+### 2. Implement the interface
+
+Create `src/providers/stock/your-stock.ts`:
+
+```typescript
+import type { StockCandidate, StockAsset, StockProvider } from "../../schema/providers.js";
+
+export class YourStock implements StockProvider {
+  constructor(private apiKey: string) {}
+
+  async searchVideo(query: string): Promise<StockCandidate[]> {
+    // Return candidates with url, width, height, duration, id
+    return [];
+  }
+
+  async searchImage(query: string): Promise<StockCandidate[]> {
+    return [];
+  }
+
+  async download(candidate: StockCandidate): Promise<StockAsset> {
+    // Download the file and return the local path
+    return { filePath: "/path/to/downloaded.mp4", width: 1920, height: 1080 };
+  }
+}
+```
+
+### 3. Register in the factory
+
+Stock providers are special: the factory builds an array with primary + fallback. Add your provider to the construction logic in `createProviders()`.
+
+---
+
+## Adding a Video Provider
+
+Video providers generate short video clips from a source image and prompt.
+
+### 1. Add the provider key
+
+```typescript
+export type VideoProviderKey = "gemini" | "fal" | "your-video";
+```
+
+### 2. Implement the interface
+
+```typescript
+import type { VideoProvider, VideoResult } from "../../schema/providers.js";
+
+export class YourVideo implements VideoProvider {
+  readonly supportedDurations = [5, 10];  // seconds
+
+  constructor(private model?: string, private apiKey?: string) {}
+
+  async generate(opts: {
+    sourceImage: Buffer;
+    prompt: string;
+    durationSeconds?: number;
+    aspectRatio?: string;
+  }): Promise<VideoResult> {
+    // Generate video, write to temp file
+    return {
+      filePath: "/path/to/generated.mp4",
+      durationSeconds: opts.durationSeconds ?? 5,
+    };
+  }
+}
+```
+
+### 3. Register in the factory
+
+Video providers also form a fallback array. Add your provider to the video provider construction logic.
+
+---
+
+## Adding a Music Provider
+
+Music providers generate or select background music tracks.
+
+### 1. Add the provider key
+
+```typescript
+export type MusicProviderKey = "bundled" | "lyria" | "your-music";
+```
+
+### 2. Implement the interface
+
+```typescript
+import type { MusicProvider, MusicResult } from "../../schema/providers.js";
+import type { MusicMood } from "../../schema/director-score.js";
+
+export class YourMusic implements MusicProvider {
+  constructor(private apiKey?: string) {}
+
+  async generate(prompt: string, mood: MusicMood): Promise<MusicResult> {
+    // Generate or fetch music
+    return {
+      filePath: "/path/to/track.mp3",
+      durationSeconds: 45,
+      metadata: { source: "your-music" },
+    };
+  }
+}
+```
+
+### 3. Register in the factory
+
+```typescript
+const music: MusicProvider =
+  config.music === "your-music"
+    ? new YourMusic(k["YOUR_MUSIC_KEY"])
+    : config.music === "lyria"
+      ? new LyriaMusic(googleKey)
+      : new BundledMusic();
+```
+
+---
+
+## Testing Your Provider
+
+Create a test file next to your implementation:
+
+```
+src/providers/llm/your-provider.ts
+src/providers/llm/your-provider.test.ts
+```
+
+Mock external API calls and test:
+
+- Constructor accepts optional API key
+- Correct model is used
+- Errors are handled gracefully
+- Output matches the expected interface
+
+Also update `src/providers/factory.test.ts` to cover the new provider path.
+
+```bash
+npx vitest run src/providers/llm/your-provider.test.ts
+npx vitest run src/providers/factory.test.ts
+```
+
+---
+
+## Checklist
+
+When adding a new provider, ensure you have:
+
+- [ ] Added the key to the type union in `src/schema/providers.ts`
+- [ ] Created the implementation in `src/providers/<category>/`
+- [ ] Registered it in `src/providers/factory.ts`
+- [ ] Added it to the `GET /api/v1/providers` response in `src/server.ts`
+- [ ] Written tests for the implementation
+- [ ] Updated factory tests to cover the new branch
+- [ ] Documented required environment variables

@@ -1,0 +1,43 @@
+---
+title: Archetype Gallery
+description: Explore 14 visual styles that control every aspect of your video's look and feel.
+---
+
+OpenReels includes 14 visual archetypes. Each archetype controls colors, caption style, motion intensity, AI image prompting, lighting, and composition rules.
+
+## All Archetypes
+
+| Archetype | Best For | Pacing |
+|-----------|----------|--------|
+| [Editorial Caricature](/docs/archetypes/editorial-caricature) | News commentary, satire, social issues | Standard |
+| [Warm Narrative](/docs/archetypes/warm-narrative) | Storytelling, history, human interest | Cinematic |
+| [Studio Realism](/docs/archetypes/studio-realism) | Professional photography, editorial, luxury | Cinematic |
+| [Infographic](/docs/archetypes/infographic) | Data, facts, explainers, rapid-fire content | Fast |
+| [Anime Illustration](/docs/archetypes/anime-illustration) | Dynamic, action-oriented, pop culture | Standard |
+| [Pastoral Watercolor](/docs/archetypes/pastoral-watercolor) | Nature, contemplative, hand-painted aesthetic | Cinematic |
+| [Comic Book](/docs/archetypes/comic-book) | Action, adventure, energetic content | Fast |
+| [Gothic Fantasy](/docs/archetypes/gothic-fantasy) | Dark themes, mythology, epic content | Cinematic |
+| [Vintage Snapshot](/docs/archetypes/vintage-snapshot) | Nostalgic, intimate, personal stories | Cinematic |
+| [Surreal Dreamscape](/docs/archetypes/surreal-dreamscape) | Sci-fi, fantasy, mind-bending topics | Cinematic |
+| [Warm Editorial](/docs/archetypes/warm-editorial) | Lifestyle, people stories, general purpose | Standard |
+| [Cinematic Documentary](/docs/archetypes/cinematic-documentary) | Factual, historical, science | Cinematic |
+| [Moody Cinematic](/docs/archetypes/moody-cinematic) | Mystery, tension, crime, dark history | Cinematic |
+| [Bold Illustration](/docs/archetypes/bold-illustration) | Educational, how-to, listicles | Standard |
+
+## Using Archetypes
+
+Let the AI choose the best archetype for your topic (default):
+
+```bash
+pnpm start "the fall of the Roman Empire"
+```
+
+Or specify one explicitly:
+
+```bash
+pnpm start "5 stoic lessons" --archetype warm_narrative
+```
+
+## Configuration
+
+Each archetype is defined as a JSON file in `src/config/archetypes/`. See [Archetype Configuration](/docs/configuration/archetypes) for the full schema.

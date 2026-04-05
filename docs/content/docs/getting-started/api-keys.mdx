@@ -1,0 +1,79 @@
+---
+title: API Keys
+description: Which API keys you need, where to get them, and how to configure your .env file.
+---
+
+## Minimum keys to run
+
+You need at least **one LLM provider** and **one TTS provider** to generate a video.
+
+| What you need | Provider | Key | Where to get it |
+|---|---|---|---|
+| LLM (pick one) | Anthropic (default) | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com/) |
+| | OpenAI | `OPENAI_API_KEY` | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
+| | Google Gemini | `GOOGLE_API_KEY` | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| TTS (pick one) | ElevenLabs (default) | `ELEVENLABS_API_KEY` | [elevenlabs.io](https://elevenlabs.io/) |
+| | Inworld | `INWORLD_TTS_API_KEY` | [inworld.ai](https://inworld.ai/) |
+| | Kokoro (free, local) | No key needed | Use `--tts-provider kokoro` or `--provider local` |
+| | OpenAI TTS | `OPENAI_API_KEY` | Same key as OpenAI LLM |
+| | Gemini TTS | `GOOGLE_API_KEY` | Same key as Gemini LLM |
+
+## Google API key
+
+The `GOOGLE_API_KEY` is the most versatile single key. It unlocks:
+
+- **Gemini** LLM
+- **Imagen** image generation
+- **Veo** AI video generation
+- **Lyria 3 Pro** AI music generation
+- **Gemini TTS** voiceover
+
+Using `--provider google` sets all of these at once. One key, full pipeline.
+
+## Optional keys
+
+| Provider | Key | Purpose | Where to get it |
+|---|---|---|---|
+| Pexels | `PEXELS_API_KEY` | Stock footage search | [pexels.com/api](https://www.pexels.com/api/) |
+| Pixabay | `PIXABAY_API_KEY` | Stock footage search | [pixabay.com/api/docs](https://pixabay.com/api/docs/) |
+| fal.ai | `FAL_API_KEY` | Kling video generation | [fal.ai](https://fal.ai/) |
+
+Stock providers are free to use but require registration. If no stock keys are set, the pipeline uses AI-generated images as the fallback for every scene.
+
+## The .env file
+
+Copy `.env.example` and fill in your keys:
+
+```bash
+cp .env.example .env
+```
+
+```bash title=".env"
+# Required: LLM provider (at least one)
+ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
+GOOGLE_API_KEY=AIza...
+
+# Required: TTS (at least one, or use Kokoro for free)
+ELEVENLABS_API_KEY=...
+INWORLD_TTS_API_KEY=...
+
+# Optional: Stock footage
+PEXELS_API_KEY=...
+PIXABAY_API_KEY=...
+```
+
+Only fill in the keys for providers you plan to use. Unused keys can be left blank or removed.
+
+## Provider shorthand flags
+
+Instead of setting individual provider flags, use the `--provider` meta-flag:
+
+| Flag | Effect |
+|---|---|
+| `--provider google` | Sets LLM to Gemini, images to Imagen, TTS to Gemini TTS, video to Veo, music to Lyria. Only needs `GOOGLE_API_KEY`. |
+| `--provider openai` | Sets LLM to OpenAI GPT. Only needs `OPENAI_API_KEY`. |
+| `--provider anthropic` | Sets LLM to Anthropic Claude (default). Only needs `ANTHROPIC_API_KEY`. |
+| `--provider local` | Sets TTS to Kokoro (free, no API key). LLM still defaults to Anthropic. |
+
+Explicit per-provider flags (like `--tts-provider`, `--image-provider`) always override the meta-flag.

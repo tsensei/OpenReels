@@ -1,0 +1,277 @@
+---
+title: Architecture
+description: Deep dive into the OpenReels codebase — directory structure, key abstractions, and data flow.
+---
+
+OpenReels is a 6-stage AI pipeline that transforms a text topic into a rendered YouTube Short. This page explains the codebase structure, key abstractions, and how data flows through the system.
+
+## High-Level Architecture
+
+```
+Topic (text)
+    │
+    ▼
+┌──────────┐   ┌──────────┐   ┌─────┐   ┌─────────┐   ┌──────────┐   ┌────────┐
+│ Research  │──►│ Director │──►│ TTS │──►│ Visuals  │──►│ Assembly │──►│ Critic │
+└──────────┘   └──────────┘   └─────┘   └─────────┘   └──────────┘   └────────┘
+    │               │             │           │              │             │
+    │          DirectorScore   Audio +     Images,      final.mp4      Score +
+    │                          word       videos,                     review
+    │                         stamps    stock clips
+    ▼
+Research data
+(facts, mood)
+```
+
+The pipeline is orchestrated by Mastra (a workflow framework) in `src/pipeline/orchestrator.ts`. Each stage is a Mastra step that receives the output of previous stages.
+
+---
+
+## Directory Structure
+
+### `src/agents/`
+
+AI agent functions that make LLM calls with structured output. Each agent has a system prompt (in `prompts/`) and returns typed data via Zod schemas.
+
+| File | Agent | Input | Output |
+|------|-------|-------|--------|
+| `research.ts` | Research | topic | summary, key facts, mood |
+| `creative-director.ts` | Creative Director | research data + archetype | DirectorScore |
+| `image-prompter.ts` | Image Prompter | raw visual prompt | optimized prompt for image gen |
+| `music-prompter.ts` | Music Prompter | music mood | prompt string for AI music gen |
+| `critic.ts` | Critic | rendered video + score | score 0-10, strengths, weaknesses |
+
+### `src/pipeline/`
+
+The orchestrator and supporting utilities.
+
+| File | Purpose |
+|------|---------|
+| `orchestrator.ts` | Mastra workflow definition with 6 stages |
+| `utils.ts` | Stage names, callback interfaces, pipeline options/result types |
+| `music-resolver.ts` | Resolves music via bundled library or AI generation (Lyria) |
+| `scene-assets.ts` | Maps DirectorScore scenes to resolved asset file paths |
+
+### `src/providers/`
+
+Provider implementations behind stable interfaces. Each category has a base interface and one or more concrete implementations.
+
+```
+providers/
+  factory.ts          # createProviders() — wires everything together
+  llm/
+    base.ts           # BaseLLM abstract class
+    anthropic.ts      # AnthropicLLM (Claude)
+    openai.ts         # OpenAILLM (GPT)
+    gemini.ts         # GeminiLLM (Gemini)
+  tts/
+    elevenlabs.ts     # ElevenLabsTTS (native word timestamps)
+    inworld.ts        # InworldTTS (native word timestamps)
+    kokoro.ts         # KokoroTTS (local, needs alignment)
+    gemini.ts         # GeminiTTS (needs alignment)
+    openai.ts         # OpenAITTS (needs alignment)
+    aligned-tts-provider.ts  # Decorator that adds Whisper alignment
+    whisper-aligner.ts       # Whisper-based word timestamp alignment
+  image/
+    gemini.ts         # GeminiImage
+    openai.ts         # OpenAIImage
+  stock/
+    pexels.ts         # PexelsStock
+    pixabay.ts        # PixabayStock
+    adaptive-resolver.ts  # Multi-provider fallback with query reformulation
+    query-reformer.ts     # Rewrites prompts for better stock search results
+    stock-verifier.ts     # VLM-based relevance verification
+  video/
+    gemini.ts         # GeminiVideo (Veo)
+    fal.ts            # FalVideo (Kling, Wan)
+    video-resolver.ts # Multi-provider fallback for video generation
+  music/
+    bundled.ts        # Bundled music library manifest + validation
+    bundled-adapter.ts # BundledMusic provider (selects from library)
+    lyria.ts          # LyriaMusic (Google Lyria 3 Pro generation)
+```
+
+### `src/schema/`
+
+Zod schemas that define the data contracts.
+
+| File | Schemas |
+|------|---------|
+| `director-score.ts` | `DirectorScore`, `Scene`, `MusicMood`, `VisualType`, `Motion`, `TransitionType` |
+| `providers.ts` | Provider key types, `LLMProvider`, `TTSProvider`, `ImageProvider`, `StockProvider`, `VideoProvider`, `MusicProvider` interfaces |
+| `archetype.ts` | `ArchetypeConfig` schema |
+
+### `src/config/`
+
+Configuration and registration.
+
+| File | Purpose |
+|------|---------|
+| `archetype-registry.ts` | Loads and registers the 14 archetype JSON configs |
+| `archetypes/*.json` | Individual archetype definitions (colors, pacing, caption style, etc.) |
+| `playbook.ts` | Pipeline behavior configuration |
+| `platforms.ts` | Platform specs (YouTube, TikTok, etc.) with resolution, FPS, duration |
+
+### `src/remotion/`
+
+The Remotion video rendering layer.
+
+| Directory | Purpose |
+|-----------|---------|
+| `compositions/` | `OpenReelsVideo.tsx` — the main Remotion composition |
+| `beats/` | Beat components: `AIImageBeat`, `StockImageBeat`, `StockVideoBeat`, `TextCardBeat` |
+| `captions/` | 6 caption styles + timing utilities for word-level sync |
+| `audio/` | `MusicTrack` (with ducking) and `VoiceoverTrack` components |
+| `lib/` | `score-to-props.ts` (maps DirectorScore to Remotion props), font loading |
+
+### `src/cli/`
+
+CLI-specific code (not used by the web UI).
+
+| File | Purpose |
+|------|---------|
+| `args.ts` | Argument parser (topic, flags, provider selection) |
+| `progress.ts` | Terminal progress display with stage indicators |
+| `cost-estimator.ts` | Estimates and tracks actual costs across providers |
+| `validate-env.ts` | Validates required environment variables |
+
+### `web/`
+
+React SPA with Tailwind CSS, built with Vite.
+
+| Directory | Purpose |
+|-----------|---------|
+| `pages/` | `HomePage`, `JobPage`, `GalleryPage`, `SettingsPage` |
+| `hooks/` | `useApi` (REST calls), `useSSE` (real-time events) |
+| `components/` | Layout, stage cards, pipeline visualization, shadcn/ui components |
+| `lib/` | Scene asset utilities, general helpers |
+
+---
+
+## Key Abstractions
+
+### `LLMProvider` Interface
+
+All LLM providers implement this interface via the `BaseLLM` abstract class:
+
+```typescript
+interface LLMProvider {
+  readonly id: LLMProviderKey;
+  generate<T extends z.ZodType>(opts: {
+    systemPrompt: string;
+    userMessage: string;
+    schema: T;
+    enableWebSearch?: boolean;
+  }): Promise<LLMResult<z.infer<T>>>;
+}
+```
+
+`BaseLLM` provides two generation paths:
+- **Direct structured output** — single LLM call with Zod schema
+- **Two-pass web search** — first pass uses search tools, second pass structures the results
+
+Subclasses implement `createLanguageModel()` and `createSearchTools()`.
+
+### `TTSProvider` Interface
+
+```typescript
+interface TTSProvider {
+  generate(text: string): Promise<TTSResult>;
+}
+
+interface TTSResult {
+  audio: Buffer;
+  words: WordTimestamp[];  // { word, start, end } for each word
+}
+```
+
+Providers that return native word timestamps (ElevenLabs, Inworld) implement this directly. Providers without native timestamps (Kokoro, Gemini TTS, OpenAI TTS) are wrapped in `AlignedTTSProvider`, which uses `WhisperAligner` to add word-level timing after generation.
+
+### `ImageProvider` Interface
+
+```typescript
+interface ImageProvider {
+  generate(prompt: string, style?: string): Promise<Buffer>;
+}
+```
+
+### `StockProvider` Interface
+
+```typescript
+interface StockProvider {
+  searchVideo(query: string): Promise<StockCandidate[]>;
+  searchImage(query: string): Promise<StockCandidate[]>;
+  download(candidate: StockCandidate): Promise<StockAsset>;
+}
+```
+
+Stock resolution uses `AdaptiveResolver` which tries multiple providers with query reformulation and VLM-based verification.
+
+### `VideoProvider` Interface
+
+```typescript
+interface VideoProvider {
+  readonly supportedDurations: number[];
+  generate(opts: {
+    sourceImage: Buffer;
+    prompt: string;
+    durationSeconds?: number;
+    aspectRatio?: string;
+  }): Promise<VideoResult>;
+}
+```
+
+### `MusicProvider` Interface
+
+```typescript
+interface MusicProvider {
+  generate(prompt: string, mood: MusicMood): Promise<MusicResult>;
+}
+```
+
+Two implementations: `BundledMusic` (selects from a pre-packaged library) and `LyriaMusic` (generates via Google Lyria 3 Pro).
+
+---
+
+## Provider Factory
+
+`src/providers/factory.ts` exports `createProviders(config)` which wires together all provider instances based on the configuration. It handles:
+
+- **Provider selection** by key (e.g., `llm: "anthropic"`)
+- **BYOK (Bring Your Own Key)** — per-job API keys passed via the `keys` map
+- **Multi-provider arrays** for stock and video (primary + fallback)
+- **TTS alignment wrapping** for providers without native timestamps
+
+---
+
+## Data Flow
+
+1. **Research** — LLM call with web search produces facts and mood
+2. **Director** — LLM call takes research + archetype config and produces a `DirectorScore`
+3. **TTS** — Each scene's `script_line` is synthesized to audio with word timestamps
+4. **Visuals** — Each scene's `visual_type` determines the generation strategy (AI image, AI video, stock, text card). Music is resolved in parallel.
+5. **Assembly** — `score-to-props.ts` maps the DirectorScore + assets into Remotion props. Remotion renders the final video with a headless Chrome instance.
+6. **Critic** — VLM evaluates the rendered video and produces a quality score.
+
+---
+
+## Pipeline Callbacks
+
+The pipeline communicates progress via `PipelineCallbacks`:
+
+```typescript
+interface PipelineCallbacks {
+  onStageStart?(stage: StageName): void;
+  onStageComplete?(stage: StageName, detail: string, durationSec: number): void;
+  onStageSkip?(stage: StageName, reason: string): void;
+  onStageError?(stage: StageName, error: string): void;
+  onProgress?(stage: StageName, data: Record<string, unknown>): void;
+  onCostEstimate?(estimate: CostBreakdown, imageProvider: ImageProviderKey): Promise<boolean>;
+  onActualCost?(cost: ActualCostBreakdown): void;
+  onLog?(message: string): void;
+  onRunDir?(runDir: string): void;
+  isCancelled?(): boolean;
+}
+```
+
+The CLI uses callbacks to drive the terminal progress display. The worker uses callbacks to emit BullMQ progress events and write `meta.json` updates.

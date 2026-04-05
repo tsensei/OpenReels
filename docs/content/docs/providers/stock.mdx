@@ -1,0 +1,131 @@
+---
+title: Stock Footage
+description: Configure stock footage providers — Pexels and Pixabay — with vision verification, query reformulation, and AI fallback.
+---
+
+The stock provider searches for real-world footage and photos to use in scenes with `visual_type: "stock_image"` or `"stock_video"`. Stock footage is free (both Pexels and Pixabay APIs are free to use), but requires API keys.
+
+## Supported providers
+
+| Provider | Env var | Content types |
+|----------|---------|---------------|
+| Pexels | `PEXELS_API_KEY` | Videos + images |
+| Pixabay | `PIXABAY_API_KEY` | Videos + images |
+
+Both providers are used simultaneously when both keys are available. The primary provider is searched first, then the secondary.
+
+## Usage
+
+Stock providers are configured via environment variables, not CLI flags. If both keys are present, both providers are searched:
+
+```bash
+# .env
+PEXELS_API_KEY=your-pexels-key    # https://www.pexels.com/api/
+PIXABAY_API_KEY=your-pixabay-key  # https://pixabay.com/api/docs/
+```
+
+## The adaptive resolution pipeline
+
+Stock footage resolution is more complex than other providers because stock search results are unpredictable — a search for "rocket launch" might return a toy rocket or a cartoon illustration. OpenReels uses a multi-stage adaptive pipeline to handle this:
+
+### 1. Search with original query
+
+The scene's `visual_prompt` from the DirectorScore is used as the initial search query. Both stock providers are searched (primary first, then secondary).
+
+- **Video search:** Returns up to 5 candidates per provider, portrait-oriented when available
+- **Image search:** Returns up to 5 candidates per provider, portrait-oriented
+
+### 2. Vision verification
+
+Each candidate is downloaded and verified by a VLM (Vision Language Model) that scores how well the result matches the requested visual. The verifier uses a strict rubric:
+
+- **0.0-0.3** — Clearly wrong (different subject entirely)
+- **0.3-0.6** — Loosely related but not what was requested
+- **0.6-0.8** — Reasonable match, captures the right subject
+- **0.8-1.0** — Strong match, exactly what was described
+
+For video candidates, a single frame is extracted at the 1-second mark using ffmpeg for verification.
+
+A candidate passes if it scores above the confidence threshold (default: 0.6). The highest-confidence passing candidate is selected.
+
+### 3. Query reformulation
+
+If all candidates from the original query are rejected, the LLM reformulates the search query into 2-3 alternative queries optimized for stock APIs:
+
+- Strips proper nouns (no brand names or specific locations)
+- Uses concrete visual nouns that stock APIs understand
+- Keeps each query to 3-5 words
+- Orders by specificity (most specific first)
+
+For example: `"Artemis rocket launching from Kennedy Space Center"` becomes `["rocket launch pad fire smoke", "space shuttle takeoff", "rocket launch"]`.
+
+The reformulated queries are searched against both providers with the same verification process.
+
+### 4. AI image fallback
+
+If all stock search attempts are exhausted (original query + reformulated queries across all providers), the pipeline falls back to AI image generation. The fallback uses rejection context from the failed stock results as negative examples, telling the image generator what to avoid.
+
+## Configuration flags
+
+### `--stock-confidence`
+
+Minimum confidence score (0-1) for a stock result to be accepted. Higher values mean stricter matching.
+
+```bash
+# Strict matching — only accept strong matches
+pnpm start "topic" --stock-confidence 0.8
+
+# Lenient matching — accept reasonable matches
+pnpm start "topic" --stock-confidence 0.4
+```
+
+Default: `0.6`
+
+### `--stock-max-attempts`
+
+Maximum number of stock API calls per scene. This counts across all providers and query reformulations. Higher values give more chances to find good footage but increase latency.
+
+```bash
+# More thorough search
+pnpm start "topic" --stock-max-attempts 6
+
+# Quick search, fall back to AI faster
+pnpm start "topic" --stock-max-attempts 2
+```
+
+Default: `4`
+
+### `--no-stock-verify`
+
+Disable VLM verification entirely. Stock results are used as-is without quality checking. Faster but may produce mismatched visuals.
+
+```bash
+pnpm start "topic" --no-stock-verify
+```
+
+## Search behavior details
+
+### Pexels
+
+- Searches for portrait-oriented content first
+- Falls back to landscape orientation if no portrait results are found
+- Filters video files to 720-1920px width range, preferring higher resolution
+- Caches downloaded files locally at `~/.openreels/cache/stock/`
+- Rate limit handling: returns empty results on 429 (does not crash)
+
+### Pixabay
+
+- Requests vertical orientation for images
+- No orientation filter for videos (Pixabay's API has limited orientation support)
+- Returns medium or large quality video files
+- Caches downloaded files locally at `~/.openreels/cache/stock/`
+
+### Deduplication
+
+Candidates are tracked by their provider-specific ID (e.g., `pexels-video-12345`). The same asset is never verified twice across different query attempts within the same scene.
+
+## Cost
+
+Stock footage from both Pexels and Pixabay is **free**. The only cost associated with stock scenes comes from VLM verification calls (a few cents per LLM call) and potential AI image fallback if stock search fails.
+
+When stock search fails and falls back to AI image generation, the cost of that fallback image is reported in the post-run actual cost breakdown.

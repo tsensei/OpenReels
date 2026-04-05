@@ -1,0 +1,134 @@
+---
+title: Contributing
+description: How to contribute to OpenReels — setup, workflow, and guidelines.
+---
+
+OpenReels welcomes contributions. This guide covers how to get started, the development workflow, and what to expect from the review process.
+
+## Getting Started
+
+1. **Fork the repository** on GitHub
+2. **Clone your fork**:
+   ```bash
+   git clone https://github.com/your-username/OpenReels.git
+   cd OpenReels
+   ```
+3. **Install dependencies**:
+   ```bash
+   corepack enable pnpm
+   pnpm install
+   ```
+4. **Create a branch**:
+   ```bash
+   git checkout -b feat/your-feature
+   ```
+
+---
+
+## Development Workflow
+
+### Run the test suite before making changes
+
+```bash
+pnpm test
+```
+
+This runs the full vitest suite. All tests should pass on a clean checkout with no API keys required.
+
+### Make your changes
+
+- Follow the existing code patterns in the directory you are working in
+- Add tests for new functionality (see [Testing](/docs/contributing/testing))
+- Run type checking: `pnpm typecheck`
+- Run the linter: `pnpm lint`
+
+### Run tests again
+
+```bash
+pnpm test
+```
+
+Ensure all existing tests still pass and your new tests work.
+
+### Commit and push
+
+```bash
+git add -A
+git commit -m "feat: add new provider for X"
+git push origin feat/your-feature
+```
+
+Use [conventional commit](https://www.conventionalcommits.org/) prefixes: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`.
+
+---
+
+## Pull Request Process
+
+1. Open a PR against the `main` branch
+2. Fill in the PR template with a description of what changed and why
+3. Ensure the CI checks pass (tests, linting, type checking)
+4. A maintainer will review your PR
+
+### What makes a good PR
+
+- **Focused scope**: one feature or fix per PR
+- **Tests included**: new code should have tests
+- **No unrelated changes**: keep the diff clean
+- **Clear description**: explain what and why, not just what
+
+---
+
+## Code Style
+
+OpenReels uses [Biome](https://biomejs.dev/) for linting and formatting. The configuration is in the project root.
+
+```bash
+# Check for issues
+pnpm lint
+
+# Auto-fix issues
+pnpm lint:fix
+
+# Format code
+pnpm format
+```
+
+Biome handles both ESLint-style rules and Prettier-style formatting in a single tool.
+
+---
+
+## Project Layout
+
+See [Architecture](/docs/contributing/architecture) for a detailed breakdown of the codebase.
+
+The key directories:
+
+| Directory | What lives here |
+|-----------|-----------------|
+| `src/agents/` | AI agents (research, creative-director, critic, image-prompter, music-prompter) |
+| `src/pipeline/` | Mastra workflow orchestrator, utilities, music resolver |
+| `src/providers/` | LLM, TTS, image, stock, video, and music provider implementations |
+| `src/config/` | Archetypes, platforms, playbook |
+| `src/schema/` | Zod schemas (DirectorScore, providers, archetypes) |
+| `src/remotion/` | Remotion video composition, beat components, caption styles |
+| `src/cli/` | CLI argument parsing, progress display, cost estimator |
+| `web/` | React + Tailwind SPA |
+
+---
+
+## Areas for Contribution
+
+Here are some areas where contributions are particularly welcome:
+
+- **New providers** — add support for additional LLM, TTS, image, or video services (see [Adding Providers](/docs/contributing/adding-providers))
+- **Caption styles** — new visual styles for captions in `src/remotion/captions/`
+- **Archetypes** — new visual style presets in `src/config/archetypes/`
+- **Bug fixes** — check the issue tracker
+- **Documentation** — improvements and corrections
+- **Tests** — increase coverage for edge cases
+
+---
+
+## Questions?
+
+Open an issue on GitHub for questions, feature proposals, or bug reports.

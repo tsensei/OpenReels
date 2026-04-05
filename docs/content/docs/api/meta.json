@@ -1,0 +1,4 @@
+{
+  "title": "API Reference",
+  "pages": ["rest", "sse-events", "director-score"]
+}

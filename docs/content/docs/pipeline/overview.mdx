@@ -1,0 +1,120 @@
+---
+title: Pipeline Architecture
+description: How OpenReels transforms a topic into a rendered video through a 6-stage Mastra workflow.
+---
+
+OpenReels uses a linear 6-stage pipeline built on [Mastra](https://mastra.ai/) workflows. Each stage is a `createStep` that receives the output of the previous stage, with shared state passed through closures for non-serializable data like provider instances and callbacks.
+
+## The 6 stages
+
+```
+Topic
+  |
+  v
+Research ---- web search grounds the script in facts
+  |
+  v
+Director ---- writes the DirectorScore (scenes, archetype, music mood)
+  |
+  v
+TTS --------- generates voiceover audio with word-level timestamps
+  |
+  v
+Visuals ----- resolves images, video clips, stock footage, and music (parallel)
+  |
+  v
+Assembly ---- Remotion bundles and renders the final MP4
+  |
+  v
+Critic ------ scores the output; flags revision if below threshold
+```
+
+Each stage reports progress through `PipelineCallbacks` -- the same interface used by both the CLI (terminal spinners) and the web UI (Server-Sent Events).
+
+## The DirectorScore
+
+The central data structure that flows through the pipeline is the **DirectorScore**. It is produced by the Creative Director agent in stage 2 and consumed by every downstream stage.
+
+```ts
+interface DirectorScore {
+  emotional_arc: string;       // e.g. "curiosity-to-wisdom"
+  archetype: string;           // e.g. "cinematic_documentary"
+  music_mood: MusicMood;       // one of 8 mood tags
+  scenes: Scene[];             // 3-16 scenes
+}
+
+interface Scene {
+  visual_type: "ai_image" | "ai_video" | "stock_image" | "stock_video" | "text_card";
+  visual_prompt: string;       // image gen prompt or stock search query
+  motion: "zoom_in" | "zoom_out" | "pan_right" | "pan_left" | "static";
+  script_line: string;         // voiceover narration for this scene
+  transition: TransitionType | null;  // how this scene flows into the next
+}
+```
+
+The DirectorScore is saved as `score.json` in the output directory. It drives TTS script generation, visual asset resolution, Remotion composition props, and critic evaluation.
+
+## Data flow between stages
+
+Stages pass data through two mechanisms:
+
+1. **Mastra's input/output chaining** -- each step's `outputSchema` feeds the next step's `inputSchema` via `.then()`.
+2. **Shared closures** -- non-serializable data (provider instances, accumulated LLM usage, the score itself) lives in objects scoped to `buildPipelineWorkflow` and accessed by steps via closure.
+
+```
+researchStep ─(ResearchResult)─> directorStep ─(done)─> ttsStep ─(done)─> visualsStep ─(done)─> assemblyStep ─(done)─> criticStep
+```
+
+The Research step outputs a `ResearchResult` with summary, key facts, mood, and sources. From the Director step onward, each step reads the shared `directorResult`, `ttsResult`, and `visualsResult` objects that accumulate state as the pipeline progresses.
+
+## Stage lifecycle
+
+Every stage follows the same pattern:
+
+1. Call `cb.onStageStart(stageName)` to signal the UI
+2. Execute the core work (LLM call, TTS generation, rendering, etc.)
+3. Push any LLM token usage to the shared `llmUsages` array for cost tracking
+4. Call `cb.onStageComplete(stageName, detail, durationSec)` with a human-readable summary
+5. Push a log entry to `log.stages` for the run log
+
+If a stage fails non-fatally (research web search fails, critic evaluation errors), it calls `cb.onStageSkip` and continues with graceful defaults. Fatal errors propagate up and terminate the pipeline.
+
+## Cost estimation
+
+After the Director stage produces the DirectorScore, the pipeline computes an estimated cost based on the number of AI images, stock scenes, TTS characters, video clips, and music generation. In interactive mode (CLI without `--yes`), the user is prompted to confirm before spending money on asset generation.
+
+After all stages complete, actual LLM token usage is aggregated and the real cost is computed and reported.
+
+## Early exits
+
+The pipeline supports two early exit paths:
+
+- **Dry run** (`--dry-run`) -- stops after the Director stage and prints the DirectorScore JSON. No assets are generated.
+- **Cost rejection** -- if the user declines at the cost estimate prompt, the pipeline exits cleanly.
+
+Both paths still write `log.json` to the output directory.
+
+## Output directory
+
+Each run creates a timestamped directory under the output path:
+
+```
+output/
+  2025-01-15-143022-fall-of-the-roman-empire/
+    score.json       # DirectorScore
+    log.json         # stage timings, cost, resolution metadata
+    final.mp4        # rendered video
+    assets/
+      scene-0-ai.png
+      scene-1-stock.jpg
+      scene-2-ai-video.mp4
+      voiceover.mp3
+```
+
+## Source files
+
+| File | Role |
+|------|------|
+| `src/pipeline/orchestrator.ts` | Mastra workflow builder and `runPipeline` entry point |
+| `src/pipeline/utils.ts` | `PipelineCallbacks`, `PipelineOptions`, stage name constants, word splitting |
+| `src/pipeline/music-resolver.ts` | Music resolution with Lyria/bundled fallback |

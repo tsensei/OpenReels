@@ -1,0 +1,76 @@
+---
+title: Music Providers
+description: Configure background music — Google Lyria 3 Pro for AI-generated scores or the free bundled royalty-free track library.
+---
+
+The music provider generates or selects a background score that plays under the voiceover. Music is scene-synced to match the video's emotional arc, with automatic audio ducking during narration.
+
+## Supported providers
+
+| Provider | Env var | Flag value | Cost |
+|----------|---------|------------|------|
+| Bundled library | none | `bundled` | Free |
+| Google Lyria 3 Pro | `GOOGLE_API_KEY` | `lyria` | $0.08/track |
+
+## Usage
+
+```bash
+# Free bundled tracks (default)
+pnpm start "topic" --music-provider bundled
+
+# AI-generated music
+pnpm start "topic" --music-provider lyria
+```
+
+The `--provider google` shortcut sets music to Lyria automatically. To disable music entirely:
+
+```bash
+pnpm start "topic" --no-music
+```
+
+## Bundled library
+
+The bundled library ships with 25 royalty-free tracks organized by mood. No API key required, no network calls, zero cost.
+
+Track selection works by mood matching:
+1. The Creative Director's DirectorScore includes a `music_mood` field
+2. The bundled adapter filters tracks by that mood
+3. A random track from the matching mood pool is selected
+4. If no tracks match the exact mood, a random track from any mood is used as fallback
+
+The tracks are stored in `assets/music/` with metadata in `assets/music-manifest.json`. Each track entry includes mood classification, duration, source attribution, and license info.
+
+## Google Lyria 3 Pro
+
+Lyria generates a unique AI-composed background score tailored to your video's content. The Music Prompter agent writes a detailed prompt describing instruments, tempo, sections, and emotional arc, which Lyria uses to generate the audio.
+
+- **Model:** `lyria-3-pro-preview`
+- **Output format:** MP3
+- **Cost:** $0.08 per generated track
+- **Env var:** `GOOGLE_API_KEY` (same key used for Gemini LLM, Imagen, Veo, and Gemini TTS)
+
+### How it works
+
+1. The Music Prompter agent generates a detailed prompt based on the DirectorScore's mood, tempo, and scene structure
+2. The prompt is sent to the Lyria 3 Pro API via the Gemini `generateContent` endpoint with `audio` response modality
+3. Lyria returns base64-encoded audio (typically MP3) plus optional text metadata describing sections and BPM
+4. The audio is written to a temp file and passed to the Remotion assembly stage
+
+### Safety filter handling
+
+Lyria has content safety filters that may reject prompts with intense or triggering language. If a prompt is rejected:
+
+1. The provider automatically sanitizes the prompt by replacing intense adjectives (e.g., "aggressive", "menacing", "violent") with "restrained"
+2. The sanitized prompt is retried once
+3. If it fails again, the error propagates and the pipeline falls back to no music for that run
+
+The API may also return `finishReason: OTHER`, which is an opaque catch-all from the Gemini API. This is not retried since the cause cannot be determined from the response.
+
+## Cost comparison
+
+| Provider | Per track | Quality |
+|----------|----------|---------|
+| Bundled | Free | Good — curated royalty-free library |
+| Lyria 3 Pro | $0.08 | Excellent — AI-composed, unique per video, matched to emotional arc |
+
+For most use cases, the bundled library works well. Lyria is worth the $0.08 when you want music that is specifically composed to match your video's content and mood.

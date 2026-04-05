@@ -1,0 +1,135 @@
+---
+title: Pacing Tiers
+description: How fast, moderate, and cinematic pacing tiers control scene counts, word budgets, and video rhythm.
+---
+
+Pacing tiers are the primary mechanism for controlling video duration and rhythm. Each tier defines a scene count range, per-scene word budget, and total word budget that the Creative Director must follow when generating the DirectorScore.
+
+## The three tiers
+
+### Fast
+
+```
+Scenes: 8-12 | Words/scene: 8-12 | Total words: 90-120
+```
+
+Rapid cuts, high energy. Short punchy sentences with minimal breathing room. Works best with infographic-style content, quick fact lists, and data-driven topics. Scenes change every 2-4 seconds.
+
+**Archetypes using fast pacing:** `infographic`, `bold_illustration`, `comic_book`
+
+### Moderate
+
+```
+Scenes: 7-10 | Words/scene: 10-16 | Total words: 100-140
+```
+
+Balanced rhythm with editorial flow. Enough time per scene to develop a thought without dragging. The default feel for most content types -- stories, explanations, opinion pieces.
+
+**Archetypes using moderate pacing:** `warm_editorial`, `editorial_caricature`, `anime_illustration`, `vintage_snapshot`, `surreal_dreamscape`, `gothic_fantasy`
+
+### Cinematic
+
+```
+Scenes: 5-8 | Words/scene: 15-22 | Total words: 90-130
+```
+
+Deliberate, documentary-style pacing. Fewer scenes with longer narration per scene. Lets visuals breathe. Best for serious topics, historical narratives, and emotionally heavy content where rushing would undermine impact.
+
+**Archetypes using cinematic pacing:** `cinematic_documentary`, `moody_cinematic`, `studio_realism`, `warm_narrative`, `pastoral_watercolor`
+
+## How pacing is resolved
+
+The pacing tier is resolved through a three-level cascade, the same logic used by both the Creative Director and the Critic:
+
+```
+1. Explicit --pacing flag    (always wins)
+     |
+     v
+2. Archetype's scenePacing   (from archetype JSON config)
+     |
+     v
+3. Lookup table              (LLM picks archetype, table maps to tier)
+```
+
+### Level 1: Explicit override
+
+If you pass `--pacing fast`, `--pacing moderate`, or `--pacing cinematic`, the specified tier is used regardless of the archetype. This lets you force a fast-paced cinematic documentary or a slow-paced infographic.
+
+```bash
+# Force cinematic pacing on an archetype that defaults to fast
+pnpm start "topic" --archetype infographic --pacing cinematic
+```
+
+### Level 2: Archetype config
+
+If no `--pacing` flag is given but an archetype is specified (via `--archetype` or selected by the LLM), the tier comes from the archetype's `scenePacing` field:
+
+```json
+{
+  "scenePacing": "cinematic"
+}
+```
+
+### Level 3: Lookup table
+
+If neither `--pacing` nor `--archetype` is specified, the full tier lookup table is injected into the Creative Director's prompt. The LLM chooses an archetype and applies the matching tier from the table.
+
+## Effect on the pipeline
+
+The pacing tier affects three parts of the pipeline:
+
+### Creative Director
+
+The tier's constraints are injected directly into the LLM prompt:
+
+```
+Use cinematic pacing. Create a DirectorScore with 5-8 scenes.
+Per-scene word budget: 15-22 words. Total word budget: 90-130 words.
+```
+
+The Director is also told that if the script goes over budget, it should cut a scene rather than cramming more words into existing scenes.
+
+### Critic
+
+The Critic evaluates pacing against the tier-specific thresholds. A 12-scene video is perfectly fine for fast pacing but would be flagged as too many scenes for cinematic pacing. The Critic's pacing score is capped at 5 if any of these checks fail:
+
+- Total word count significantly over the tier's budget
+- Scene count outside the tier's range
+- Any scene exceeds the tier's per-scene word range
+- Hook scene exceeds 15 words
+- Any single scene holds more than 30% of total words
+
+### Video duration
+
+Word count drives video duration because voiceover is generated from the script lines at approximately 150 words per minute. The tier budgets are calibrated to produce videos in the platform's recommended duration range:
+
+| Tier | Word budget | Estimated duration |
+|------|------------|-------------------|
+| fast | 90-120 words | 36-48 seconds |
+| moderate | 100-140 words | 40-56 seconds |
+| cinematic | 90-130 words | 36-52 seconds |
+
+All tiers target the 35-55 second sweet spot for YouTube Shorts.
+
+## Usage
+
+```bash
+# Let the archetype choose (default)
+pnpm start "your topic"
+
+# Override pacing explicitly
+pnpm start "your topic" --pacing fast
+pnpm start "your topic" --pacing moderate
+pnpm start "your topic" --pacing cinematic
+
+# Combine with archetype override
+pnpm start "your topic" --archetype anime_illustration --pacing cinematic
+```
+
+## Source files
+
+| File | Role |
+|------|------|
+| `src/agents/creative-director.ts` | `PACING_CONFIG` definition and `buildPacingInstruction` |
+| `src/agents/critic.ts` | Pacing tier resolution for evaluation |
+| `src/config/archetypes/*.json` | Per-archetype `scenePacing` field |

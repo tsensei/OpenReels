@@ -1,0 +1,76 @@
+---
+title: Web UI
+description: How to use the OpenReels web interface to create videos, watch the pipeline, and download results.
+---
+
+## Starting the web UI
+
+The web UI runs via Docker Compose. It starts three services: Redis (job queue), the API server, and a background worker.
+
+```bash
+docker compose up
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Submitting a job
+
+The home page presents a topic input with provider controls.
+
+### 1. Enter a topic
+
+Type any topic into the input field. This is the subject of your video. Examples:
+
+- "The Apollo 13 disaster, from explosion to miraculous return"
+- "5 stoic lessons that changed my life"
+- "How coffee changed the course of history"
+
+You can also click one of the suggested topics from the inspiration section below the input. Topics are grouped by category (History, Science, Culture, Technology) and can be shuffled.
+
+### 2. Choose a visual style
+
+Below the input, a horizontal gallery shows all 14 visual archetypes. Click one to lock in that style, or leave it on **Auto Style** to let the LLM choose the best fit for your topic.
+
+### 3. Configure providers
+
+The input area includes quick controls for **Platform** (YouTube, TikTok, Instagram) and **Pacing** (Fast, Moderate, Cinematic, or Auto).
+
+Click **Advanced** to expand the full provider panel:
+
+- **LLM Provider** — Anthropic, OpenAI, or Gemini
+- **TTS Provider** — ElevenLabs, Inworld, Kokoro, Gemini TTS, or OpenAI TTS
+- **Image Provider** — Gemini Imagen or OpenAI DALL-E
+- **Music Provider** — Bundled (free) or Lyria 3 Pro ($0.08/track)
+- **Style Override** — Same as the archetype gallery, as a dropdown
+- **Dry Run** — Toggle on to output the DirectorScore JSON without generating assets or spending money
+
+### 4. Generate
+
+Click **Generate** to submit the job. You are redirected to the job page.
+
+## Watching the pipeline
+
+The job page shows each pipeline stage as a card:
+
+| Stage | What you see |
+|---|---|
+| **Research** | Live research data as the AI gathers facts via web search |
+| **Director** | The DirectorScore with script, scene breakdowns, and visual direction |
+| **TTS** | Voiceover generation progress |
+| **Visuals** | Scene-by-scene asset generation. AI images, AI video clips, and stock footage appear as they are produced. Failed assets show inline errors |
+| **Assembly** | Remotion render progress with frame count |
+| **Critic** | AI quality review with scores. If quality is below threshold, the pipeline automatically re-runs |
+
+All stages stream progress via Server-Sent Events (SSE). You see each stage transition from pending to active to complete in real time. A cost breakdown card shows estimated spend across LLM, TTS, images, video, music, and stock.
+
+The storyboard panel displays the full scene layout with generated assets once the Director stage completes.
+
+## Downloading the result
+
+When the pipeline completes successfully, the job page shows a **Completed** panel with a download button. Click it to download the rendered MP4 file.
+
+If the job fails, the page shows an error panel with the failure reason. You can return to the home page and try again with different settings.
+
+## Gallery
+
+Navigate to the **Gallery** page to browse all previously generated videos. The gallery supports search, filtering, and bulk deletion. Each card shows the video thumbnail, topic, archetype, and creation date.

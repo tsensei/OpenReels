@@ -1,0 +1,79 @@
+---
+title: Platform Targets
+description: Platform-specific output settings for YouTube Shorts, TikTok, and Instagram Reels.
+---
+
+OpenReels supports three platform targets that control the output video's dimensions, frame rate, and duration constraints. The platform is specified with the `--platform` flag (default: `youtube`).
+
+## Platform configurations
+
+| Setting | YouTube Shorts | TikTok | Instagram Reels |
+|---------|---------------|--------|-----------------|
+| Resolution | 1080 x 1920 | 1080 x 1920 | 1080 x 1920 |
+| FPS | 30 | 30 | 30 |
+| Max duration | 60s | 180s | 90s |
+| Recommended duration | 40-55s | 40-60s | 40-55s |
+| Codec | H.264 | H.264 | H.264 |
+
+All three platforms currently use the same 9:16 vertical resolution and 30fps frame rate. The key differences are in duration constraints.
+
+## How platform config is used
+
+The platform configuration affects two parts of the pipeline:
+
+### Assembly stage
+
+During Remotion rendering, the platform config controls:
+
+- **Width and height** -- passed to `renderMedia` as the composition dimensions
+- **FPS** -- used for frame rate in both composition selection and rendering
+- **Codec** -- H.264 for all platforms (broad compatibility)
+
+```ts
+const platformConfig = getPlatformConfig(opts.platform);
+
+await renderMedia({
+  composition: {
+    ...composition,
+    width: platformConfig.width,
+    height: platformConfig.height,
+    fps: platformConfig.fps,
+    durationInFrames: totalFrames,
+  },
+  codec: "h264",
+  // ...
+});
+```
+
+### Duration calculation
+
+The FPS value from the platform config is used throughout the score-to-props mapper for converting seconds to frames:
+
+```ts
+const durationInFrames = Math.round(durationSeconds * fps);
+```
+
+## Duration limits
+
+The `maxDurationSeconds` and `recommendedDurationSeconds` fields are available for validation and guidance but are not currently hard-enforced by the rendering pipeline. The actual video duration is determined by the voiceover length, which is controlled by the Creative Director's word budget (driven by the [pacing tier](/docs/configuration/pacing)).
+
+For YouTube Shorts, the 60-second hard limit is the most important constraint. The pacing tiers are calibrated to keep total word counts under 140 words, which at ~150 words per minute produces videos in the 40-55 second sweet spot.
+
+## Usage
+
+```bash
+# Default (YouTube Shorts)
+pnpm start "topic"
+
+# TikTok (allows longer videos)
+pnpm start "topic" --platform tiktok
+
+# Instagram Reels
+pnpm start "topic" --platform instagram
+```
+
+## Source files
+
+| File | Role |
+|------|------|
+| `src/config/platforms.ts` | Platform config definitions and `getPlatformConfig` lookup |

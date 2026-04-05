@@ -1,0 +1,82 @@
+---
+title: LLM Providers
+description: Configure the LLM provider for scripting, research, and creative direction — Anthropic Claude, OpenAI GPT, or Google Gemini.
+---
+
+The LLM provider handles all text generation in the pipeline: web research, script writing (Creative Director), image/video prompt optimization, stock query reformulation, and quality critique. OpenReels uses the [Vercel AI SDK](https://sdk.vercel.ai/) under the hood, so all three providers share the same structured output and tool-calling interface.
+
+## Supported providers
+
+| Provider | Default model | Env var | Flag value |
+|----------|--------------|---------|------------|
+| Anthropic Claude | `claude-sonnet-4-6` | `ANTHROPIC_API_KEY` | `anthropic` |
+| OpenAI GPT | `gpt-5.4` | `OPENAI_API_KEY` | `openai` |
+| Google Gemini | `gemini-2.5-flash` | `GOOGLE_API_KEY` | `gemini` |
+
+## Usage
+
+Set the LLM provider with the `--provider` flag:
+
+```bash
+pnpm start "the apollo 13 disaster" --provider anthropic
+pnpm start "the apollo 13 disaster" --provider openai
+pnpm start "the apollo 13 disaster" --provider gemini
+```
+
+The `google` shortcut sets the LLM to Gemini along with all other providers to their Google equivalents:
+
+```bash
+# Sets LLM=Gemini, Image=Gemini, TTS=Gemini, Video=Veo, Music=Lyria
+pnpm start "the apollo 13 disaster" --provider google
+```
+
+## Environment variables
+
+Each provider reads its API key from a specific environment variable:
+
+```bash
+# .env
+ANTHROPIC_API_KEY=sk-ant-...       # Anthropic Console
+OPENAI_API_KEY=sk-...              # OpenAI Platform
+GOOGLE_API_KEY=AI...               # Google AI Studio
+```
+
+Only the key for your chosen provider is required. If you use `--provider gemini`, you only need `GOOGLE_API_KEY`.
+
+## How the LLM is used
+
+The pipeline makes several LLM calls per run:
+
+| Call | Purpose |
+|------|---------|
+| **Research** | Two-pass web search: first pass uses provider-native search tools (Anthropic web search, OpenAI web search, Google Search), second pass structures the results |
+| **Creative Director** | Writes the DirectorScore — script, scene breakdowns, visual direction, emotional arc |
+| **Image Prompter** | Optimizes visual prompts for AI image/video generation per scene |
+| **Stock Query Reform** | Reformulates stock search queries when initial results are rejected |
+| **Critic** | Scores the final output and decides whether to re-run |
+| **VLM Verification** | Vision model verifies stock footage matches the requested visual |
+
+Each provider brings its own search tool integration:
+- **Anthropic** — `webSearch_20250305` tool
+- **OpenAI** — `webSearch` tool
+- **Gemini** — `googleSearch` tool
+
+## Cost comparison
+
+LLM costs are typically the smallest part of the total bill. A typical run uses 3-7 LLM calls.
+
+| Provider | Input token price | Output token price | Typical run cost |
+|----------|------------------|--------------------|-----------------|
+| Gemini 2.5 Flash | $0.10/M tokens | $0.40/M tokens | ~$0.001 |
+| OpenAI GPT | $2.00/M tokens | $8.00/M tokens | ~$0.01-0.03 |
+| Anthropic Claude | $3.00/M tokens | $15.00/M tokens | ~$0.05-0.10 |
+
+Gemini is roughly 30x cheaper than Anthropic per token. For budget-conscious runs, combine `--provider gemini` with `--tts-provider kokoro` and `--music-provider bundled`.
+
+## VLM verification model
+
+Stock footage verification uses a separate VLM (Vision Language Model) call. By default, this uses the same provider as your main LLM. The verification model examines downloaded stock footage and scores how well it matches the requested visual. The models used for verification are:
+
+- **Anthropic** — `claude-sonnet-4-6`
+- **OpenAI** — `gpt-4o`
+- **Gemini** — `gemini-2.5-flash`

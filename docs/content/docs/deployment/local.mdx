@@ -1,0 +1,193 @@
+---
+title: Local Development
+description: Set up OpenReels for local development without Docker.
+---
+
+Running OpenReels locally gives you faster iteration with hot reloading and direct access to the source code. This guide covers both development mode and production-like local runs.
+
+## Prerequisites
+
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| **Node.js** | 22+ | Required. Check with `node -v` |
+| **pnpm** | 9+ | Install via `corepack enable pnpm` |
+| **ffprobe** | any | Part of ffmpeg. Install via `brew install ffmpeg` (macOS) or `apt install ffmpeg` (Linux) |
+| **Redis** | 7+ | Only needed for the web UI / API server mode |
+
+ffprobe is used for audio duration detection during the pipeline. Without it, the assembly stage will fail.
+
+---
+
+## Install
+
+```bash
+git clone https://github.com/tsensei/OpenReels.git
+cd OpenReels
+pnpm install
+```
+
+This installs dependencies for the root package and the `web/` workspace.
+
+---
+
+## Environment Setup
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your API keys. At minimum you need one LLM key and one TTS key (or use `kokoro` for free local TTS). See [API Keys](/docs/getting-started/api-keys) for details.
+
+---
+
+## CLI Mode
+
+The fastest way to generate a video locally:
+
+```bash
+pnpm start "The history of coffee"
+```
+
+This runs the full pipeline: research, director, TTS, visuals, assembly, and critic. Output goes to `./output/` by default.
+
+Equivalent command with explicit flags:
+
+```bash
+npx tsx --env-file=.env src/index.ts "The history of coffee"
+```
+
+### Useful CLI Flags
+
+```bash
+# Dry run (skip rendering, produce DirectorScore only)
+pnpm start "topic" --dry-run
+
+# Skip music
+pnpm start "topic" --no-music
+
+# Skip AI video generation
+pnpm start "topic" --no-video
+
+# Choose providers
+pnpm start "topic" --llm gemini --tts kokoro --image openai
+
+# Auto-confirm cost estimate (non-interactive)
+pnpm start "topic" --yes
+
+# Custom output directory
+pnpm start "topic" -o ./my-output
+```
+
+---
+
+## Web UI Mode
+
+Running the web UI locally requires Redis and three processes: the API server, the worker, and the Vite dev server.
+
+### Start Redis
+
+```bash
+# macOS
+brew services start redis
+
+# Or run directly
+redis-server
+```
+
+### Option A: Docker Compose (Recommended)
+
+The simplest way even for local dev:
+
+```bash
+docker compose up
+```
+
+### Option B: Manual Processes
+
+Run each in a separate terminal:
+
+**Terminal 1 — API Server**
+
+```bash
+npx tsx --env-file=.env src/server.ts
+```
+
+**Terminal 2 — Worker**
+
+```bash
+npx tsx --env-file=.env src/worker.ts
+```
+
+**Terminal 3 — Web Dev Server** (optional, for frontend development)
+
+```bash
+cd web
+npx vite
+```
+
+The API server serves the pre-built frontend from `web/dist/`. If you are developing the frontend, run Vite's dev server for hot reloading and proxy API requests to port 3000.
+
+---
+
+## Build
+
+### TypeScript Build
+
+```bash
+pnpm build
+```
+
+Uses `tsup` to compile TypeScript to `dist/`. The compiled CLI is available as `./dist/index.js`.
+
+### Frontend Build
+
+```bash
+cd web
+npx vite build
+```
+
+Outputs to `web/dist/`. The API server automatically serves this directory when it exists.
+
+---
+
+## Type Checking
+
+```bash
+pnpm typecheck
+```
+
+Runs `tsc --noEmit` to check types without emitting files.
+
+---
+
+## Linting and Formatting
+
+OpenReels uses [Biome](https://biomejs.dev/) for linting and formatting:
+
+```bash
+# Check
+pnpm lint
+
+# Auto-fix
+pnpm lint:fix
+
+# Format
+pnpm format
+```
+
+---
+
+## Project Scripts Reference
+
+| Script | Command | Description |
+|--------|---------|-------------|
+| `pnpm start` | `tsx --env-file=.env src/index.ts` | Run CLI pipeline |
+| `pnpm dev` | `tsx --env-file=.env src/index.ts` | Alias for start |
+| `pnpm build` | `tsup` | Compile TypeScript |
+| `pnpm test` | `vitest run` | Run test suite |
+| `pnpm test:watch` | `vitest` | Run tests in watch mode |
+| `pnpm lint` | `biome check .` | Lint check |
+| `pnpm lint:fix` | `biome check --write .` | Lint auto-fix |
+| `pnpm format` | `biome format --write .` | Format code |
+| `pnpm typecheck` | `tsc --noEmit` | Type check |
+| `pnpm clean` | `rm -rf dist` | Clean build output |
