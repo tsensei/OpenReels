@@ -15,17 +15,41 @@ import {
   ArrowRight,
   Gauge,
   MonitorPlay,
-  Palette,
   SlidersHorizontal,
   Lightbulb,
+  Shuffle,
 } from "lucide-react";
+import { ArchetypeCard } from "@/components/ArchetypeCard";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
-const SUGGESTIONS = [
-  "Black holes explained",
-  "How coffee changed history",
-  "5 facts about the deep ocean",
-  "Ancient Rome",
-];
+const TOPIC_CATEGORIES: Record<string, string[]> = {
+  History: [
+    "How coffee changed history",
+    "Ancient Rome's greatest inventions",
+    "The fall of the Berlin Wall",
+    "5 forgotten civilizations",
+  ],
+  Science: [
+    "Black holes explained",
+    "Why do we dream?",
+    "CRISPR gene editing in 2026",
+    "The science of time perception",
+  ],
+  Culture: [
+    "How anime conquered the world",
+    "The psychology of music",
+    "Street food capitals of the world",
+    "Why we love horror movies",
+  ],
+  Technology: [
+    "Top 5 AI advancements in 2026",
+    "How quantum computing works",
+    "The future of space tourism",
+    "Inside a data center",
+  ],
+};
+
+const CATEGORY_KEYS = Object.keys(TOPIC_CATEGORIES);
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -46,11 +70,23 @@ export function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Topic inspiration
+  const [activeCategory, setActiveCategory] = useState(CATEGORY_KEYS[0]!);
+  const [shuffledTopics, setShuffledTopics] = useState<string[]>([]);
+
   useEffect(() => {
     api.listArchetypes().then(setArchetypes).catch(() => {});
     api.listPlatforms().then(setPlatforms).catch(() => {});
     api.listProviders().then(setProviders).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    setShuffledTopics(TOPIC_CATEGORIES[activeCategory] ?? []);
+  }, [activeCategory]);
+
+  const handleShuffle = () => {
+    setShuffledTopics((prev) => [...prev].sort(() => Math.random() - 0.5));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,26 +119,26 @@ export function HomePage() {
   const hasTopic = topic.trim().length > 0;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-6 sm:px-10 lg:px-[100px]">
-      <div className="flex flex-col items-center gap-9">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 sm:px-6 lg:px-[100px] py-8">
+      <div className="flex w-full max-w-[720px] flex-col items-center gap-8">
         {/* Hero */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold" style={{ letterSpacing: "-1px" }}>
+          <h1 className="text-3xl sm:text-4xl font-bold" style={{ letterSpacing: "-1px" }}>
             What story should we tell?
           </h1>
-          <p className="mt-3 text-base text-muted-foreground">
+          <p className="mt-3 text-sm sm:text-base text-muted-foreground">
             Describe a topic and we'll turn it into a fully rendered Short.
           </p>
         </div>
 
         {/* Input Card */}
-        <form onSubmit={handleSubmit} className="w-full max-w-[660px]">
+        <form onSubmit={handleSubmit} className="w-full">
           <div
             className={cn(
-              "rounded-[14px] border bg-card px-6 py-5 transition-all",
+              "rounded-[14px] border bg-card px-5 sm:px-6 py-5 transition-all",
               hasTopic
                 ? "border-primary/40 shadow-[0_0_24px_-4px] shadow-primary/20"
-                : "border-[#334155]"
+                : "border-[#334155]",
             )}
           >
             {/* Topic Input */}
@@ -119,7 +155,10 @@ export function HomePage() {
             <div className="mt-4 flex items-center gap-2 flex-wrap">
               {/* Platform selector */}
               <Select value={platform} onValueChange={(v) => v && setPlatform(v)}>
-                <SelectTrigger size="sm" className="h-auto gap-1.5 rounded-[8px] border-[#334155] bg-transparent px-3 py-1.5 text-xs font-medium text-[#94A3B8]">
+                <SelectTrigger
+                  size="sm"
+                  className="h-auto gap-1.5 rounded-[8px] border-[#334155] bg-transparent px-3 py-1.5 text-xs font-medium text-[#94A3B8]"
+                >
                   <MonitorPlay className="size-3.5 text-[#64748B]" />
                   <SelectValue />
                 </SelectTrigger>
@@ -132,28 +171,12 @@ export function HomePage() {
                 </SelectContent>
               </Select>
 
-              {/* Style selector */}
-              <Select value={archetype} onValueChange={(v) => setArchetype(v ?? "")}>
-                <SelectTrigger size="sm" className="h-auto gap-1.5 rounded-[8px] border-[#334155] bg-transparent px-3 py-1.5 text-xs font-medium text-[#94A3B8]">
-                  <Palette className="size-3.5 text-[#64748B]" />
-                  <SelectValue placeholder="Auto Style" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Auto Style</SelectItem>
-                  {archetypes.map((a) => (
-                    <SelectItem key={a.name} value={a.name}>
-                      {a.name
-                        .split(/[-_]/)
-                        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                        .join(" ")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
               {/* Pacing selector */}
               <Select value={pacing} onValueChange={(v) => setPacing(v ?? "")}>
-                <SelectTrigger size="sm" className="h-auto gap-1.5 rounded-[8px] border-[#334155] bg-transparent px-3 py-1.5 text-xs font-medium text-[#94A3B8]">
+                <SelectTrigger
+                  size="sm"
+                  className="h-auto gap-1.5 rounded-[8px] border-[#334155] bg-transparent px-3 py-1.5 text-xs font-medium text-[#94A3B8]"
+                >
                   <Gauge className="size-3.5 text-[#64748B]" />
                   <SelectValue placeholder="Auto Pace" />
                 </SelectTrigger>
@@ -173,7 +196,7 @@ export function HomePage() {
                   "flex items-center gap-1.5 rounded-[8px] border px-3 py-1.5 text-xs font-medium transition-colors",
                   showAdvanced
                     ? "border-primary/40 bg-primary/10 text-primary"
-                    : "border-[#334155] bg-transparent text-[#94A3B8] hover:text-foreground"
+                    : "border-[#334155] bg-transparent text-[#94A3B8] hover:text-foreground",
                 )}
               >
                 <SlidersHorizontal className="size-3.5 text-[#64748B]" />
@@ -196,7 +219,7 @@ export function HomePage() {
             {/* Advanced Options Panel */}
             {showAdvanced && (
               <div className="mt-4 border-t border-border pt-4">
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
                       LLM Provider
@@ -250,6 +273,7 @@ export function HomePage() {
                       </SelectContent>
                     </Select>
                   </div>
+
                   <div>
                     <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
                       Music Provider
@@ -261,6 +285,29 @@ export function HomePage() {
                       <SelectContent>
                         <SelectItem value="bundled">Bundled (free)</SelectItem>
                         <SelectItem value="lyria">Lyria 3 Pro ($0.08)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Archetype fallback dropdown in Advanced */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                      Style Override
+                    </label>
+                    <Select value={archetype} onValueChange={(v) => setArchetype(v ?? "")}>
+                      <SelectTrigger className="h-9 w-full rounded-lg">
+                        <SelectValue placeholder="Auto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Auto Style</SelectItem>
+                        {archetypes.map((a) => (
+                          <SelectItem key={a.name} value={a.name}>
+                            {a.name
+                              .split(/[-_]/)
+                              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                              .join(" ")}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -288,19 +335,74 @@ export function HomePage() {
           )}
         </form>
 
-        {/* Suggestion Chips */}
-        <div className="flex flex-wrap items-center justify-center gap-2.5">
-          {SUGGESTIONS.map((s) => (
+        {/* Archetype Gallery */}
+        {archetypes.length > 0 && (
+          <div className="w-full">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-[1.5px] text-[#64748B]">
+              Visual Style
+            </h3>
+            <ScrollArea className="w-full">
+              <div className="flex gap-3 pb-3">
+                {/* Auto Style card */}
+                <ArchetypeCard
+                  archetype={null}
+                  selected={archetype === ""}
+                  onClick={() => setArchetype("")}
+                />
+                {archetypes.map((a) => (
+                  <ArchetypeCard
+                    key={a.name}
+                    archetype={a}
+                    selected={archetype === a.name}
+                    onClick={() => setArchetype(a.name)}
+                  />
+                ))}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </div>
+        )}
+
+        {/* Topic Inspiration */}
+        <div className="w-full">
+          <div className="mb-3 flex items-center gap-3">
+            {CATEGORY_KEYS.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setActiveCategory(cat)}
+                className={cn(
+                  "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                  activeCategory === cat
+                    ? "bg-primary/15 text-primary"
+                    : "text-[#64748B] hover:text-foreground",
+                )}
+              >
+                {cat}
+              </button>
+            ))}
             <button
-              key={s}
               type="button"
-              onClick={() => setTopic(s)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#334155] bg-[#1E293B80] px-3.5 py-1.5 text-xs font-normal text-[#94A3B8] transition-colors hover:bg-accent hover:text-accent-foreground whitespace-nowrap"
+              onClick={handleShuffle}
+              className="ml-auto flex items-center gap-1 text-xs text-[#64748B] hover:text-foreground transition-colors"
             >
-              <Lightbulb className="size-3.5 text-primary" />
-              {s}
+              <Shuffle className="size-3" />
+              Shuffle
             </button>
-          ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            {shuffledTopics.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setTopic(s)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#334155] bg-[#1E293B80] px-3.5 py-1.5 text-xs font-normal text-[#94A3B8] transition-colors hover:bg-accent hover:text-accent-foreground whitespace-nowrap"
+              >
+                <Lightbulb className="size-3.5 text-primary" />
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
