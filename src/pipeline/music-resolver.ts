@@ -89,6 +89,7 @@ export async function resolveMusic(
     cb?.onProgress?.("visuals", {
       type: "music_generated",
       provider: opts.musicProviderKey,
+      prompt: promptResult.prompt,
       durationSeconds: result.durationSeconds,
     });
 

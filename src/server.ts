@@ -266,23 +266,24 @@ app.get("/api/v1/jobs", async (request) => {
 
   if (!fs.existsSync(JOBS_DIR)) return { jobs: [], total: 0 };
 
-  const dirs = fs
-    .readdirSync(JOBS_DIR, { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    .map((d) => {
+  const dirents = fs.readdirSync(JOBS_DIR, { withFileTypes: true }).filter((d) => d.isDirectory());
+  const entries = await Promise.all(
+    dirents.map(async (d) => {
       const metaPath = path.join(JOBS_DIR, d.name, "meta.json");
       try {
-        const meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+        const raw = await fs.promises.readFile(metaPath, "utf-8");
+        const meta = JSON.parse(raw);
         return { id: d.name, ...meta };
       } catch {
         return { id: d.name, status: "unknown" };
       }
-    })
-    .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+    }),
+  );
+  entries.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
 
   return {
-    jobs: dirs.slice(offsetNum, offsetNum + limitNum),
-    total: dirs.length,
+    jobs: entries.slice(offsetNum, offsetNum + limitNum),
+    total: entries.length,
   };
 });
 
