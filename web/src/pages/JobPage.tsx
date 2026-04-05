@@ -3,7 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CompletedPanel } from "@/components/pipeline/CompletedPanel";
 import { FailedPanel } from "@/components/pipeline/FailedPanel";
-import { RunningPanel } from "@/components/pipeline/RunningPanel";
+import { StoryboardPanel } from "@/components/pipeline/StoryboardPanel";
+import { CostBreakdownCard } from "@/components/pipeline/CostBreakdownCard";
 import { STAGE_LABELS, StageCard } from "@/components/StageCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,8 +17,16 @@ import {
   type ResearchData,
 } from "@/hooks/useApi";
 import { useSSE } from "@/hooks/useSSE";
+import { formatArchetypeName } from "@/lib/utils";
 
 const STAGES = ["research", "director", "tts", "visuals", "assembly", "critic"] as const;
+
+interface MusicInfo {
+  status: "idle" | "generating" | "generated" | "fallback";
+  provider?: string;
+  prompt?: string;
+  reason?: string;
+}
 
 export function JobPage() {
   const { id } = useParams<{ id: string }>();
@@ -36,6 +45,7 @@ export function JobPage() {
     totalFrames?: number;
   } | null>(null);
   const [assetFailures, setAssetFailures] = useState<Array<{ scene: number; error: string }>>([]);
+  const [musicInfo, setMusicInfo] = useState<MusicInfo>({ status: "idle" });
 
   useEffect(() => {
     if (!id) return;
@@ -48,6 +58,7 @@ export function JobPage() {
     setCostEstimate(null);
     setAssemblyProgress(null);
     setAssetFailures([]);
+    setMusicInfo({ status: "idle" });
     setCancelling(false);
 
     api
@@ -143,6 +154,19 @@ export function JobPage() {
             ...prev,
             { scene: d.scene as number, error: d.error as string },
           ]);
+        } else if (type === "music_generating") {
+          setMusicInfo({ status: "generating", provider: d.provider as string });
+        } else if (type === "music_generated") {
+          setMusicInfo({
+            status: "generated",
+            provider: d.provider as string,
+            prompt: d.prompt as string | undefined,
+          });
+        } else if (type === "music_fallback") {
+          setMusicInfo({
+            status: "fallback",
+            reason: d.reason as string | undefined,
+          });
         }
       }
     },
@@ -194,7 +218,6 @@ export function JobPage() {
   const videoUrl = job.videoPath ? `/api/v1/jobs/${job.id}/artifacts/${job.videoPath}` : null;
 
   // Find the failed stage for error display
-  // Check "error" first, then fall back to "running" (stage that was mid-flight when job failed)
   const failedStage = isFailed
     ? (STAGES.find((s) => job.stages?.[s]?.status === "error") ??
       STAGES.find((s) => job.stages?.[s]?.status === "running") ??
@@ -221,6 +244,9 @@ export function JobPage() {
         : "Rendering..."
     : undefined;
 
+  // Stage status helpers
+  const visualsComplete = job.stages?.visuals?.status === "done" || job.stages?.visuals?.status === "skipped";
+
   return (
     <div className="py-6 px-4 sm:px-6 lg:px-10">
       {/* Header */}
@@ -233,10 +259,7 @@ export function JobPage() {
                 variant="secondary"
                 className="rounded-md border-0 bg-[#6366F120] px-2.5 py-1 text-xs font-medium text-[#A5B4FC]"
               >
-                {job.archetype
-                  .split(/[-_]/)
-                  .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                  .join(" ")}
+                {formatArchetypeName(job.archetype)}
               </Badge>
             )}
             <span className="text-xs text-[#64748B]">YouTube Shorts</span>
@@ -254,7 +277,7 @@ export function JobPage() {
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           {isRunning && (
             <div className="flex items-center gap-1.5 rounded-lg border border-[#334155] bg-[#1E293B] px-3.5 py-1.5">
-              <div className="size-2 rounded-full bg-[#22D3EE]" />
+              <div className="size-2 rounded-full bg-[#22D3EE] animate-pulse" />
               <span className="text-[13px] font-medium text-[#22D3EE]">Generating...</span>
             </div>
           )}
@@ -342,8 +365,20 @@ export function JobPage() {
           })}
         </ol>
 
-        {/* Right: Content Area */}
-        <div className="min-w-0 flex-1">
+        {/* Right: Progressive Card Feed */}
+        <div className="min-w-0 flex-1 flex flex-col gap-3">
+          {/* Completed: video player + stats at top */}
+          {isCompleted && (
+            <CompletedPanel
+              job={job}
+              score={score}
+              criticReview={criticReview}
+              costEstimate={costEstimate}
+              totalDuration={totalDuration}
+            />
+          )}
+
+          {/* Failed/cancelled error card */}
           {(isFailed || isCancelled) && (
             <FailedPanel
               failedStageName={
@@ -357,27 +392,149 @@ export function JobPage() {
             />
           )}
 
-          {isCompleted && (
-            <CompletedPanel
-              job={job}
+          {/* Research card — always visible once available */}
+          {researchData && (
+            <ResearchCard data={researchData} />
+          )}
+
+          {/* Storyboard — always visible once score available */}
+          {score && (
+            <StoryboardPanel
               score={score}
-              criticReview={criticReview}
-              costEstimate={costEstimate}
-              totalDuration={totalDuration}
+              jobId={job.id}
+              runDir={job.runDir ?? null}
+              visualsComplete={!!visualsComplete}
+              assetFailures={assetFailures}
             />
           )}
 
-          {!isCompleted && !isFailed && !isCancelled && (
-            <RunningPanel
-              researchData={researchData}
-              score={score}
-              costEstimate={costEstimate}
-              assetFailures={assetFailures}
-              stages={job.stages ?? {}}
-            />
+          {/* Cost estimate — shown during generation */}
+          {costEstimate && !isCompleted && (
+            <CostBreakdownCard estimate={costEstimate} variant="compact" />
+          )}
+
+          {/* Music status — live during visuals */}
+          {musicInfo.status !== "idle" && !isCompleted && (
+            <MusicStatusCard info={musicInfo} />
+          )}
+
+          {/* Asset failure warnings */}
+          {assetFailures.length > 0 && !isCompleted && (
+            <div className="rounded-[10px] border border-[#F59E0B30] bg-[#F59E0B10] p-4">
+              <span className="text-[10px] font-semibold uppercase tracking-[1.5px] text-[#F59E0B]">
+                ASSET WARNINGS
+              </span>
+              <div className="mt-2 flex flex-col gap-1">
+                {assetFailures.map((f, i) => (
+                  <p key={i} className="text-[12px] text-[#FBBF24]">
+                    Scene {f.scene}: {f.error}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TTS badge */}
+          {job.stages?.tts?.status === "done" && job.stages.tts.detail && !isCompleted && (
+            <div className="rounded-[10px] border border-[#334155] bg-[#1E293B] px-4 py-2.5">
+              <span className="text-[11px] text-[#94A3B8]">
+                Voice synthesis: {job.stages.tts.detail}
+              </span>
+            </div>
+          )}
+
+          {/* Empty state while waiting */}
+          {!researchData && !score && !costEstimate && isRunning && (
+            <div className="flex h-64 items-center justify-center">
+              <p className="text-sm text-[#64748B]">
+                Pipeline output will appear here as stages complete...
+              </p>
+            </div>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ─── Inline sub-components ─── */
+
+function ResearchCard({ data }: { data: ResearchData }) {
+  const [expanded, setExpanded] = useState(false);
+  const facts = expanded ? data.key_facts : data.key_facts.slice(0, 5);
+
+  return (
+    <div className="rounded-[10px] border border-[#334155] bg-[#1E293B] p-4 animate-in fade-in duration-500">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-[1.5px] text-[#64748B]">
+            RESEARCH SUMMARY
+          </span>
+          {data.mood && (
+            <span className="rounded-full bg-[#0F172A] px-2 py-0.5 text-[10px] text-[#94A3B8]">
+              {data.mood}
+            </span>
+          )}
+        </div>
+        <span className="text-xs font-medium text-[#22C55E]">
+          {data.key_facts.length} facts
+        </span>
+      </div>
+      <p className="mb-3 text-[13px] leading-relaxed text-[#CBD5E1]">
+        {data.summary}
+      </p>
+      {data.key_facts.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {facts.map((fact, i) => (
+            <span
+              key={i}
+              className="rounded-md bg-[#0F172A] px-2 py-1 text-[11px] text-[#94A3B8]"
+            >
+              {fact}
+            </span>
+          ))}
+          {data.key_facts.length > 5 && (
+            <button
+              type="button"
+              onClick={() => setExpanded(!expanded)}
+              className="rounded-md bg-[#0F172A] px-2 py-1 text-[11px] text-primary hover:text-primary/80"
+            >
+              {expanded ? "Show less" : `+${data.key_facts.length - 5} more`}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MusicStatusCard({ info }: { info: MusicInfo }) {
+  return (
+    <div className="rounded-[10px] border border-[#334155] bg-[#1E293B] px-4 py-2.5 flex items-center gap-2">
+      {info.status === "generating" && (
+        <>
+          <div className="size-3 animate-spin rounded-full border-2 border-[#334155] border-t-[#A78BFA]" />
+          <span className="text-[11px] text-[#94A3B8]">
+            Generating music via {info.provider ?? "AI"}...
+          </span>
+        </>
+      )}
+      {info.status === "generated" && (
+        <>
+          <span className="size-2 rounded-full bg-[#22C55E]" />
+          <span className="text-[11px] text-[#94A3B8]">
+            Music generated via {info.provider ?? "AI"}
+          </span>
+        </>
+      )}
+      {info.status === "fallback" && (
+        <>
+          <span className="size-2 rounded-full bg-[#F59E0B]" />
+          <span className="text-[11px] text-[#94A3B8]">
+            Using bundled track{info.reason ? ` (${info.reason})` : ""}
+          </span>
+        </>
+      )}
     </div>
   );
 }
