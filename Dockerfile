@@ -22,16 +22,13 @@ WORKDIR /app
 # Enable pnpm via corepack
 RUN corepack enable pnpm
 
-# Install backend dependencies first (layer caching)
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+# Install dependencies (pnpm workspace — root + web only, docs deploys separately)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY web/package.json ./web/
+RUN pnpm install --frozen-lockfile --filter=!docs
 
 # Install Chrome Headless Shell for Remotion rendering
 RUN npx remotion browser ensure
-
-# Install frontend dependencies
-COPY web/package.json web/pnpm-lock.yaml ./web/
-RUN cd web && pnpm install --frozen-lockfile
 
 # Copy full source
 COPY . .

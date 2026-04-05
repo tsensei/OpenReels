@@ -4,3 +4,6 @@ dist/
 .env
 staging_docs/
 output/
+.next/
+docs/out/
+docs/src/data/
