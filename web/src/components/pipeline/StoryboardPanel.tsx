@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { DirectorScore } from "@/hooks/useApi";
 import { getSceneAssetUrl } from "@/lib/scene-assets";
 import { cn } from "@/lib/utils";
-import { ImageOff, Play, Move, ArrowRight, Type } from "lucide-react";
+import { ImageOff, Pause, Play, Move, ArrowRight, Type } from "lucide-react";
 
 const VISUAL_TYPE_BADGE: Record<string, { label: string; color: string }> = {
   ai_image: { label: "AI", color: "bg-indigo-500/20 text-indigo-400" },
@@ -121,16 +121,28 @@ function StoryboardScene({
 }) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Reset error state when visuals complete so thumbnails retry loading.
-  // During generation, images 404 because assets aren't written yet.
-  // Once visuals stage finishes, assets exist and we need a fresh attempt.
   useEffect(() => {
     if (visualsComplete && imgError) {
       setImgError(false);
       setImgLoaded(false);
     }
-  }, [visualsComplete]);
+  }, [visualsComplete, imgError]);
+
+  const togglePlay = useCallback(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    if (vid.paused) {
+      vid.play();
+      setPlaying(true);
+    } else {
+      vid.pause();
+      setPlaying(false);
+    }
+  }, []);
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-lg border border-[#1E293B] bg-[#0F172A] transition-colors hover:border-[#334155]">
@@ -148,16 +160,19 @@ function StoryboardScene({
           <>
             {isVideo ? (
               <video
+                ref={videoRef}
                 src={thumbnailUrl}
                 className={cn(
                   "h-full w-full object-cover transition-opacity duration-500",
                   imgLoaded ? "opacity-100" : "opacity-0",
                 )}
                 muted
+                loop
                 playsInline
                 preload="metadata"
                 onLoadedData={() => setImgLoaded(true)}
                 onError={() => setImgError(true)}
+                onEnded={() => setPlaying(false)}
               />
             ) : (
               <img
@@ -190,11 +205,22 @@ function StoryboardScene({
           </div>
         )}
 
-        {/* Video play overlay */}
+        {/* Video play/pause overlay */}
         {isVideo && imgLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Play className="size-6 text-white/80" />
-          </div>
+          <button
+            type="button"
+            onClick={togglePlay}
+            className={cn(
+              "absolute inset-0 flex items-center justify-center transition-opacity",
+              playing ? "bg-transparent opacity-0 hover:opacity-100 hover:bg-black/20" : "bg-black/20 opacity-100",
+            )}
+          >
+            {playing ? (
+              <Pause className="size-6 text-white/80" />
+            ) : (
+              <Play className="size-6 text-white/80" />
+            )}
+          </button>
         )}
 
         {/* Scene number overlay */}

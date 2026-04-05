@@ -78,22 +78,25 @@ app.get("/api/v1/stats", async () => {
   let totalCost = 0;
 
   const dirs = fs.readdirSync(JOBS_DIR, { withFileTypes: true }).filter((d) => d.isDirectory());
-  for (const d of dirs) {
-    const metaPath = path.join(JOBS_DIR, d.name, "meta.json");
-    try {
-      const meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
-      totalJobs++;
-      if (meta.status === "completed") {
-        completedJobs++;
-        const cost = meta.actualCost?.totalCost ?? meta.costEstimate?.totalCost ?? 0;
-        totalCost += cost;
-      } else if (meta.status === "failed" || meta.status === "cancelled") {
-        failedJobs++;
-      } else if (meta.status === "running" || meta.status === "queued") {
-        activeJobs++;
-      }
-    } catch {}
-  }
+  await Promise.all(
+    dirs.map(async (d) => {
+      const metaPath = path.join(JOBS_DIR, d.name, "meta.json");
+      try {
+        const raw = await fs.promises.readFile(metaPath, "utf-8");
+        const meta = JSON.parse(raw);
+        totalJobs++;
+        if (meta.status === "completed") {
+          completedJobs++;
+          const cost = meta.actualCost?.totalCost ?? meta.costEstimate?.totalCost ?? 0;
+          totalCost += cost;
+        } else if (meta.status === "failed" || meta.status === "cancelled") {
+          failedJobs++;
+        } else if (meta.status === "running" || meta.status === "queued") {
+          activeJobs++;
+        }
+      } catch {}
+    }),
+  );
 
   return { totalJobs, completedJobs, failedJobs, activeJobs, totalCost: Math.round(totalCost * 100) / 100 };
 });

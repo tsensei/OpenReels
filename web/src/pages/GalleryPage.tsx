@@ -55,8 +55,6 @@ export function GalleryPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [offset, setOffset] = useState(0);
-
   // Toolbar state
   const [searchQuery, setSearchQuery] = useState("");
   const [archetypeFilter, setArchetypeFilter] = useState("all");
@@ -73,6 +71,7 @@ export function GalleryPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const bulkMode = selectedIds.size > 0;
 
@@ -82,20 +81,18 @@ export function GalleryPage() {
 
   const loadJobs = useCallback(async (append = false) => {
     try {
-      const currentOffset = append ? offset + PAGE_SIZE : 0;
+      const currentOffset = append ? jobs.length : 0;
       const result = await api.listJobs(PAGE_SIZE, currentOffset);
       if (append) {
         setJobs((prev) => [...prev, ...result.jobs]);
-        setOffset(currentOffset);
       } else {
         setJobs(result.jobs);
-        setOffset(0);
       }
       setTotal(result.total);
     } catch {}
     setLoading(false);
     setLoadingMore(false);
-  }, [offset]);
+  }, [jobs.length]);
 
   useEffect(() => {
     loadJobs();
@@ -123,14 +120,21 @@ export function GalleryPage() {
   const handleBulkDelete = async () => {
     setDeleting(true);
     const ids = Array.from(selectedIds);
+    let failCount = 0;
     for (const id of ids) {
       try {
         await api.deleteJob(id);
-      } catch {}
+      } catch {
+        failCount++;
+      }
     }
     setSelectedIds(new Set());
     setDeleteDialogOpen(false);
     setDeleting(false);
+    if (failCount > 0) {
+      setDeleteError(`${failCount} of ${ids.length} deletions failed (jobs may still be active)`);
+      setTimeout(() => setDeleteError(null), 5000);
+    }
     // Reload
     setLoading(true);
     loadJobs();
@@ -228,7 +232,7 @@ export function GalleryPage() {
       <div className="mb-5 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Gallery</h1>
         <span className="text-[13px] text-[#64748B]">
-          {filteredJobs.length} of {total} video{total !== 1 ? "s" : ""}
+          {filteredJobs.length} of {jobs.length} loaded{jobs.length < total ? ` (${total} total)` : ""}
         </span>
       </div>
 
@@ -248,6 +252,13 @@ export function GalleryPage() {
           archetypes={archetypes}
         />
       </div>
+
+      {/* Delete error banner */}
+      {deleteError && (
+        <div className="mb-4 rounded-lg border border-[#EF444430] bg-[#EF444410] px-4 py-2.5 text-sm text-[#EF4444]">
+          {deleteError}
+        </div>
+      )}
 
       {/* Bulk action bar */}
       {bulkMode && (

@@ -1,5 +1,4 @@
-import { cn } from "@/lib/utils";
-import { formatArchetypeName } from "@/lib/utils";
+import { cn, formatArchetypeName } from "@/lib/utils";
 import { Check, Sparkles } from "lucide-react";
 import type { Archetype } from "@/hooks/useApi";
 
