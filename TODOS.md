@@ -96,6 +96,13 @@
   **Depends on:** TTS alignment layer (Kokoro + Gemini TTS providers)
   Deferred from plan: Unified TTS Alignment Layer (CEO review: user prefers unified voice interface later)
 
+## Documentation
+
+- [ ] **Interactive @remotion/player embeds in docs** — Add `@remotion/player` to archetype gallery pages so visitors can see DirectorScore fixtures render in-browser without installing anything. The compositions (`OpenReelsVideo.tsx`) and score-to-props mapper (`src/remotion/lib/`) already exist but are wired for server-side rendering. Porting to client-side player requires: bundle the Remotion player (~500KB), adapt score-to-props for browser context, verify static export compatibility, handle missing assets gracefully. Remotion's own docs site already does this pattern, proving feasibility.
+  **Priority:** P3
+  **Depends on:** v1 docs site deployed and working
+  Deferred from plan: Fumadocs Documentation Site (design doc Approach B, deferred for bundle size and porting risk)
+
 ## Completed
 
 - [x] **HTTP API server mode** — Fastify HTTP server with POST /api/v1/jobs, GET /api/v1/jobs/:id, SSE /api/v1/jobs/:id/events, plus full React web UI.

@@ -2,6 +2,20 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.13.0] - 2026-04-05
+
+### Added
+- Documentation site built with Fumadocs (Next.js), deployed to GitHub Pages via static export at `openreels.tsensei.dev/docs`. 47 MDX pages covering getting started, providers, archetypes, pipeline architecture, configuration, REST API, deployment, and contributing.
+- Landing page redirects to `/docs` for clean entry point.
+- Archetype gallery with all 14 visual styles, each with visual parameters, style guides, and sample commands derived from archetype JSON configs at build time.
+- Prebuild sync script (`docs/scripts/sync-archetypes.ts`) copies archetype JSON configs into the docs build with schema validation, ensuring zero drift between pipeline and documentation.
+- GitHub Actions workflow (`docs.yml`) auto-deploys docs on push to `main` when `docs/` or `src/config/archetypes/` files change.
+- 213 archetype validation tests (required fields, color format, value ranges, sync script output).
+
+### Changed
+- Converted to pnpm workspace with `pnpm-workspace.yaml` listing `web` and `docs` workspaces. Consolidated `web/pnpm-lock.yaml` into the root lock file.
+- Updated Dockerfile to use workspace-aware install (`pnpm install --filter=!docs`) so Docker builds exclude the docs workspace.
+
 ## [0.12.1] - 2026-04-05
 
 ### Fixed
