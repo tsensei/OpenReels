@@ -118,6 +118,11 @@ const worker = new Worker<JobData>(
 
     // Build callbacks that emit BullMQ progress events and update meta.json
     const callbacks: PipelineCallbacks = {
+      onRunDir(runDir: string) {
+        meta.runDir = path.relative(jobDir, runDir);
+        writeMeta(jobDir, meta);
+      },
+
       onStageStart(stage: StageName) {
         meta.stages[stage] = { status: "running" };
         writeMeta(jobDir, meta);

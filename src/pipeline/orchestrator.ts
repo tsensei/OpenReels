@@ -160,10 +160,57 @@ async function generateAIImage(
   } catch (err) {
     console.warn(`[visuals] Scene ${sceneIndex} prompt optimization failed, using original: ${err}`);
   }
-  const imageBuffer = await opts.imageGen.generate(prompt);
-  const filePath = path.join(assetsDir, `scene-${sceneIndex}-ai.png`);
-  fs.writeFileSync(filePath, imageBuffer);
-  return { path: filePath, usage, durationSeconds: null };
+
+  try {
+    const imageBuffer = await opts.imageGen.generate(prompt);
+    const filePath = path.join(assetsDir, `scene-${sceneIndex}-ai.png`);
+    fs.writeFileSync(filePath, imageBuffer);
+    return { path: filePath, usage, durationSeconds: null };
+  } catch (err) {
+    if (!isSafetyRejection(err)) throw err;
+
+    // Safety rejection: retry once with a sanitized prompt
+    console.warn(`[visuals] Scene ${sceneIndex} image rejected by safety filter, retrying with softened prompt`);
+    try {
+      const sanitized = await optimizeImagePrompt(
+        opts.llm,
+        visualPrompt,
+        scriptLine,
+        sceneIndex,
+        totalScenes,
+        archetype,
+        {
+          rejectionContext:
+            `The previous prompt was rejected by the image provider's safety filter (${String(err).slice(0, 200)}). ` +
+            `Rewrite the prompt to convey the same scene mood and composition through atmosphere, lighting, and implication. ` +
+            `Remove ALL references to violence, blood, gore, weapons in use, suffering, nudity, or graphic content. ` +
+            `Keep the archetype style and emotional tone intact.`,
+        },
+      );
+      prompt = sanitized.prompt;
+      usage = sanitized.usage;
+    } catch {
+      // If the LLM sanitization call itself fails, re-throw the original safety error
+      throw err;
+    }
+
+    const imageBuffer = await opts.imageGen.generate(prompt);
+    const filePath = path.join(assetsDir, `scene-${sceneIndex}-ai.png`);
+    fs.writeFileSync(filePath, imageBuffer);
+    return { path: filePath, usage, durationSeconds: null };
+  }
+}
+
+function isSafetyRejection(err: unknown): boolean {
+  const msg = String(err).toLowerCase();
+  return (
+    msg.includes("safety") ||
+    msg.includes("content policy") ||
+    msg.includes("safety_violations") ||
+    msg.includes("rejected by the safety") ||
+    msg.includes("content moderation") ||
+    msg.includes("prohibited content")
+  );
 }
 
 async function resolveVisualAsset(
@@ -756,6 +803,9 @@ export async function runPipeline(
   fs.mkdirSync(runDir, { recursive: true });
   const assetsDir = path.join(runDir, "assets");
   fs.mkdirSync(assetsDir, { recursive: true });
+
+  // Notify caller of runDir so it can be persisted before any stage runs
+  cb.onRunDir?.(runDir);
 
   const logPath = path.join(runDir, "log.json");
   const scorePath = path.join(runDir, "score.json");

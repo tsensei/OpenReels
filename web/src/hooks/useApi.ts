@@ -40,6 +40,10 @@ export interface Archetype {
   captionStyle: string;
   artStyle: string;
   mood: string;
+  colorPalette?: { background: string; accent: string; text: string };
+  visualColorPalette?: string[];
+  scenePacing?: "fast" | "moderate" | "cinematic";
+  motionIntensity?: number;
 }
 
 export interface Platform {
@@ -59,17 +63,29 @@ export interface ProviderOptions {
   llm: ProviderOption[];
   tts: ProviderOption[];
   image: ProviderOption[];
+  video: ProviderOption[];
+}
+
+export interface StatsResponse {
+  totalJobs: number;
+  completedJobs: number;
+  failedJobs: number;
+  activeJobs: number;
+  totalCost: number;
 }
 
 export interface CostBreakdown {
   llmCost: number;
   ttsCost: number;
   imageCost: number;
+  videoCost: number;
+  musicCost: number;
   totalCost: number;
   details: {
     llmCalls: number;
     ttsCharacters: number;
     aiImages: number;
+    aiVideos: number;
   };
 }
 
@@ -78,6 +94,7 @@ export interface ActualCostBreakdown {
   ttsCost: number;
   imageCost: number;
   videoCost: number;
+  musicCost: number;
   totalCost: number;
   details: {
     totalInputTokens: number;
@@ -125,6 +142,7 @@ export interface CreateJobRequest {
     llm?: string;
     tts?: string;
     image?: string;
+    music?: string;
   };
 }
 
@@ -171,6 +189,10 @@ export const api = {
   },
 
   getHealth() {
-    return fetchJson<{ status: string; redis: string }>("/health");
+    return fetchJson<{ status: string; redis: string; keys?: Record<string, boolean> }>("/health");
+  },
+
+  getStats() {
+    return fetchJson<StatsResponse>("/stats");
   },
 };

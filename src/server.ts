@@ -53,7 +53,49 @@ app.get("/api/v1/health", async () => {
     status: redisOk ? "healthy" : "degraded",
     redis: redisOk ? "connected" : "disconnected",
     jobsDir: jobsDirStats ? "exists" : "missing",
+    keys: {
+      ANTHROPIC_API_KEY: !!process.env["ANTHROPIC_API_KEY"],
+      OPENAI_API_KEY: !!process.env["OPENAI_API_KEY"],
+      GOOGLE_API_KEY: !!process.env["GOOGLE_API_KEY"],
+      ELEVENLABS_API_KEY: !!process.env["ELEVENLABS_API_KEY"],
+      INWORLD_TTS_API_KEY: !!process.env["INWORLD_TTS_API_KEY"],
+      PEXELS_API_KEY: !!process.env["PEXELS_API_KEY"],
+      PIXABAY_API_KEY: !!process.env["PIXABAY_API_KEY"],
+    },
   };
+});
+
+// --- Aggregate stats ---
+app.get("/api/v1/stats", async () => {
+  if (!fs.existsSync(JOBS_DIR)) {
+    return { totalJobs: 0, completedJobs: 0, failedJobs: 0, activeJobs: 0, totalCost: 0 };
+  }
+
+  let totalJobs = 0;
+  let completedJobs = 0;
+  let failedJobs = 0;
+  let activeJobs = 0;
+  let totalCost = 0;
+
+  const dirs = fs.readdirSync(JOBS_DIR, { withFileTypes: true }).filter((d) => d.isDirectory());
+  for (const d of dirs) {
+    const metaPath = path.join(JOBS_DIR, d.name, "meta.json");
+    try {
+      const meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+      totalJobs++;
+      if (meta.status === "completed") {
+        completedJobs++;
+        const cost = meta.actualCost?.totalCost ?? meta.costEstimate?.totalCost ?? 0;
+        totalCost += cost;
+      } else if (meta.status === "failed" || meta.status === "cancelled") {
+        failedJobs++;
+      } else if (meta.status === "running" || meta.status === "queued") {
+        activeJobs++;
+      }
+    } catch {}
+  }
+
+  return { totalJobs, completedJobs, failedJobs, activeJobs, totalCost: Math.round(totalCost * 100) / 100 };
 });
 
 // --- Archetypes ---
@@ -66,6 +108,10 @@ app.get("/api/v1/archetypes", async () => {
       captionStyle: config.captionStyle,
       artStyle: config.artStyle,
       mood: config.mood,
+      colorPalette: config.colorPalette,
+      visualColorPalette: config.visualColorPalette,
+      scenePacing: config.scenePacing,
+      motionIntensity: config.motionIntensity,
     };
   });
 });

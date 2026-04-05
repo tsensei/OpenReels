@@ -37,6 +37,8 @@ export interface PipelineCallbacks {
   onCostEstimate?(estimate: CostBreakdown, imageProvider: ImageProviderKey, stockSceneCount?: number): Promise<boolean>;
   onActualCost?(cost: ActualCostBreakdown): void;
   onLog?(message: string): void;
+  /** Called once the run directory is created, before any stage runs. */
+  onRunDir?(runDir: string): void;
   /** Called when pipeline is cancelled between stages. Return true if cancelled. */
   isCancelled?(): boolean;
 }
