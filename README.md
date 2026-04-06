@@ -20,6 +20,14 @@ openreels "the apollo 13 disaster, from explosion to miraculous return" --provid
 
 </div>
 
+### Web UI
+
+<div align="center">
+<img src=".github/assets/demo.gif" alt="OpenReels Web UI demo" width="800" />
+
+**Live pipeline visualization.** Watch research, script, voiceover, visuals, music, and assembly stages stream in real time.
+</div>
+
 ## How it works
 
 Give it a topic. It handles everything:

@@ -171,7 +171,11 @@ function StoryboardScene({
                 playsInline
                 preload="metadata"
                 onLoadedData={() => setImgLoaded(true)}
-                onError={() => setImgError(true)}
+                onError={(e) => {
+                  (e.target as HTMLVideoElement).removeAttribute("src");
+                  (e.target as HTMLVideoElement).load();
+                  setImgError(true);
+                }}
                 onEnded={() => setPlaying(false)}
               />
             ) : (

@@ -51,6 +51,35 @@ const TOPIC_CATEGORIES: Record<string, string[]> = {
 
 const CATEGORY_KEYS = Object.keys(TOPIC_CATEGORIES);
 
+const DISPLAY_NAMES: Record<string, string> = {
+  // Platforms
+  youtube: "YouTube",
+  tiktok: "TikTok",
+  instagram: "Instagram",
+  // LLM
+  anthropic: "Anthropic (Claude)",
+  openai: "OpenAI (GPT)",
+  gemini: "Google Gemini",
+  ollama: "Ollama (Local)",
+  // TTS
+  elevenlabs: "ElevenLabs",
+  inworld: "Inworld",
+  kokoro: "Kokoro (Local)",
+  "gemini-tts": "Gemini TTS",
+  "openai-tts": "OpenAI TTS",
+  // Image
+  // gemini/openai already covered above
+  // Music
+  bundled: "Bundled (Free)",
+  lyria: "Lyria 3 Pro",
+  // Video
+  fal: "fal.ai (Kling)",
+};
+
+function displayName(key: string): string {
+  return DISPLAY_NAMES[key] ?? key;
+}
+
 export function HomePage() {
   const navigate = useNavigate();
   const [topic, setTopic] = useState("");
@@ -160,12 +189,12 @@ export function HomePage() {
                   className="h-auto gap-1.5 rounded-[8px] border-[#334155] bg-transparent px-3 py-1.5 text-xs font-medium text-[#94A3B8]"
                 >
                   <MonitorPlay className="size-3.5 text-[#64748B]" />
-                  <SelectValue />
+                  <SelectValue>{displayName(platform)}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {platforms.map((p) => (
                     <SelectItem key={p.name} value={p.name}>
-                      {p.name.charAt(0).toUpperCase() + p.name.slice(1)}
+                      {displayName(p.name)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -226,7 +255,7 @@ export function HomePage() {
                     </label>
                     <Select value={llmProvider} onValueChange={(v) => v && setLlmProvider(v)}>
                       <SelectTrigger className="h-9 w-full rounded-lg">
-                        <SelectValue />
+                        <SelectValue>{displayName(llmProvider)}</SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {providers?.llm.map((p) => (
@@ -244,7 +273,7 @@ export function HomePage() {
                     </label>
                     <Select value={ttsProvider} onValueChange={(v) => v && setTtsProvider(v)}>
                       <SelectTrigger className="h-9 w-full rounded-lg">
-                        <SelectValue />
+                        <SelectValue>{displayName(ttsProvider)}</SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {providers?.tts.map((p) => (
@@ -262,7 +291,7 @@ export function HomePage() {
                     </label>
                     <Select value={imageProvider} onValueChange={(v) => v && setImageProvider(v)}>
                       <SelectTrigger className="h-9 w-full rounded-lg">
-                        <SelectValue />
+                        <SelectValue>{displayName(imageProvider)}</SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {providers?.image.map((p) => (
@@ -280,10 +309,10 @@ export function HomePage() {
                     </label>
                     <Select value={musicProvider} onValueChange={(v) => v && setMusicProvider(v)}>
                       <SelectTrigger className="h-9 w-full rounded-lg">
-                        <SelectValue />
+                        <SelectValue>{displayName(musicProvider)}</SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="bundled">Bundled (free)</SelectItem>
+                        <SelectItem value="bundled">Bundled (Free)</SelectItem>
                         <SelectItem value="lyria">Lyria 3 Pro ($0.08)</SelectItem>
                       </SelectContent>
                     </Select>

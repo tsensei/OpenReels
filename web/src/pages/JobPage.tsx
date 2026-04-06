@@ -509,13 +509,18 @@ function ResearchCard({ data }: { data: ResearchData }) {
 }
 
 function MusicStatusCard({ info }: { info: MusicInfo }) {
+  const musicProviderNames: Record<string, string> = {
+    lyria: "Lyria",
+    bundled: "Bundled Library",
+  };
+  const providerLabel = musicProviderNames[info.provider ?? ""] ?? info.provider ?? "AI";
   return (
     <div className="rounded-[10px] border border-[#334155] bg-[#1E293B] px-4 py-2.5 flex items-center gap-2">
       {info.status === "generating" && (
         <>
           <div className="size-3 animate-spin rounded-full border-2 border-[#334155] border-t-[#A78BFA]" />
           <span className="text-[11px] text-[#94A3B8]">
-            Generating music via {info.provider ?? "AI"}...
+            Generating music via {providerLabel}...
           </span>
         </>
       )}
@@ -523,7 +528,7 @@ function MusicStatusCard({ info }: { info: MusicInfo }) {
         <>
           <span className="size-2 rounded-full bg-[#22C55E]" />
           <span className="text-[11px] text-[#94A3B8]">
-            Music generated via {info.provider ?? "AI"}
+            Music generated via {providerLabel}
           </span>
         </>
       )}
