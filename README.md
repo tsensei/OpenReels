@@ -222,7 +222,7 @@ The rewrite moves from Python to TypeScript for native [Remotion](https://www.re
 
 ## Status
 
-v0.11.0 shipped. AI-generated background music via Google Lyria 3 Pro with scene-synced scoring. See [CHANGELOG.md](CHANGELOG.md) for full version history and [TODOS.md](TODOS.md) for known issues and roadmap.
+v0.14.0 shipped. Full local mode with Ollama LLM, Kokoro TTS, and bundled music. No paid API keys needed. See [CHANGELOG.md](CHANGELOG.md) for full version history and [TODOS.md](TODOS.md) for known issues and roadmap.
 
 ## License
 

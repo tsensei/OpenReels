@@ -14,9 +14,9 @@ src/
   pipeline/             # Mastra workflow orchestrator + utils + music-resolver (6-stage pipeline)
   providers/
     factory.ts          # provider factory with BYOK support
-    llm/                # base.ts (BaseLLM), anthropic.ts, openai.ts, gemini.ts (AI SDK 6)
+    llm/                # base.ts (BaseLLM), anthropic.ts, openai.ts, gemini.ts, ollama.ts (AI SDK 6)
     tts/                # elevenlabs.ts, inworld.ts, kokoro.ts, gemini.ts, openai.ts, aligned-tts-provider.ts, whisper-aligner.ts
-    image/              # gemini.ts, openai.ts
+    image/              # gemini.ts, openai.ts, stub.ts (local mode)
     stock/              # pexels.ts, pixabay.ts, adaptive-resolver.ts, query-reformer.ts, stock-verifier.ts
     music/              # lyria.ts (Lyria 3 Pro), bundled-adapter.ts, bundled.ts
     video/              # gemini.ts (Veo), fal.ts (Kling), video-resolver.ts
@@ -46,7 +46,7 @@ fixtures/               # sample DirectorScore JSONs
 ```bash
 pnpm install          # install dependencies
 pnpm start "topic"    # run full pipeline (CLI)
-pnpm test             # run vitest suite (288 tests)
+pnpm test             # run vitest suite (326 tests)
 ```
 
 ### Web UI (Docker Compose)

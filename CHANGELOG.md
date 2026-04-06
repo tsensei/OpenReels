@@ -7,10 +7,9 @@ All notable changes to OpenReels will be documented in this file.
 ### Added
 - **Ollama LLM provider** for local inference. Run the entire LLM pipeline on your own hardware with `--provider ollama`. No cloud API keys needed for LLM, TTS, or music.
 - **`--local` compound flag** that auto-configures Ollama + Kokoro TTS + bundled music + stock footage in one flag. The zero-config entry point for local mode.
-- **Structured output hardening** in OllamaLLM: JSON repair via `jsonrepair`, error classification (recoverable vs non-recoverable), and retry loop with feedback injection. Non-recoverable errors (OOM, context exceeded, connection refused) throw immediately instead of wasting retries.
-- **Ollama startup health check** that verifies the server is running and the model is pulled before the pipeline starts. Clear error messages with setup instructions.
-- **Stub image provider** for `--local` mode. Prevents silent blank frames by catching any `ai_image` beats that slip through the schema.
-- **VisualType schema stripping** in local mode. The `ai_image` option is removed from the Zod enum at runtime so the LLM literally cannot select it.
+- **Structured output hardening** for local models: automatic JSON repair, smart error classification (non-recoverable errors like OOM throw immediately instead of wasting retries), and retry loop with feedback injection.
+- **Ollama startup health check** verifies the server is running and the model is pulled before the pipeline starts. Clear error messages with setup instructions if anything is missing.
+- **Local mode visual types** automatically stripped to stock-only (stock_image, stock_video, text_card). The LLM never sees `ai_image` as an option, so it can't pick what isn't available. Stub image provider as a safety net if anything slips through.
 - **Docker Compose `--profile local`** with an Ollama container that auto-pulls the model on first start (healthcheck-gated). Zero manual Ollama setup: `docker compose --profile local up`.
 - **$0 cost display** for Ollama in the CLI cost estimator. Mixed local+cloud setups (e.g., Ollama LLM + Gemini images) show $0 for local providers and real costs for cloud.
 - **Web search bypass** in BaseLLM. When a provider has no search tools (like Ollama), `enableWebSearch` gracefully falls back to structured output using the model's training data.
