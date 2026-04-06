@@ -67,6 +67,10 @@ The **golden rule** enforced by Zod validation: no more than 2 consecutive scene
 
 When video providers are configured (`--video-provider`), the Director is told about `ai_video` as a fifth visual type. Without video providers, only the four non-video types are offered. For `ai_video` scenes, motion is set to `"static"` because the video generation model controls motion rather than the Ken Burns effect.
 
+## Local mode schema stripping
+
+In local mode (`--local` or `--provider ollama`), the `ai_image` visual type is removed from the Zod schema at runtime. The LLM only sees `stock_image`, `stock_video`, and `text_card` as valid options. This is a schema-level constraint, not a prompt instruction, so the model cannot accidentally pick a visual type that requires a cloud image generation API. A `StubImageProvider` acts as a safety net in case anything slips through.
+
 ## Transitions
 
 Each scene can specify how it flows into the next scene:

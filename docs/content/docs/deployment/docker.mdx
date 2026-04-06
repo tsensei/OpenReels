@@ -206,6 +206,26 @@ docker compose run worker npx tsx src/index.ts --yes "Your topic here"
 
 ---
 
+## Local Mode with Ollama
+
+Docker Compose includes an Ollama profile for running the full pipeline locally without paid API keys:
+
+```bash
+docker compose --profile local up
+```
+
+This starts an additional `ollama` service that automatically pulls the default model (`gemma4:e4b`) on first start. The worker auto-configures for local mode when Ollama is selected as the LLM provider.
+
+The Ollama container uses a persistent `ollama-models` volume so the model download only happens once. The healthcheck waits for the model to be ready before the worker starts processing jobs.
+
+You can override the model via environment variable:
+
+```bash
+OLLAMA_MODEL=gemma4:31b docker compose --profile local up
+```
+
+---
+
 ## Scaling
 
 The worker runs with concurrency 1 by default. To run multiple workers:

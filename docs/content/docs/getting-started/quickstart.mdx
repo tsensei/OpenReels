@@ -64,7 +64,10 @@ pnpm install
 # Full pipeline with Google providers (LLM, image, TTS, video, music)
 pnpm start "the fall of the Roman Empire" --provider google
 
-# Free local TTS, no API spend on voiceover
+# Full local mode — Ollama + Kokoro + bundled music (no paid API keys)
+pnpm start "5 stoic lessons" --local
+
+# Free local LLM + TTS, still needs image API key
 pnpm start "5 stoic lessons" --provider local
 
 # Dry run — outputs the DirectorScore JSON without generating any assets

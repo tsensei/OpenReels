@@ -9,7 +9,7 @@ OpenReels uses a pluggable provider system. Each stage of the pipeline (scriptin
 
 | Capability | Providers | Env var |
 |-----------|-----------|---------|
-| **LLM** | Anthropic Claude, OpenAI GPT, Google Gemini | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY` |
+| **LLM** | Anthropic Claude, OpenAI GPT, Google Gemini, **Ollama (local)** | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`, none |
 | **TTS** | ElevenLabs, Inworld, OpenAI TTS, Gemini TTS, Kokoro (free, local) | `ELEVENLABS_API_KEY`, `INWORLD_TTS_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`, none |
 | **Images** | Gemini Imagen, OpenAI DALL-E | `GOOGLE_API_KEY`, `OPENAI_API_KEY` |
 | **Video** | Google Veo, fal.ai Kling | `GOOGLE_API_KEY`, `FAL_API_KEY` |
@@ -25,8 +25,9 @@ The `--provider` flag sets the **LLM** provider. It also acts as a convenience s
 | `anthropic` | LLM only (default). Other providers use their own flags. |
 | `openai` | LLM only. |
 | `gemini` | LLM only. |
+| `ollama` | LLM only (local inference). No API key needed. |
 | `google` | LLM (Gemini) + Image (Gemini Imagen) + TTS (Gemini TTS) + Video (Veo) + Music (Lyria). One `GOOGLE_API_KEY` for everything. |
-| `local` | LLM (your default) + TTS (Kokoro, free local). No TTS API key needed. |
+| `local` | LLM (Ollama) + TTS (Kokoro, free local). No LLM or TTS API key needed. |
 
 Individual provider flags override the `--provider` shortcut:
 
@@ -40,7 +41,7 @@ pnpm start "topic" --provider google --tts-provider elevenlabs
 OpenReels never stores API keys. You provide them via environment variables (`.env` file or system env). The web UI's Settings page lets you enter keys per-session — they are sent with each API request and never persisted server-side.
 
 Minimum to run:
-- **One LLM key** — `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GOOGLE_API_KEY`
+- **One LLM key** — `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GOOGLE_API_KEY`. Or use `--provider ollama` / `--local` for free local inference (no key needed).
 - **One TTS option** — `ELEVENLABS_API_KEY`, `INWORLD_TTS_API_KEY`, or use `--tts-provider kokoro` (free, no key)
 
 Optional:
@@ -54,7 +55,7 @@ Before every run, the pipeline shows a cost estimate and asks for confirmation. 
 
 | Provider category | Cheapest option | Mid-range | Premium |
 |------------------|----------------|-----------|---------|
-| **LLM** | Gemini 2.5 Flash (~$0.001/run) | OpenAI GPT ($0.01-0.03/run) | Anthropic Claude ($0.05-0.10/run) |
+| **LLM** | Ollama (free, local) | Gemini 2.5 Flash (~$0.001/run) | Anthropic Claude ($0.05-0.10/run) |
 | **TTS** | Kokoro (free) | Gemini TTS / Inworld (~$0.01/run) | ElevenLabs (~$0.15/run) |
 | **Images** | Gemini Imagen ($0.101/image) | -- | OpenAI DALL-E ($0.167/image) |
 | **Video** | Veo 3.1 Lite ($0.30/6s clip) | -- | fal.ai Kling ($0.35/5s clip) |
@@ -73,7 +74,10 @@ pnpm start "your topic" --dry-run
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--provider <name>` | LLM provider (`anthropic`, `openai`, `gemini`, `google`, `local`) | `anthropic` |
+| `--provider <name>` | LLM provider (`anthropic`, `openai`, `gemini`, `ollama`, `google`, `local`) | `anthropic` |
+| `--local` | Full local mode: Ollama + Kokoro + bundled music + stock visuals | off |
+| `--ollama-model <name>` | Ollama model name | `gemma4:e4b` |
+| `--ollama-base-url <url>` | Ollama server URL | `http://127.0.0.1:11434` |
 | `--tts-provider <name>` | TTS provider (`elevenlabs`, `inworld`, `kokoro`, `gemini-tts`, `openai-tts`) | `elevenlabs` |
 | `--image-provider <name>` | Image provider (`gemini`, `openai`) | `gemini` |
 | `--video-provider <name>` | Video provider (`gemini`, `fal`) | auto-detect |

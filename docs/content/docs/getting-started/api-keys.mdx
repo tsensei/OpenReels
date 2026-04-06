@@ -5,13 +5,14 @@ description: Which API keys you need, where to get them, and how to configure yo
 
 ## Minimum keys to run
 
-You need at least **one LLM provider** and **one TTS provider** to generate a video.
+You need at least **one LLM provider** and **one TTS provider** to generate a video. Or use `--local` for a zero-API-key setup with Ollama + Kokoro.
 
 | What you need | Provider | Key | Where to get it |
 |---|---|---|---|
 | LLM (pick one) | Anthropic (default) | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com/) |
 | | OpenAI | `OPENAI_API_KEY` | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
 | | Google Gemini | `GOOGLE_API_KEY` | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| | Ollama (free, local) | No key needed | [ollama.com/download](https://ollama.com/download). Use `--provider ollama` or `--local` |
 | TTS (pick one) | ElevenLabs (default) | `ELEVENLABS_API_KEY` | [elevenlabs.io](https://elevenlabs.io/) |
 | | Inworld | `INWORLD_TTS_API_KEY` | [inworld.ai](https://inworld.ai/) |
 | | Kokoro (free, local) | No key needed | Use `--tts-provider kokoro` or `--provider local` |
@@ -74,6 +75,8 @@ Instead of setting individual provider flags, use the `--provider` meta-flag:
 | `--provider google` | Sets LLM to Gemini, images to Imagen, TTS to Gemini TTS, video to Veo, music to Lyria. Only needs `GOOGLE_API_KEY`. |
 | `--provider openai` | Sets LLM to OpenAI GPT. Only needs `OPENAI_API_KEY`. |
 | `--provider anthropic` | Sets LLM to Anthropic Claude (default). Only needs `ANTHROPIC_API_KEY`. |
-| `--provider local` | Sets TTS to Kokoro (free, no API key). LLM still defaults to Anthropic. |
+| `--provider ollama` | Sets LLM to Ollama (local). No LLM API key needed. |
+| `--provider local` | Sets LLM to Ollama and TTS to Kokoro. No LLM or TTS API key needed. |
+| `--local` | Full local mode: Ollama + Kokoro + bundled music + stock visuals. No paid API keys for LLM, TTS, or music. Only needs a free Pexels key for stock footage. |
 
 Explicit per-provider flags (like `--tts-provider`, `--image-provider`) always override the meta-flag.

@@ -1,9 +1,9 @@
 ---
 title: LLM Providers
-description: Configure the LLM provider for scripting, research, and creative direction — Anthropic Claude, OpenAI GPT, or Google Gemini.
+description: Configure the LLM provider for scripting, research, and creative direction — Anthropic Claude, OpenAI GPT, Google Gemini, or Ollama (local).
 ---
 
-The LLM provider handles all text generation in the pipeline: web research, script writing (Creative Director), image/video prompt optimization, stock query reformulation, and quality critique. OpenReels uses the [Vercel AI SDK](https://sdk.vercel.ai/) under the hood, so all three providers share the same structured output and tool-calling interface.
+The LLM provider handles all text generation in the pipeline: web research, script writing (Creative Director), image/video prompt optimization, stock query reformulation, and quality critique. OpenReels uses the [Vercel AI SDK](https://sdk.vercel.ai/) under the hood, so all providers share the same structured output and tool-calling interface.
 
 ## Supported providers
 
@@ -12,6 +12,7 @@ The LLM provider handles all text generation in the pipeline: web research, scri
 | Anthropic Claude | `claude-sonnet-4-6` | `ANTHROPIC_API_KEY` | `anthropic` |
 | OpenAI GPT | `gpt-5.4` | `OPENAI_API_KEY` | `openai` |
 | Google Gemini | `gemini-2.5-flash` | `GOOGLE_API_KEY` | `gemini` |
+| Ollama (local) | `gemma4:e4b` | None | `ollama` |
 
 ## Usage
 
@@ -21,6 +22,7 @@ Set the LLM provider with the `--provider` flag:
 pnpm start "the apollo 13 disaster" --provider anthropic
 pnpm start "the apollo 13 disaster" --provider openai
 pnpm start "the apollo 13 disaster" --provider gemini
+pnpm start "the apollo 13 disaster" --provider ollama
 ```
 
 The `google` shortcut sets the LLM to Gemini along with all other providers to their Google equivalents:
@@ -30,9 +32,16 @@ The `google` shortcut sets the LLM to Gemini along with all other providers to t
 pnpm start "the apollo 13 disaster" --provider google
 ```
 
+The `--local` flag configures the full local pipeline (Ollama + Kokoro TTS + bundled music + stock footage):
+
+```bash
+# No paid API keys needed for LLM, TTS, or music
+pnpm start "the apollo 13 disaster" --local
+```
+
 ## Environment variables
 
-Each provider reads its API key from a specific environment variable:
+Cloud providers read their API key from a specific environment variable:
 
 ```bash
 # .env
@@ -41,7 +50,7 @@ OPENAI_API_KEY=sk-...              # OpenAI Platform
 GOOGLE_API_KEY=AI...               # Google AI Studio
 ```
 
-Only the key for your chosen provider is required. If you use `--provider gemini`, you only need `GOOGLE_API_KEY`.
+Only the key for your chosen provider is required. If you use `--provider gemini`, you only need `GOOGLE_API_KEY`. Ollama requires no API key — it runs locally on your machine.
 
 ## How the LLM is used
 
@@ -60,6 +69,7 @@ Each provider brings its own search tool integration:
 - **Anthropic** — `webSearch_20250305` tool
 - **OpenAI** — `webSearch` tool
 - **Gemini** — `googleSearch` tool
+- **Ollama** — No web search. The research stage uses the model's training data instead of live web results.
 
 ## Cost comparison
 
@@ -67,11 +77,12 @@ LLM costs are typically the smallest part of the total bill. A typical run uses 
 
 | Provider | Input token price | Output token price | Typical run cost |
 |----------|------------------|--------------------|-----------------|
+| Ollama (local) | Free | Free | $0.00 |
 | Gemini 2.5 Flash | $0.10/M tokens | $0.40/M tokens | ~$0.001 |
 | OpenAI GPT | $2.00/M tokens | $8.00/M tokens | ~$0.01-0.03 |
 | Anthropic Claude | $3.00/M tokens | $15.00/M tokens | ~$0.05-0.10 |
 
-Gemini is roughly 30x cheaper than Anthropic per token. For budget-conscious runs, combine `--provider gemini` with `--tts-provider kokoro` and `--music-provider bundled`.
+Ollama runs entirely on your machine. For zero-cost runs, use `--local` which sets Ollama + Kokoro TTS + bundled music. The only cost is stock footage (Pexels/Pixabay are free).
 
 ## VLM verification model
 
@@ -80,3 +91,45 @@ Stock footage verification uses a separate VLM (Vision Language Model) call. By 
 - **Anthropic** — `claude-sonnet-4-6`
 - **OpenAI** — `gpt-4o`
 - **Gemini** — `gemini-2.5-flash`
+- **Ollama** — Disabled by default in local mode (`--no-stock-verify`). Can be re-enabled with `--stock-verify` if a capable vision model is available.
+
+## Ollama setup
+
+Ollama runs open-weight models locally. Install Ollama, pull a model, and point OpenReels at it:
+
+```bash
+# 1. Install Ollama: https://ollama.com/download
+# 2. Pull a model
+ollama pull gemma4:e4b
+
+# 3. Run OpenReels
+pnpm start "why octopuses are aliens" --provider ollama
+```
+
+### Recommended models
+
+| Model | VRAM | Structured Output (τ2) | Notes |
+|-------|------|------------------------|-------|
+| `gemma4:31b` | 20GB+ | 76.9% | Best local structured output |
+| `gemma4:26b-a4b` | 16GB+ | 68.2% | Efficient MoE variant |
+| `gemma4:e4b` | 4GB+ | 42.2% | Default. Small, good for testing |
+| `llama3.1:8b` | 8GB | Moderate | Minimum for DirectorScore |
+
+### Ollama-specific flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--ollama-model <name>` | Ollama model name | `gemma4:e4b` |
+| `--ollama-base-url <url>` | Ollama server URL | `http://127.0.0.1:11434` |
+
+### Structured output hardening
+
+Local models produce less reliable JSON than cloud APIs. OllamaLLM includes automatic hardening:
+
+1. **JSON repair** — Malformed JSON from the model is repaired via `jsonrepair` and re-validated against the Zod schema
+2. **Retry with feedback** — If repair fails, the error message is appended to the next attempt so the model can self-correct (up to 3 retries)
+3. **Error classification** — Non-recoverable errors (OOM, context exceeded, connection refused, model not found) throw immediately instead of wasting retries
+
+### Local mode schema stripping
+
+In local mode, `ai_image` is removed from the visual type enum at the Zod schema level. The LLM never sees it as an option, so it cannot pick a visual type that requires a cloud image generation API. Only `stock_image`, `stock_video`, and `text_card` are available.

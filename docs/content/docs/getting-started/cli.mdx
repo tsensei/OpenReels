@@ -22,7 +22,10 @@ The topic is a required positional argument. Everything else is optional.
 
 | Flag | Description | Default |
 |---|---|---|
-| `-p, --provider <name>` | LLM provider: `anthropic`, `openai`, `gemini`, `google`, `local` | `anthropic` |
+| `-p, --provider <name>` | LLM provider: `anthropic`, `openai`, `gemini`, `ollama`, `google`, `local` | `anthropic` |
+| `--local` | Full local mode: Ollama + Kokoro + bundled music + stock visuals | off |
+| `--ollama-model <name>` | Ollama model name | `gemma4:e4b` |
+| `--ollama-base-url <url>` | Ollama server URL | `http://127.0.0.1:11434` |
 | `-i, --image-provider <name>` | Image provider: `gemini`, `openai` | `gemini` |
 | `--tts-provider <name>` | TTS provider: `elevenlabs`, `inworld`, `kokoro`, `gemini-tts`, `openai-tts` | `elevenlabs` |
 | `--music-provider <name>` | Music provider: `bundled`, `lyria` | `bundled` |
@@ -48,7 +51,8 @@ The topic is a required positional argument. Everything else is optional.
 The `--provider` flag is a convenience shorthand that sets multiple providers at once:
 
 - **`--provider google`** sets LLM to Gemini, images to Imagen, TTS to Gemini TTS, video to Veo, and music to Lyria. Only needs `GOOGLE_API_KEY`.
-- **`--provider local`** sets TTS to Kokoro (free, local inference, no API key). LLM defaults to Anthropic.
+- **`--provider local`** sets LLM to Ollama and TTS to Kokoro (free, local inference, no API key).
+- **`--local`** sets everything for local mode: Ollama LLM + Kokoro TTS + bundled music + stock visuals + no stock verification + no AI video. No paid API keys needed.
 
 Explicit per-provider flags always take precedence. For example, `--provider google --tts-provider elevenlabs` uses Google for everything except TTS.
 
@@ -62,9 +66,17 @@ One API key, full pipeline with AI-generated music and video:
 pnpm start "the apollo 13 disaster" --provider google
 ```
 
+### Full local mode (no paid API keys)
+
+Run the entire pipeline on your own hardware. Only needs a free Pexels key for stock footage:
+
+```bash
+pnpm start "5 stoic lessons that changed my life" --local
+```
+
 ### Free local TTS
 
-Use Kokoro for voiceover with no API cost. Still needs an LLM key and image key:
+Use Ollama for LLM and Kokoro for voiceover. Still needs an image API key:
 
 ```bash
 pnpm start "5 stoic lessons that changed my life" --provider local

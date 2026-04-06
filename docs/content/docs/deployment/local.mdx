@@ -36,7 +36,7 @@ This installs dependencies for the root package and the `web/` workspace.
 cp .env.example .env
 ```
 
-Edit `.env` with your API keys. At minimum you need one LLM key and one TTS key (or use `kokoro` for free local TTS). See [API Keys](/docs/getting-started/api-keys) for details.
+Edit `.env` with your API keys. At minimum you need one LLM key and one TTS key (or use `kokoro` for free local TTS). Or skip all paid keys and use `--local` with Ollama. See [API Keys](/docs/getting-started/api-keys) for details.
 
 ---
 
@@ -59,6 +59,9 @@ npx tsx --env-file=.env src/index.ts "The history of coffee"
 ### Useful CLI Flags
 
 ```bash
+# Full local mode — no paid API keys (Ollama + Kokoro + bundled music)
+pnpm start "topic" --local
+
 # Dry run (skip rendering, produce DirectorScore only)
 pnpm start "topic" --dry-run
 
@@ -69,7 +72,7 @@ pnpm start "topic" --no-music
 pnpm start "topic" --no-video
 
 # Choose providers
-pnpm start "topic" --llm gemini --tts kokoro --image openai
+pnpm start "topic" --provider gemini --tts-provider kokoro --image-provider openai
 
 # Auto-confirm cost estimate (non-interactive)
 pnpm start "topic" --yes
@@ -77,6 +80,27 @@ pnpm start "topic" --yes
 # Custom output directory
 pnpm start "topic" -o ./my-output
 ```
+
+### Running with Ollama
+
+To use a local LLM via Ollama:
+
+```bash
+# 1. Install Ollama: https://ollama.com/download
+# 2. Pull a model
+ollama pull gemma4:e4b
+
+# 3. Run with Ollama as LLM provider
+pnpm start "topic" --provider ollama
+
+# Or full local mode (Ollama + Kokoro TTS + bundled music)
+pnpm start "topic" --local
+
+# Use a different model
+pnpm start "topic" --local --ollama-model gemma4:31b
+```
+
+OpenReels verifies that Ollama is running and the model is available before starting the pipeline.
 
 ---
 
