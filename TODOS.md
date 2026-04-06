@@ -96,6 +96,18 @@
   **Depends on:** TTS alignment layer (Kokoro + Gemini TTS providers)
   Deferred from plan: Unified TTS Alignment Layer (CEO review: user prefers unified voice interface later)
 
+## Ollama / Local Mode
+
+- [ ] **Compressed creative-director prompt for local models** — Create a `prompts/creative-director-local.md` under 2K tokens, stripping reference tables, simplifying archetype descriptions, removing playbook commentary. Select automatically when `--provider ollama` is active. Currently the full system prompt + playbook is ~4.5K tokens which works fine for 8B+ models, but if real-world testing with smaller models shows reliability issues, this compressed variant would improve success rates significantly.
+  **Priority:** P3
+  **Depends on:** Ollama provider shipped + real-world testing showing prompt length issues
+  Deferred from plan: Ollama LLM Provider + Local Mode (CEO review: modern 8B models handle 8K+ context, defer unless testing shows issues)
+
+- [ ] **Ollama connection health indicator in Web UI Settings** — Add a real-time health indicator in the Settings page that pings the Ollama endpoint and shows green/yellow/red status with available model list. Currently CLI validates at startup but web UI users get no feedback until a job fails. Would need a new `/api/v1/ollama/health` endpoint and a polling component in SettingsPage.
+  **Priority:** P3
+  **Depends on:** Ollama provider shipped
+  Deferred from plan: Ollama LLM Provider + Local Mode (CEO review: user skipped for v1)
+
 ## Documentation
 
 - [ ] **Interactive @remotion/player embeds in docs** — Add `@remotion/player` to archetype gallery pages so visitors can see DirectorScore fixtures render in-browser without installing anything. The compositions (`OpenReelsVideo.tsx`) and score-to-props mapper (`src/remotion/lib/`) already exist but are wired for server-side rendering. Porting to client-side player requires: bundle the Remotion player (~500KB), adapt score-to-props for browser context, verify static export compatibility, handle missing assets gracefully. Remotion's own docs site already does this pattern, proving feasibility.

@@ -27,11 +27,16 @@ services:
     build: .
     entrypoint: ["npx", "tsx", "src/worker.ts"]
     depends_on:
-      - redis
+      redis:
+        condition: service_started
+      ollama:
+        condition: service_healthy
+        required: false
     env_file: .env
     environment:
       - REDIS_URL=redis://redis:6379
       - JOBS_DIR=/app/jobs
+      - OLLAMA_BASE_URL=http://ollama:11434
     shm_size: "2gb"
     volumes:
       - jobs-data:/app/jobs
@@ -39,6 +44,23 @@ services:
       - openreels-cache:/root/.openreels/cache
     restart: unless-stopped
 
+  ollama:
+    image: ollama/ollama:latest
+    profiles: [local]
+    volumes:
+      - ollama-models:/root/.ollama
+    environment:
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-gemma4:e4b}
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull $${OLLAMA_MODEL:-gemma4:e4b} && wait"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+    restart: unless-stopped
+
 volumes:
   jobs-data:
   openreels-cache:
+  ollama-models:

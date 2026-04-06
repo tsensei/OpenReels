@@ -43,7 +43,7 @@ Mix and match providers or go all-in on one ecosystem:
 
 | Capability | Providers |
 |-----------|-----------|
-| **LLM** | Anthropic Claude, OpenAI GPT, Google Gemini |
+| **LLM** | Anthropic Claude, OpenAI GPT, Google Gemini, **Ollama (local)** |
 | **TTS** | ElevenLabs, Inworld, OpenAI TTS, Gemini TTS, Kokoro (free, local) |
 | **Images** | Gemini Imagen, OpenAI DALL-E |
 | **Video** | Google Veo, fal.ai Kling (with cross-provider fallback) |
@@ -52,7 +52,9 @@ Mix and match providers or go all-in on one ecosystem:
 
 **One key, everything Google:** `--provider google` sets LLM, images, TTS, video, and music to Google APIs with a single `GOOGLE_API_KEY`.
 
-**Zero-cost voiceover:** `--provider local` uses Kokoro for free local TTS. No API key needed.
+**Full local mode:** `--local` runs the entire LLM + TTS + music pipeline on your machine via Ollama + Kokoro. No paid API keys. Only a free Pexels key for stock footage.
+
+**Zero-cost voiceover:** `--provider local` uses Ollama for LLM and Kokoro for free local TTS.
 
 ## Quickstart
 
@@ -97,8 +99,11 @@ cp .env.example .env   # fill in your API keys
 # Full pipeline with AI music
 pnpm start "the fall of the Roman Empire" --provider google
 
-# Free local TTS, no API spend on voiceover
-pnpm start "5 stoic lessons" --provider local
+# Full local mode: Ollama LLM + Kokoro TTS + bundled music (no paid API keys)
+pnpm start "5 stoic lessons" --local
+
+# Preview DirectorScore locally without generating assets ($0 cost)
+pnpm start "your topic" --local --dry-run
 
 # Dry run (outputs DirectorScore JSON, no asset generation)
 pnpm start "your topic" --dry-run
@@ -106,6 +111,36 @@ pnpm start "your topic" --dry-run
 # Specific archetype and provider combo
 pnpm start "your topic" --archetype anime_illustration --provider openai
 ```
+
+### Local mode (no paid API keys)
+
+Run the full pipeline on your own hardware with Ollama:
+
+```bash
+# 1. Install Ollama: https://ollama.com/download
+# 2. Pull a model
+ollama pull gemma4:e4b     # default, 4GB+ VRAM
+
+# 3. Run OpenReels in local mode
+pnpm start "why octopuses are aliens" --local
+```
+
+Or with Docker (zero manual setup):
+
+```bash
+docker compose --profile local up
+```
+
+**Local mode sets:** Ollama LLM + Kokoro TTS + bundled music + stock footage. Only a free [Pexels API key](https://www.pexels.com/api/) is needed for stock footage visuals.
+
+**Recommended models:**
+
+| Model | VRAM | Structured Output | Notes |
+|-------|------|-------------------|-------|
+| gemma4:31b | 20GB+ | 76.9% (τ2) | Best local structured output |
+| gemma4:26b-a4b | 16GB+ | 68.2% (τ2) | Efficient MoE variant |
+| gemma4:e4b | 4GB+ | 42.2% (τ2) | Small, good for testing |
+| llama3.1:8b | 8GB | Moderate | Minimum for DirectorScore |
 
 ### API keys
 
@@ -120,7 +155,10 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--provider <name>` | LLM provider (`anthropic`, `openai`, `gemini`, `google`, `local`) | `anthropic` |
+| `--provider <name>` | LLM provider (`anthropic`, `openai`, `gemini`, `google`, `ollama`, `local`) | `anthropic` |
+| `--local` | Local mode: Ollama + Kokoro + bundled music + stock visuals | off |
+| `--ollama-model <name>` | Ollama model name | `gemma4:e4b` |
+| `--ollama-base-url <url>` | Ollama server URL | `http://127.0.0.1:11434` |
 | `--image-provider <name>` | Image provider (`gemini`, `openai`) | `gemini` |
 | `--tts-provider <name>` | TTS provider (`elevenlabs`, `inworld`, `kokoro`, `gemini-tts`, `openai-tts`) | `elevenlabs` |
 | `--music-provider <name>` | Music provider (`bundled`, `lyria`) | `bundled` |
