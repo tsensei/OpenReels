@@ -1,6 +1,7 @@
 /**
  * Ollama startup health check.
  * Verifies the Ollama server is reachable and the requested model is available.
+ * Throws on failure instead of calling process.exit, so it's safe in non-CLI contexts.
  */
 export async function checkOllamaHealth(
   baseUrl: string = "http://127.0.0.1:11434",
@@ -25,23 +26,21 @@ export async function checkOllamaHealth(
 
     if (!found) {
       const available = modelNames.length > 0 ? `\nAvailable models: ${modelNames.join(", ")}` : "";
-      console.error(
-        `\nOllama model "${model}" not found. Pull it first:\n\n  ollama pull ${model}\n${available}\n`,
+      throw new Error(
+        `Ollama model "${model}" not found. Pull it first:\n\n  ollama pull ${model}\n${available}`,
       );
-      process.exit(1);
     }
 
     console.log(`[ollama] Connected to ${baseUrl}, model "${model}" ready`);
   } catch (err) {
     if (err instanceof Error && (err.message.includes("fetch failed") || err.message.includes("ECONNREFUSED"))) {
-      console.error(
-        `\nOllama server not reachable at ${baseUrl}.\n\n` +
+      throw new Error(
+        `Ollama server not reachable at ${baseUrl}.\n\n` +
           "Make sure Ollama is installed and running:\n\n" +
           "  1. Install: https://ollama.com/download\n" +
           "  2. Start:   ollama serve\n" +
-          `  3. Pull:    ollama pull ${model}\n`,
+          `  3. Pull:    ollama pull ${model}`,
       );
-      process.exit(1);
     }
     throw err;
   }

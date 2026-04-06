@@ -21,7 +21,12 @@ async function main(): Promise<void> {
 
   // Validate Ollama connectivity if using local/ollama provider
   if (opts.provider === "ollama") {
-    await checkOllamaHealth(opts.ollamaBaseUrl, opts.ollamaModel);
+    try {
+      await checkOllamaHealth(opts.ollamaBaseUrl, opts.ollamaModel);
+    } catch (err) {
+      console.error(`\n${err instanceof Error ? err.message : err}\n`);
+      process.exit(1);
+    }
   }
 
   // Initialize providers via factory

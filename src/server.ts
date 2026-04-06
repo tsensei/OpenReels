@@ -164,6 +164,8 @@ interface CreateJobBody {
   dryRun?: boolean;
   noMusic?: boolean;
   noVideo?: boolean;
+  ollamaModel?: string;
+  ollamaBaseUrl?: string;
   providers?: {
     llm?: string;
     tts?: string;
@@ -177,7 +179,7 @@ interface CreateJobBody {
 }
 
 app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
-  const { topic, archetype, pacing, platform, dryRun, noMusic, noVideo, providers, keys } = request.body ?? {};
+  const { topic, archetype, pacing, platform, dryRun, noMusic, noVideo, ollamaModel, ollamaBaseUrl, providers, keys } = request.body ?? {};
 
   if (!topic || typeof topic !== "string" || topic.trim().length === 0) {
     return reply.status(400).send({ error: "topic is required" });
@@ -222,7 +224,10 @@ app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
     dryRun: dryRun ?? false,
     noMusic: noMusic === true,
     noVideo: noVideo === true || isLocalMode,
+    stockVerify: !isLocalMode,
     localMode: isLocalMode,
+    ollamaModel,
+    ollamaBaseUrl,
     providers: {
       llm: resolvedLlm,
       tts: isLocalMode ? (providers?.tts ?? "kokoro") : (providers?.tts ?? "elevenlabs"),

@@ -41,10 +41,10 @@ export class OllamaLLM extends BaseLLM {
   }): Promise<LLMResult<z.infer<T>>> {
     const maxRetries = 3;
     let lastError: Error | null = null;
+    const languageModel = this.createLanguageModel();
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        const languageModel = this.createLanguageModel();
         const userMessage =
           attempt > 0 && lastError
             ? `${opts.userMessage}\n\nYour previous JSON response was invalid: ${lastError.message}. Please output valid JSON matching the schema exactly.`

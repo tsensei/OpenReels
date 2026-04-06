@@ -51,7 +51,7 @@ services:
       - ollama-models:/root/.ollama
     environment:
       - OLLAMA_MODEL=${OLLAMA_MODEL:-gemma4:e4b}
-    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull $${OLLAMA_MODEL:-gemma4:e4b} && wait"]
+    entrypoint: ["/bin/sh", "-c", "ollama serve & until curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; do sleep 1; done && ollama pull $${OLLAMA_MODEL:-gemma4:e4b} && wait"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
       interval: 10s

@@ -41,6 +41,7 @@ interface JobData {
   dryRun: boolean;
   noMusic?: boolean;
   noVideo?: boolean;
+  stockVerify?: boolean;
   localMode?: boolean;
   ollamaModel?: string;
   ollamaBaseUrl?: string;
@@ -87,7 +88,7 @@ function writeMeta(jobDir: string, meta: JobMeta) {
 const worker = new Worker<JobData>(
   "openreels",
   async (job: Job<JobData>) => {
-    const { topic, archetype, pacing, platform, dryRun, noMusic, noVideo, localMode, ollamaModel, ollamaBaseUrl, providers, keys } = job.data;
+    const { topic, archetype, pacing, platform, dryRun, noMusic, noVideo, stockVerify, localMode, ollamaModel, ollamaBaseUrl, providers, keys } = job.data;
     const jobDir = path.join(JOBS_DIR, job.id!);
     fs.mkdirSync(jobDir, { recursive: true });
 
@@ -212,16 +213,20 @@ const worker = new Worker<JobData>(
       },
     };
 
-    // Create verification model with per-job API keys
-    const llmKey =
-      providers.llm === "openai" ? keys["OPENAI_API_KEY"]
-      : providers.llm === "gemini" ? keys["GOOGLE_API_KEY"]
-      : keys["ANTHROPIC_API_KEY"];
-    const verifyModel = createVerificationModel(
-      providers.llm as LLMProviderKey,
-      undefined,
-      llmKey,
-    );
+    // Create verification model with per-job API keys (skip in local mode)
+    const shouldVerifyStock = stockVerify !== false;
+    let verifyModel: ReturnType<typeof createVerificationModel> | undefined;
+    if (shouldVerifyStock) {
+      const llmKey =
+        providers.llm === "openai" ? keys["OPENAI_API_KEY"]
+        : providers.llm === "gemini" ? keys["GOOGLE_API_KEY"]
+        : keys["ANTHROPIC_API_KEY"];
+      verifyModel = createVerificationModel(
+        providers.llm as LLMProviderKey,
+        undefined,
+        llmKey,
+      );
+    }
 
     // Run the pipeline
     const result = await runPipeline(
