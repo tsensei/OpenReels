@@ -2,6 +2,19 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.13.1] - 2026-04-06
+
+### Fixed
+- Storyboard preview now shows correct thumbnails when stock images/videos fail verification and fall back to AI-generated images. Previously, the URL pointed to the non-existent stock filename, resulting in broken previews.
+- Scene type badge updates from "ST"/"SV" to "AI" with a fallback indicator when stock assets fall back to AI generation.
+- Video play controls correctly hidden for scenes that fell back from stock video to AI image.
+- Eliminated premature 404 requests for scene assets during pipeline execution. Thumbnails now load only after the visuals stage completes.
+- Web UI now handles `stock_fallback` and `video_fallback` SSE events (previously silently dropped).
+
+### Added
+- README screenshots: home page, live pipeline, completed job, and gallery views.
+- README archetype comparison: same topic rendered in four different visual styles.
+
 ## [0.13.0] - 2026-04-05
 
 ### Added

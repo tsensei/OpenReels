@@ -28,6 +28,30 @@ openreels "the apollo 13 disaster, from explosion to miraculous return" --provid
 **Live pipeline visualization.** Watch research, script, voiceover, visuals, music, and assembly stages stream in real time.
 </div>
 
+<details>
+<summary><strong>Screenshots</strong></summary>
+
+<table>
+<tr>
+<td><img src=".github/assets/home.png" alt="Home page" width="400" /></td>
+<td><img src=".github/assets/pipeline.png" alt="Pipeline running" width="400" /></td>
+</tr>
+<tr>
+<td align="center"><em>Topic input with archetype gallery</em></td>
+<td align="center"><em>Live pipeline with storyboard</em></td>
+</tr>
+<tr>
+<td><img src=".github/assets/pipeline_completed.png" alt="Pipeline completed" width="400" /></td>
+<td><img src=".github/assets/gallery.png" alt="Gallery view" width="400" /></td>
+</tr>
+<tr>
+<td align="center"><em>Completed: video player, cost breakdown, quality review</em></td>
+<td align="center"><em>Gallery with multiple generations</em></td>
+</tr>
+</table>
+
+</details>
+
 ## How it works
 
 Give it a topic. It handles everything:
@@ -165,7 +189,24 @@ After rendering, actual cost is computed from real token usage. Use `--dry-run` 
 
 ## Archetypes
 
-14 visual styles that control colors, captions, motion, lighting, and AI image prompting:
+14 visual styles that control colors, captions, motion, lighting, and AI image prompting. Same topic, four different archetypes:
+
+<div align="center">
+<table>
+<tr>
+<td><img src=".github/assets/kaldi_cinematic.jpg" alt="Cinematic Documentary" width="180" /></td>
+<td><img src=".github/assets/kaldi_anime.jpg" alt="Anime Illustration" width="180" /></td>
+<td><img src=".github/assets/kaldi_surreal.jpg" alt="Surreal Dreamscape" width="180" /></td>
+<td><img src=".github/assets/kaldi_vintage.jpg" alt="Vintage Snapshot" width="180" /></td>
+</tr>
+<tr>
+<td align="center"><em>Cinematic Documentary</em></td>
+<td align="center"><em>Anime Illustration</em></td>
+<td align="center"><em>Surreal Dreamscape</em></td>
+<td align="center"><em>Vintage Snapshot</em></td>
+</tr>
+</table>
+</div>
 
 | Archetype | Best for |
 |-----------|----------|
