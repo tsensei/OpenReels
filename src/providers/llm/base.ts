@@ -31,6 +31,13 @@ export abstract class BaseLLM implements LLMProvider {
     enableWebSearch?: boolean;
   }): Promise<LLMResult<z.infer<T>>> {
     if (opts.enableWebSearch) {
+      // If the provider has no search tools, fall back to structured output
+      // rather than failing. This enables providers like Ollama that lack web search.
+      const tools = this.createSearchTools();
+      if (Object.keys(tools).length === 0) {
+        console.warn(`[${this.id}] Web search unavailable with this provider. Research based on model knowledge only.`);
+        return this.generateStructured(opts);
+      }
       return this.generateWithSearch(opts);
     }
     return this.generateStructured(opts);
@@ -41,7 +48,7 @@ export abstract class BaseLLM implements LLMProvider {
    * Pass 1: web search + free-form response (model needs freedom to call search)
    * Pass 2: structured output using search results as context
    */
-  private async generateWithSearch<T extends z.ZodType>(opts: {
+  protected async generateWithSearch<T extends z.ZodType>(opts: {
     systemPrompt: string;
     userMessage: string;
     schema: T;
@@ -85,7 +92,7 @@ export abstract class BaseLLM implements LLMProvider {
     return { data: structuredResult.output as z.infer<T>, usage: totalUsage };
   }
 
-  private async generateStructured<T extends z.ZodType>(opts: {
+  protected async generateStructured<T extends z.ZodType>(opts: {
     systemPrompt: string;
     userMessage: string;
     schema: T;

@@ -30,6 +30,20 @@ class TestLLM extends BaseLLM {
   }
 }
 
+// Test subclass with NO search tools (like Ollama)
+class NoSearchLLM extends BaseLLM {
+  readonly id: LLMProviderKey = "ollama";
+  private mockModel = {} as LanguageModel;
+
+  protected createLanguageModel(): LanguageModel {
+    return this.mockModel;
+  }
+
+  protected createSearchTools() {
+    return {};
+  }
+}
+
 const testSchema = z.object({ result: z.string() });
 
 describe("BaseLLM", () => {
@@ -158,6 +172,27 @@ describe("BaseLLM", () => {
 
       const pass1Call = mockGenerateText.mock.calls[0]![0] as any;
       expect(pass1Call.tools).toEqual({ test_search: {} });
+    });
+  });
+
+  describe("search tools empty bypass", () => {
+    it("falls back to generateStructured when enableWebSearch is true but no search tools", async () => {
+      const noSearchLlm = new NoSearchLLM();
+      mockGenerateText.mockResolvedValueOnce({
+        output: { result: "from training data" },
+        usage: { inputTokens: 100, outputTokens: 50 },
+      } as any);
+
+      const result = await noSearchLlm.generate({
+        systemPrompt: "test",
+        userMessage: "test",
+        schema: testSchema,
+        enableWebSearch: true,
+      });
+
+      expect(result.data).toEqual({ result: "from training data" });
+      // Should call generateText only once (structured, not search+structured)
+      expect(mockGenerateText).toHaveBeenCalledTimes(1);
     });
   });
 
