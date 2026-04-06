@@ -16,6 +16,7 @@ import {
   type JobSummary,
   type ResearchData,
 } from "@/hooks/useApi";
+import type { SceneFallbacks } from "@/lib/scene-assets";
 import { useSSE } from "@/hooks/useSSE";
 import { formatArchetypeName } from "@/lib/utils";
 
@@ -45,6 +46,7 @@ export function JobPage() {
     totalFrames?: number;
   } | null>(null);
   const [assetFailures, setAssetFailures] = useState<Array<{ scene: number; error: string }>>([]);
+  const [sceneFallbacks, setSceneFallbacks] = useState<SceneFallbacks>({});
   const [musicInfo, setMusicInfo] = useState<MusicInfo>({ status: "idle" });
 
   useEffect(() => {
@@ -58,6 +60,7 @@ export function JobPage() {
     setCostEstimate(null);
     setAssemblyProgress(null);
     setAssetFailures([]);
+    setSceneFallbacks({});
     setMusicInfo({ status: "idle" });
     setCancelling(false);
 
@@ -154,6 +157,16 @@ export function JobPage() {
             ...prev,
             { scene: d.scene as number, error: d.error as string },
           ]);
+        } else if (type === "stock_fallback") {
+          setSceneFallbacks((prev) => ({
+            ...prev,
+            [d.scene as number]: "ai_image",
+          }));
+        } else if (type === "video_fallback") {
+          setSceneFallbacks((prev) => ({
+            ...prev,
+            [d.scene as number]: "ai_video_to_image",
+          }));
         } else if (type === "music_generating") {
           setMusicInfo({ status: "generating", provider: d.provider as string });
         } else if (type === "music_generated") {
@@ -405,6 +418,7 @@ export function JobPage() {
               runDir={job.runDir ?? null}
               visualsComplete={!!visualsComplete}
               assetFailures={assetFailures}
+              sceneFallbacks={sceneFallbacks}
             />
           )}
 

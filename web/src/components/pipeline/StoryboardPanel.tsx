@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DirectorScore } from "@/hooks/useApi";
-import { getSceneAssetUrl } from "@/lib/scene-assets";
+import { getSceneAssetUrl, type SceneFallbacks } from "@/lib/scene-assets";
 import { cn } from "@/lib/utils";
 import { ImageOff, Pause, Play, Move, ArrowRight, Type } from "lucide-react";
 
@@ -26,6 +26,7 @@ interface StoryboardPanelProps {
   runDir: string | null;
   visualsComplete: boolean;
   assetFailures: Array<{ scene: number; error: string }>;
+  sceneFallbacks: SceneFallbacks;
 }
 
 export function StoryboardPanel({
@@ -34,6 +35,7 @@ export function StoryboardPanel({
   runDir,
   visualsComplete,
   assetFailures,
+  sceneFallbacks,
 }: StoryboardPanelProps) {
   const failedScenes = new Set(assetFailures.map((f) => f.scene));
 
@@ -61,16 +63,23 @@ export function StoryboardPanel({
       {/* Scene grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
         {score.scenes.map((scene, i) => {
-          const badge = VISUAL_TYPE_BADGE[scene.visual_type] ?? {
-            label: "??",
-            color: "bg-gray-500/20 text-gray-400",
-          };
+          const fallback = sceneFallbacks[i];
+          const badge = fallback
+            ? VISUAL_TYPE_BADGE["ai_image"]!
+            : VISUAL_TYPE_BADGE[scene.visual_type] ?? {
+                label: "??",
+                color: "bg-gray-500/20 text-gray-400",
+              };
           const isTextCard = scene.visual_type === "text_card";
           const thumbnailUrl =
-            runDir && !isTextCard
-              ? getSceneAssetUrl(jobId, runDir, scene, i)
+            runDir && !isTextCard && visualsComplete
+              ? getSceneAssetUrl(jobId, runDir, scene, i, sceneFallbacks)
               : null;
           const hasFailed = failedScenes.has(i);
+          // A fallback that resolved to an image is no longer a video
+          const isVideo =
+            !fallback &&
+            (scene.visual_type === "ai_video" || scene.visual_type === "stock_video");
 
           return (
             <StoryboardScene
@@ -84,8 +93,9 @@ export function StoryboardPanel({
               thumbnailUrl={thumbnailUrl}
               hasFailed={hasFailed}
               visualsComplete={visualsComplete}
-              isVideo={scene.visual_type === "ai_video" || scene.visual_type === "stock_video"}
+              isVideo={isVideo}
               isTextCard={isTextCard}
+              fallback={fallback}
             />
           );
         })}
@@ -106,6 +116,7 @@ function StoryboardScene({
   visualsComplete,
   isVideo,
   isTextCard,
+  fallback,
 }: {
   index: number;
   scriptLine: string;
@@ -118,6 +129,7 @@ function StoryboardScene({
   visualsComplete: boolean;
   isVideo: boolean;
   isTextCard: boolean;
+  fallback?: string;
 }) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -233,7 +245,12 @@ function StoryboardScene({
         </div>
 
         {/* Type badge overlay */}
-        <div className="absolute top-1.5 right-1.5">
+        <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5">
+          {fallback && (
+            <span className="rounded bg-amber-500/20 px-1 py-0.5 text-[8px] font-bold text-amber-400">
+              FB
+            </span>
+          )}
           <span className={cn("rounded px-1 py-0.5 text-[9px] font-bold", badge.color)}>
             {badge.label}
           </span>
