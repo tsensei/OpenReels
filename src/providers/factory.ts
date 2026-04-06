@@ -67,7 +67,7 @@ export function createProviders(config: ProviderConfig): Providers {
 
   const llm: LLMProvider =
     config.llm === "ollama"
-      ? new OllamaLLM(config.ollamaModel, config.ollamaBaseUrl)
+      ? new OllamaLLM(config.ollamaModel, config.ollamaBaseUrl ?? process.env["OLLAMA_BASE_URL"])
       : config.llm === "openai"
         ? new OpenAILLM(undefined, k["OPENAI_API_KEY"])
         : config.llm === "gemini"
