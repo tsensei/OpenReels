@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPacingInstruction, PACING_CONFIG } from "./creative-director.js";
+import { buildPacingInstruction, buildDirectorScoreRaw, PACING_CONFIG } from "./creative-director.js";
 
 describe("buildPacingInstruction", () => {
   // Path 2: explicit archetype — derive tier from config
@@ -100,5 +100,83 @@ describe("PACING_CONFIG", () => {
 
   it("cinematic tier has lower scene count than fast", () => {
     expect(PACING_CONFIG.cinematic.max).toBeLessThan(PACING_CONFIG.fast.max);
+  });
+});
+
+describe("buildDirectorScoreRaw", () => {
+  const makeScene = (type: string) => ({
+    visual_type: type,
+    visual_prompt: "test",
+    motion: "static",
+    script_line: "test",
+    transition: null,
+  });
+
+  const makeScore = (scenes: ReturnType<typeof makeScene>[]) => ({
+    emotional_arc: "test",
+    archetype: "cinematic_documentary",
+    music_mood: "epic_cinematic",
+    scenes,
+  });
+
+  it("includes ai_image in default mode", () => {
+    const schema = buildDirectorScoreRaw(false);
+    const result = schema.safeParse(
+      makeScore([makeScene("ai_image"), makeScene("stock_image"), makeScene("text_card")]),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("excludes ai_image in local mode", () => {
+    const schema = buildDirectorScoreRaw(true);
+    // ai_image should be rejected
+    const resultBad = schema.safeParse(
+      makeScore([makeScene("ai_image"), makeScene("stock_image"), makeScene("text_card")]),
+    );
+    expect(resultBad.success).toBe(false);
+
+    // stock types should be accepted
+    const resultGood = schema.safeParse(
+      makeScore([makeScene("stock_image"), makeScene("stock_video"), makeScene("text_card")]),
+    );
+    expect(resultGood.success).toBe(true);
+  });
+
+  it("excludes ai_video in local mode", () => {
+    const schema = buildDirectorScoreRaw(true);
+    const result = schema.safeParse(
+      makeScore([makeScene("ai_video"), makeScene("stock_image"), makeScene("text_card")]),
+    );
+    expect(result.success).toBe(false);
+  });
+
+  it("local mode schema rejects ai_image input", () => {
+    const schema = buildDirectorScoreRaw(true);
+    const result = schema.safeParse({
+      emotional_arc: "test",
+      archetype: "cinematic_documentary",
+      music_mood: "epic_cinematic",
+      scenes: [
+        { visual_type: "ai_image", visual_prompt: "test", motion: "static", script_line: "test", transition: null },
+        { visual_type: "stock_image", visual_prompt: "test", motion: "static", script_line: "test", transition: null },
+        { visual_type: "text_card", visual_prompt: "test", motion: "static", script_line: "test", transition: null },
+      ],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("local mode schema accepts stock_image input", () => {
+    const schema = buildDirectorScoreRaw(true);
+    const result = schema.safeParse({
+      emotional_arc: "test",
+      archetype: "cinematic_documentary",
+      music_mood: "epic_cinematic",
+      scenes: [
+        { visual_type: "stock_image", visual_prompt: "test", motion: "static", script_line: "test", transition: null },
+        { visual_type: "stock_video", visual_prompt: "test", motion: "zoom_in", script_line: "test", transition: null },
+        { visual_type: "text_card", visual_prompt: "test", motion: "static", script_line: "test", transition: null },
+      ],
+    });
+    expect(result.success).toBe(true);
   });
 });

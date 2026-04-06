@@ -10,24 +10,31 @@ import type { ResearchResult } from "./research.js";
 
 const SYSTEM_PROMPT_PATH = path.join(process.cwd(), "prompts", "creative-director.md");
 
-// Schema for LLM output (before refinements that can't be expressed in JSON Schema)
-const DirectorScoreRaw = z.object({
-  emotional_arc: z.string(),
-  archetype: z.enum(listArchetypes() as [string, ...string[]]),
-  music_mood: MusicMood,
-  scenes: z
-    .array(
-      z.object({
-        visual_type: VisualType,
-        visual_prompt: z.string(),
-        motion: Motion,
-        script_line: z.string(),
-        transition: TransitionType.nullable(),
-      }),
-    )
-    .min(3)
-    .max(16),
-});
+// Local-mode visual types: strip ai_image (no cloud image gen available)
+const VisualTypeLocal = z.enum(["stock_image", "stock_video", "text_card"]);
+
+/** Build the raw DirectorScore schema, optionally stripping ai_image for local mode. */
+export function buildDirectorScoreRaw(localMode: boolean) {
+  const visualTypeSchema = localMode ? VisualTypeLocal : VisualType;
+  return z.object({
+    emotional_arc: z.string(),
+    archetype: z.enum(listArchetypes() as [string, ...string[]]),
+    music_mood: MusicMood,
+    scenes: z
+      .array(
+        z.object({
+          visual_type: visualTypeSchema,
+          visual_prompt: z.string(),
+          motion: Motion,
+          script_line: z.string(),
+          transition: TransitionType.nullable(),
+        }),
+      )
+      .min(3)
+      .max(16),
+  });
+}
+
 
 export interface DirectorScoreOutput {
   data: DirectorScore;
@@ -38,7 +45,7 @@ export async function generateDirectorScore(
   llm: LLMProvider,
   topic: string,
   researchContext: ResearchResult,
-  options?: { archetype?: string; pacing?: string; videoEnabled?: boolean },
+  options?: { archetype?: string; pacing?: string; videoEnabled?: boolean; localMode?: boolean },
 ): Promise<DirectorScoreOutput> {
   let systemPrompt = buildDefaultPrompt();
 
@@ -62,12 +69,21 @@ export async function generateDirectorScore(
     : `Choose from: ${archetypes.join(", ")}`;
 
   const videoEnabled = options?.videoEnabled ?? false;
-  const visualTypes = videoEnabled
-    ? "all 5 visual types (ai_image, ai_video, stock_image, stock_video, text_card)"
-    : "all 4 visual types (ai_image, stock_image, stock_video, text_card)";
-  const videoGuidance = videoEnabled
-    ? "\nai_video: Use for 1-3 scenes where MOTION is the story (explosions, flowing water, launches, transformations). ai_video costs ~$0.30/scene vs ~$0.04 for ai_image. Use selectively. Set motion to 'static' for ai_video scenes (the video model handles motion)."
-    : "";
+  const localMode = options?.localMode ?? false;
+
+  let visualTypes: string;
+  let videoGuidance = "";
+  if (localMode) {
+    // In local mode, ai_image is unavailable (no cloud image gen API).
+    // Strip it from the schema and instructions so the LLM never picks it.
+    visualTypes = "all 3 visual types (stock_image, stock_video, text_card)";
+  } else if (videoEnabled) {
+    visualTypes = "all 5 visual types (ai_image, ai_video, stock_image, stock_video, text_card)";
+    videoGuidance =
+      "\nai_video: Use for 1-3 scenes where MOTION is the story (explosions, flowing water, launches, transformations). ai_video costs ~$0.30/scene vs ~$0.04 for ai_image. Use selectively. Set motion to 'static' for ai_video scenes (the video model handles motion).";
+  } else {
+    visualTypes = "all 4 visual types (ai_image, stock_image, stock_video, text_card)";
+  }
 
   // Resolve pacing tier: explicit --pacing override > archetype default > lookup table
   const pacingInstruction = buildPacingInstruction(options?.archetype, options?.pacing);
@@ -103,7 +119,7 @@ If over budget, cut a scene rather than cramming.`;
           attempt > 0
             ? `${userMessage}\n\nPREVIOUS ATTEMPT FAILED: ${lastError?.message}. Fix the issue.`
             : userMessage,
-        schema: DirectorScoreRaw,
+        schema: buildDirectorScoreRaw(localMode),
       });
 
       totalUsage.inputTokens += result.usage.inputTokens;
