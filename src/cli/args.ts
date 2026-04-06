@@ -15,6 +15,9 @@ export interface CLIOptions {
   videoModel?: string;
   musicProvider: MusicProviderKey;
   kokoroVoice?: string;
+  ollamaModel?: string;
+  ollamaBaseUrl?: string;
+  localMode: boolean;
   noVideo: boolean;
   archetype?: string;
   pacing?: string;
@@ -39,10 +42,13 @@ export function parseArgs(): CLIOptions {
     .version(version)
     .argument("<topic>", "The topic for your video")
     .addOption(
-      new Option("-p, --provider <provider>", "LLM provider (use 'google' to set LLM+image+video to Gemini)")
-        .choices(["anthropic", "openai", "gemini", "google", "local"])
+      new Option("-p, --provider <provider>", "LLM provider (use 'google' for all-Gemini, 'local' for Ollama+Kokoro)")
+        .choices(["anthropic", "openai", "gemini", "google", "ollama", "local"])
         .default("anthropic"),
     )
+    .option("--local", "Local mode: Ollama LLM + Kokoro TTS + bundled music + stock visuals (no cloud API keys for LLM/TTS/music)", false)
+    .option("--ollama-model <model>", "Ollama model name", "gemma4:e4b")
+    .option("--ollama-base-url <url>", "Ollama server base URL", "http://127.0.0.1:11434")
     .addOption(
       new Option("-i, --image-provider <provider>", "Image generation provider")
         .choices(["gemini", "openai"])
@@ -112,10 +118,38 @@ export function parseArgs(): CLIOptions {
       opts["musicProvider"] = "lyria";
     }
   } else if (opts["provider"] === "local") {
-    opts["provider"] = "anthropic"; // LLM defaults unchanged
+    // --provider local: Ollama LLM + Kokoro TTS (behavior changed from anthropic+kokoro)
+    console.info("Note: --provider local now uses Ollama for LLM. Use --provider anthropic for cloud LLM.");
+    opts["provider"] = "ollama";
     const ttsSource = program.getOptionValueSource("ttsProvider");
     if (!ttsSource || ttsSource === "default") {
       opts["ttsProvider"] = "kokoro";
+    }
+  }
+
+  // --local compound flag: sets all providers for full local pipeline
+  if (opts["local"]) {
+    const providerSource = program.getOptionValueSource("provider");
+    if (!providerSource || providerSource === "default") {
+      opts["provider"] = "ollama";
+    }
+    const ttsSource = program.getOptionValueSource("ttsProvider");
+    if (!ttsSource || ttsSource === "default") {
+      opts["ttsProvider"] = "kokoro";
+    }
+    const musicSource = program.getOptionValueSource("musicProvider");
+    if (!musicSource || musicSource === "default") {
+      opts["musicProvider"] = "bundled";
+    }
+    // Disable stock verification by default in local mode (no reliable local VLM)
+    const stockVerifySource = program.getOptionValueSource("stockVerify");
+    if (!stockVerifySource || stockVerifySource === "default") {
+      opts["stockVerify"] = false;
+    }
+    // Disable video generation by default in local mode
+    const videoSource = program.getOptionValueSource("video");
+    if (!videoSource || videoSource === "default") {
+      opts["video"] = false;
     }
   }
 
@@ -128,6 +162,9 @@ export function parseArgs(): CLIOptions {
     videoModel: opts["videoModel"] as string | undefined,
     musicProvider: opts["musicProvider"] as MusicProviderKey,
     kokoroVoice: opts["kokoroVoice"] as string | undefined,
+    ollamaModel: opts["ollamaModel"] as string | undefined,
+    ollamaBaseUrl: opts["ollamaBaseUrl"] as string | undefined,
+    localMode: opts["local"] as boolean,
     noVideo: opts["video"] === false,
     archetype: opts["archetype"] as string | undefined,
     pacing: opts["pacing"] as string | undefined,

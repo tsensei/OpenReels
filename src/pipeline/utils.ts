@@ -68,6 +68,7 @@ export interface PipelineOptions {
   videoProviders?: VideoProvider[];
   videoProvider?: VideoProviderKey;
   noVideo?: boolean;
+  localMode?: boolean;
 }
 
 export interface PipelineResult {

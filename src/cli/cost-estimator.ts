@@ -60,6 +60,10 @@ const PRICING = {
     perInputToken: 0.10 / 1_000_000, // $0.10 per 1M input tokens (Gemini 2.5 Flash)
     perOutputToken: 0.40 / 1_000_000, // $0.40 per 1M output tokens (Gemini 2.5 Flash)
   },
+  ollama: {
+    perInputToken: 0, // Free — local inference
+    perOutputToken: 0,
+  },
   ttsPerChar: {
     elevenlabs: 0.00018, // $0.18 per 1K chars (avg of Creator $0.20 and Pro $0.17, Multilingual v2)
     inworld: 0.00001, // $0.01 per 1K chars (Inworld TTS-1.5 Max: $10/1M chars)

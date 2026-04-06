@@ -13,7 +13,12 @@ export function validateEnv(opts: {
   imageProvider: ImageProviderKey;
   videoProvider?: VideoProviderKey;
   musicProvider?: MusicProviderKey;
+  localMode?: boolean;
 }): void {
+  // Ollama requires no cloud API keys — skip LLM key checks.
+  // In local mode, also skip image provider key checks (stub handles it).
+  const needsImageKey = !opts.localMode;
+
   const requirements: EnvRequirement[] = [
     {
       key: "ANTHROPIC_API_KEY",
@@ -25,7 +30,7 @@ export function validateEnv(opts: {
       key: "OPENAI_API_KEY",
       provider: "OpenAI (LLM/Image)",
       signupUrl: "https://platform.openai.com/api-keys",
-      required: opts.provider === "openai" || opts.imageProvider === "openai" || opts.ttsProvider === "openai-tts",
+      required: opts.provider === "openai" || (needsImageKey && opts.imageProvider === "openai") || opts.ttsProvider === "openai-tts",
     },
     {
       key: "GOOGLE_API_KEY",
@@ -33,7 +38,7 @@ export function validateEnv(opts: {
       signupUrl: "https://aistudio.google.com/apikey",
       required:
         opts.provider === "gemini" ||
-        opts.imageProvider === "gemini" ||
+        (needsImageKey && opts.imageProvider === "gemini") ||
         opts.videoProvider === "gemini" ||
         opts.ttsProvider === "gemini-tts" ||
         opts.musicProvider === "lyria",

@@ -4,6 +4,7 @@ import { parseArgs } from "./cli/args.js";
 import { validateEnv } from "./cli/validate-env.js";
 import { createCliCallbacks, runPipeline } from "./pipeline/orchestrator.js";
 import { createProviders, createVerificationModel } from "./providers/factory.js";
+import { checkOllamaHealth } from "./providers/llm/ollama-health.js";
 
 async function main(): Promise<void> {
   const opts = parseArgs();
@@ -15,7 +16,13 @@ async function main(): Promise<void> {
     imageProvider: opts.imageProvider,
     videoProvider: opts.videoProvider,
     musicProvider: opts.musicProvider,
+    localMode: opts.localMode,
   });
+
+  // Validate Ollama connectivity if using local/ollama provider
+  if (opts.provider === "ollama") {
+    await checkOllamaHealth(opts.ollamaBaseUrl, opts.ollamaModel);
+  }
 
   // Initialize providers via factory
   const { llm, tts, imageGen, stock, videoProviders, music } = createProviders({
@@ -26,6 +33,9 @@ async function main(): Promise<void> {
     videoModel: opts.videoModel,
     music: opts.musicProvider,
     kokoroVoice: opts.kokoroVoice,
+    ollamaModel: opts.ollamaModel,
+    ollamaBaseUrl: opts.ollamaBaseUrl,
+    localMode: opts.localMode,
   });
 
   // Create CLI callbacks for terminal progress display
@@ -59,6 +69,7 @@ async function main(): Promise<void> {
       videoProviders: opts.noVideo ? [] : videoProviders,
       videoProvider: opts.videoProvider,
       noVideo: opts.noVideo,
+      localMode: opts.localMode,
       stockVerify: opts.stockVerify,
       stockConfidence: opts.stockConfidence,
       stockMaxAttempts: opts.stockMaxAttempts,

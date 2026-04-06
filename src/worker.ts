@@ -41,6 +41,9 @@ interface JobData {
   dryRun: boolean;
   noMusic?: boolean;
   noVideo?: boolean;
+  localMode?: boolean;
+  ollamaModel?: string;
+  ollamaBaseUrl?: string;
   providers: {
     llm: string;
     tts: string;
@@ -84,7 +87,7 @@ function writeMeta(jobDir: string, meta: JobMeta) {
 const worker = new Worker<JobData>(
   "openreels",
   async (job: Job<JobData>) => {
-    const { topic, archetype, pacing, platform, dryRun, noMusic, noVideo, providers, keys } = job.data;
+    const { topic, archetype, pacing, platform, dryRun, noMusic, noVideo, localMode, ollamaModel, ollamaBaseUrl, providers, keys } = job.data;
     const jobDir = path.join(JOBS_DIR, job.id!);
     fs.mkdirSync(jobDir, { recursive: true });
 
@@ -113,6 +116,9 @@ const worker = new Worker<JobData>(
       video: providers.video as VideoProviderKey | undefined,
       videoModel: providers.videoModel,
       music: (providers.music as MusicProviderKey) ?? "bundled",
+      ollamaModel,
+      ollamaBaseUrl,
+      localMode,
       keys,
     });
 
@@ -230,6 +236,7 @@ const worker = new Worker<JobData>(
         videoProviders: noVideo ? [] : providerInstances.videoProviders,
         videoProvider: providers.video as VideoProviderKey | undefined,
         noVideo: noVideo === true,
+        localMode,
         archetype,
         pacing,
         platform,

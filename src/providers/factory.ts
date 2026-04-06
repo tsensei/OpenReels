@@ -18,8 +18,11 @@ import type {
 } from "../schema/providers.js";
 import { GeminiImage } from "./image/gemini.js";
 import { OpenAIImage } from "./image/openai.js";
+import { StubImageProvider } from "./image/stub.js";
+import { createOllama as createOllamaForVerification } from "ai-sdk-ollama";
 import { AnthropicLLM } from "./llm/anthropic.js";
 import { GeminiLLM } from "./llm/gemini.js";
+import { OllamaLLM } from "./llm/ollama.js";
 import { OpenAILLM } from "./llm/openai.js";
 import { PexelsStock } from "./stock/pexels.js";
 import { PixabayStock } from "./stock/pixabay.js";
@@ -44,6 +47,9 @@ export interface ProviderConfig {
   music?: MusicProviderKey;
   videoModel?: string;
   kokoroVoice?: string;
+  ollamaModel?: string;
+  ollamaBaseUrl?: string;
+  localMode?: boolean;
   keys?: Record<string, string>;
 }
 
@@ -60,11 +66,13 @@ export function createProviders(config: ProviderConfig): Providers {
   const k = config.keys ?? {};
 
   const llm: LLMProvider =
-    config.llm === "openai"
-      ? new OpenAILLM(undefined, k["OPENAI_API_KEY"])
-      : config.llm === "gemini"
-        ? new GeminiLLM(undefined, k["GOOGLE_API_KEY"])
-        : new AnthropicLLM(undefined, k["ANTHROPIC_API_KEY"]);
+    config.llm === "ollama"
+      ? new OllamaLLM(config.ollamaModel, config.ollamaBaseUrl)
+      : config.llm === "openai"
+        ? new OpenAILLM(undefined, k["OPENAI_API_KEY"])
+        : config.llm === "gemini"
+          ? new GeminiLLM(undefined, k["GOOGLE_API_KEY"])
+          : new AnthropicLLM(undefined, k["ANTHROPIC_API_KEY"]);
 
   // Providers that lack native timestamps get wrapped with the alignment decorator.
   // The aligner is shared (lazy singleton) so the Whisper model loads only once.
@@ -90,9 +98,11 @@ export function createProviders(config: ProviderConfig): Providers {
   }
 
   const imageGen: ImageProvider =
-    config.image === "openai"
-      ? new OpenAIImage(undefined, k["OPENAI_API_KEY"])
-      : new GeminiImage(undefined, k["GOOGLE_API_KEY"]);
+    config.localMode
+      ? new StubImageProvider()
+      : config.image === "openai"
+        ? new OpenAIImage(undefined, k["OPENAI_API_KEY"])
+        : new GeminiImage(undefined, k["GOOGLE_API_KEY"]);
 
   // Build stock provider array: construct both if both keys are available
   const stock: StockProvider[] = [];
@@ -138,6 +148,12 @@ export function createVerificationModel(
   model?: string,
   apiKey?: string,
 ): LanguageModel {
+  if (provider === "ollama") {
+    // Ollama multimodal models (llava, etc.) can be used for verification
+    // but quality varies. Callers should disable verification in --local mode.
+    const ollamaProvider = createOllamaForVerification();
+    return ollamaProvider(model ?? "llava") as unknown as LanguageModel;
+  }
   if (provider === "openai") {
     const openai = apiKey ? createOpenAI({ apiKey }) : createOpenAI();
     return openai(model ?? "gpt-4o");

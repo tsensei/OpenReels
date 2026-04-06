@@ -136,6 +136,7 @@ app.get("/api/v1/providers", async () => ({
     { key: "anthropic", label: "Anthropic (Claude)" },
     { key: "openai", label: "OpenAI (GPT)" },
     { key: "gemini", label: "Google Gemini" },
+    { key: "ollama", label: "Ollama (Local)" },
   ],
   tts: [
     { key: "elevenlabs", label: "ElevenLabs" },
@@ -210,6 +211,9 @@ app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
       .send({ error: `Unknown platform: ${platform}. Available: ${validPlatforms.join(", ")}` });
   }
 
+  const resolvedLlm = providers?.llm ?? "anthropic";
+  const isLocalMode = resolvedLlm === "ollama";
+
   const job = await queue.add("render", {
     topic: topic.trim(),
     archetype,
@@ -217,15 +221,16 @@ app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
     platform: platform ?? "youtube",
     dryRun: dryRun ?? false,
     noMusic: noMusic === true,
-    noVideo: noVideo === true,
+    noVideo: noVideo === true || isLocalMode,
+    localMode: isLocalMode,
     providers: {
-      llm: providers?.llm ?? "anthropic",
-      tts: providers?.tts ?? "elevenlabs",
+      llm: resolvedLlm,
+      tts: isLocalMode ? (providers?.tts ?? "kokoro") : (providers?.tts ?? "elevenlabs"),
       image: providers?.image ?? "gemini",
       stock: providers?.stock ?? "pexels",
       video: providers?.video,
       videoModel: providers?.videoModel,
-      music: providers?.music ?? "bundled",
+      music: isLocalMode ? "bundled" : (providers?.music ?? "bundled"),
     },
     keys: keys ?? {},
     jobsDir: JOBS_DIR,

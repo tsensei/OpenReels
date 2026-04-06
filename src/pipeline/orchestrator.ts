@@ -414,6 +414,7 @@ function buildPipelineWorkflow(
         archetype: opts.archetype,
         pacing: opts.pacing,
         videoEnabled,
+        localMode: opts.localMode,
       });
       // Store on shared context via closure
       directorResult.score = cdOutput.data;
