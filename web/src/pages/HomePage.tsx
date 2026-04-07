@@ -148,11 +148,11 @@ export function HomePage() {
   const hasTopic = topic.trim().length > 0;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 sm:px-6 lg:px-[100px] py-8">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 sm:px-6 lg:px-24 py-8">
       <div className="flex w-full max-w-[720px] flex-col items-center gap-8">
         {/* Hero */}
         <div className="text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold" style={{ letterSpacing: "-1px" }}>
+          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
             What story should we tell?
           </h1>
           <p className="mt-3 text-sm sm:text-base text-muted-foreground">
@@ -166,8 +166,8 @@ export function HomePage() {
             className={cn(
               "rounded-[14px] border bg-card px-5 sm:px-6 py-5 transition-all",
               hasTopic
-                ? "border-primary/40 shadow-[0_0_24px_-4px] shadow-primary/20"
-                : "border-[#334155]",
+                ? "border-primary/40 shadow-glow-md shadow-primary/20"
+                : "border-border",
             )}
           >
             {/* Topic Input */}
@@ -177,7 +177,7 @@ export function HomePage() {
               onChange={(e) => setTopic(e.target.value)}
               maxLength={200}
               placeholder="The science of black holes, how coffee changed history..."
-              className="w-full bg-transparent text-[15px] text-foreground placeholder:text-[#475569] focus:outline-none"
+              className="w-full bg-transparent text-[15px] text-foreground placeholder:text-text-faint focus:outline-none"
             />
 
             {/* Controls Row */}
@@ -186,9 +186,9 @@ export function HomePage() {
               <Select value={platform} onValueChange={(v) => v && setPlatform(v)}>
                 <SelectTrigger
                   size="sm"
-                  className="h-auto gap-1.5 rounded-[8px] border-[#334155] bg-transparent px-3 py-1.5 text-xs font-medium text-[#94A3B8]"
+                  className="h-auto gap-1.5 rounded-[8px] border-border bg-transparent px-3 py-1.5 text-xs font-medium text-text-subtle"
                 >
-                  <MonitorPlay className="size-3.5 text-[#64748B]" />
+                  <MonitorPlay className="size-3.5 text-muted-foreground" />
                   <SelectValue>{displayName(platform)}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -204,9 +204,9 @@ export function HomePage() {
               <Select value={pacing} onValueChange={(v) => setPacing(v ?? "")}>
                 <SelectTrigger
                   size="sm"
-                  className="h-auto gap-1.5 rounded-[8px] border-[#334155] bg-transparent px-3 py-1.5 text-xs font-medium text-[#94A3B8]"
+                  className="h-auto gap-1.5 rounded-[8px] border-border bg-transparent px-3 py-1.5 text-xs font-medium text-text-subtle"
                 >
-                  <Gauge className="size-3.5 text-[#64748B]" />
+                  <Gauge className="size-3.5 text-muted-foreground" />
                   <SelectValue placeholder="Auto Pace" />
                 </SelectTrigger>
                 <SelectContent>
@@ -225,10 +225,10 @@ export function HomePage() {
                   "flex items-center gap-1.5 rounded-[8px] border px-3 py-1.5 text-xs font-medium transition-colors",
                   showAdvanced
                     ? "border-primary/40 bg-primary/10 text-primary"
-                    : "border-[#334155] bg-transparent text-[#94A3B8] hover:text-foreground",
+                    : "border-border bg-transparent text-text-subtle hover:text-foreground",
                 )}
               >
-                <SlidersHorizontal className="size-3.5 text-[#64748B]" />
+                <SlidersHorizontal className="size-3.5 text-muted-foreground" />
                 Advanced
               </button>
 
@@ -367,7 +367,7 @@ export function HomePage() {
         {/* Archetype Gallery */}
         {archetypes.length > 0 && (
           <div className="w-full">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-[1.5px] text-[#64748B]">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-[1.5px] text-muted-foreground">
               Visual Style
             </h3>
             <ScrollArea className="w-full">
@@ -404,7 +404,7 @@ export function HomePage() {
                   "rounded-full px-3 py-1 text-xs font-medium transition-colors",
                   activeCategory === cat
                     ? "bg-primary/15 text-primary"
-                    : "text-[#64748B] hover:text-foreground",
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {cat}
@@ -413,7 +413,7 @@ export function HomePage() {
             <button
               type="button"
               onClick={handleShuffle}
-              className="ml-auto flex items-center gap-1 text-xs text-[#64748B] hover:text-foreground transition-colors"
+              className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <Shuffle className="size-3" />
               Shuffle
@@ -425,7 +425,7 @@ export function HomePage() {
                 key={s}
                 type="button"
                 onClick={() => setTopic(s)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#334155] bg-[#1E293B80] px-3.5 py-1.5 text-xs font-normal text-[#94A3B8] transition-colors hover:bg-accent hover:text-accent-foreground whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/50 px-3.5 py-1.5 text-xs font-normal text-text-subtle transition-colors hover:bg-accent hover:text-accent-foreground whitespace-nowrap"
               >
                 <Lightbulb className="size-3.5 text-primary" />
                 {s}

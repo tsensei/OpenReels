@@ -1,4 +1,4 @@
-import { AlertTriangle, Download, Loader2, Plus } from "lucide-react";
+import { AlertTriangle, Download, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CompletedPanel } from "@/components/pipeline/CompletedPanel";
@@ -218,8 +218,35 @@ export function JobPage() {
 
   if (!job) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      <div className="py-6 px-4 sm:px-6 lg:px-10">
+        {/* Header skeleton */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-6 w-64 animate-pulse rounded-lg bg-card" />
+            <div className="h-4 w-32 animate-pulse rounded bg-card" />
+          </div>
+          <div className="h-8 w-28 animate-pulse rounded-lg bg-card" />
+        </div>
+        {/* Two-column skeleton */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Timeline */}
+          <div className="w-full lg:w-[280px] space-y-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="size-8 animate-pulse rounded-full bg-card" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 w-24 animate-pulse rounded bg-card" />
+                  <div className="h-3 w-16 animate-pulse rounded bg-card" />
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Content */}
+          <div className="flex-1 space-y-3">
+            <div className="h-48 animate-pulse rounded-xl bg-card" />
+            <div className="h-32 animate-pulse rounded-xl bg-card" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -265,21 +292,21 @@ export function JobPage() {
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg sm:text-[22px] font-bold">{job.topic}</h1>
+          <h1 className="truncate text-lg sm:text-xl font-semibold tracking-tight">{job.topic}</h1>
           <div className="mt-1.5 flex flex-wrap items-center gap-3">
             {job.archetype && (
               <Badge
                 variant="secondary"
-                className="rounded-md border-0 bg-[#6366F120] px-2.5 py-1 text-xs font-medium text-[#A5B4FC]"
+                className="rounded-md border-0 bg-primary/12 px-2.5 py-1 text-xs font-medium text-primary/80"
               >
                 {formatArchetypeName(job.archetype)}
               </Badge>
             )}
-            <span className="text-xs text-[#64748B]">YouTube Shorts</span>
+            <span className="text-xs text-muted-foreground">YouTube Shorts</span>
             {totalCost != null && (
               <>
-                <span className="text-xs text-[#475569]">&middot;</span>
-                <span className="text-xs text-[#64748B]">
+                <span className="text-xs text-text-faint">&middot;</span>
+                <span className="text-xs text-muted-foreground">
                   ~${totalCost.toFixed(2)} {job.actualCost ? "total" : "estimated"}
                 </span>
               </>
@@ -289,27 +316,27 @@ export function JobPage() {
 
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           {isRunning && (
-            <div className="flex items-center gap-1.5 rounded-lg border border-[#334155] bg-[#1E293B] px-3.5 py-1.5">
-              <div className="size-2 rounded-full bg-[#22D3EE] animate-pulse" />
-              <span className="text-[13px] font-medium text-[#22D3EE]">Generating...</span>
+            <div className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-1.5">
+              <div className="size-2 rounded-full bg-status-info animate-pulse" />
+              <span className="text-xs font-medium text-status-info">Generating...</span>
             </div>
           )}
           {isCompleted && (
-            <div className="flex items-center gap-1.5 rounded-lg bg-[#22C55E20] px-3.5 py-1.5">
-              <div className="size-2 rounded-full bg-[#22C55E]" />
-              <span className="text-[13px] font-medium text-[#22C55E]">Complete</span>
+            <div className="flex items-center gap-1.5 rounded-lg bg-status-success/12 px-3.5 py-1.5">
+              <div className="size-2 rounded-full bg-status-success" />
+              <span className="text-xs font-medium text-status-success">Complete</span>
             </div>
           )}
           {isFailed && (
-            <div className="flex items-center gap-1.5 rounded-lg bg-[#EF444420] px-3.5 py-1.5">
-              <div className="size-2 rounded-full bg-[#EF4444]" />
-              <span className="text-[13px] font-medium text-[#EF4444]">Failed</span>
+            <div className="flex items-center gap-1.5 rounded-lg bg-destructive/12 px-3.5 py-1.5">
+              <div className="size-2 rounded-full bg-destructive" />
+              <span className="text-xs font-medium text-destructive">Failed</span>
             </div>
           )}
           {isCancelled && (
-            <div className="flex items-center gap-1.5 rounded-lg bg-[#F59E0B20] px-3.5 py-1.5">
-              <div className="size-2 rounded-full bg-[#F59E0B]" />
-              <span className="text-[13px] font-medium text-[#F59E0B]">Cancelled</span>
+            <div className="flex items-center gap-1.5 rounded-lg bg-status-warning/12 px-3.5 py-1.5">
+              <div className="size-2 rounded-full bg-status-warning" />
+              <span className="text-xs font-medium text-status-warning">Cancelled</span>
             </div>
           )}
 
@@ -317,7 +344,7 @@ export function JobPage() {
             <Button
               variant="outline"
               size="sm"
-              className="rounded-lg border-[#334155] px-3.5 py-1.5 text-[13px] font-medium text-[#CBD5E1]"
+              className="rounded-lg border-border px-3.5 py-1.5 text-xs font-medium text-secondary-foreground"
               onClick={handleCancel}
               disabled={cancelling}
             >
@@ -336,7 +363,7 @@ export function JobPage() {
             <Button
               variant="outline"
               size="sm"
-              className="rounded-lg border-[#334155] px-4 py-2 text-[13px] font-medium text-[#94A3B8]"
+              className="rounded-lg border-border px-4 py-2 text-xs font-medium text-text-subtle"
               onClick={() => navigate("/")}
             >
               <Plus className="size-3.5" />
@@ -434,13 +461,13 @@ export function JobPage() {
 
           {/* Asset failure warnings */}
           {assetFailures.length > 0 && !isCompleted && (
-            <div className="rounded-[10px] border border-[#F59E0B30] bg-[#F59E0B10] p-4">
-              <span className="text-[10px] font-semibold uppercase tracking-[1.5px] text-[#F59E0B]">
+            <div className="rounded-[10px] border border-status-warning/20 bg-status-warning/6 p-4">
+              <span className="text-[0.625rem] font-semibold uppercase tracking-[1.5px] text-status-warning">
                 ASSET WARNINGS
               </span>
               <div className="mt-2 flex flex-col gap-1">
                 {assetFailures.map((f, i) => (
-                  <p key={i} className="text-[12px] text-[#FBBF24]">
+                  <p key={i} className="text-xs text-status-warning/90">
                     Scene {f.scene}: {f.error}
                   </p>
                 ))}
@@ -450,8 +477,8 @@ export function JobPage() {
 
           {/* TTS badge */}
           {job.stages?.tts?.status === "done" && job.stages.tts.detail && !isCompleted && (
-            <div className="rounded-[10px] border border-[#334155] bg-[#1E293B] px-4 py-2.5">
-              <span className="text-[11px] text-[#94A3B8]">
+            <div className="rounded-lg border border-border/60 bg-card/60 px-4 py-2.5">
+              <span className="text-[0.6875rem] text-text-subtle">
                 Voice synthesis: {job.stages.tts.detail}
               </span>
             </div>
@@ -460,7 +487,7 @@ export function JobPage() {
           {/* Empty state while waiting */}
           {!researchData && !score && !costEstimate && isRunning && (
             <div className="flex h-64 items-center justify-center">
-              <p className="text-sm text-[#64748B]">
+              <p className="text-sm text-muted-foreground">
                 Pipeline output will appear here as stages complete...
               </p>
             </div>
@@ -478,23 +505,23 @@ function ResearchCard({ data }: { data: ResearchData }) {
   const facts = expanded ? data.key_facts : data.key_facts.slice(0, 5);
 
   return (
-    <div className="rounded-[10px] border border-[#334155] bg-[#1E293B] p-4 animate-in fade-in duration-500">
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm animate-in fade-in duration-500">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[1.5px] text-[#64748B]">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-[1.5px] text-muted-foreground">
             RESEARCH SUMMARY
           </span>
           {data.mood && (
-            <span className="rounded-full bg-[#0F172A] px-2 py-0.5 text-[10px] text-[#94A3B8]">
+            <span className="rounded-full bg-surface-inset px-2 py-0.5 text-[0.625rem] text-text-subtle">
               {data.mood}
             </span>
           )}
         </div>
-        <span className="text-xs font-medium text-[#22C55E]">
+        <span className="text-xs font-medium text-status-success">
           {data.key_facts.length} facts
         </span>
       </div>
-      <p className="mb-3 text-[13px] leading-relaxed text-[#CBD5E1]">
+      <p className="mb-3 text-xs leading-relaxed text-secondary-foreground">
         {data.summary}
       </p>
       {data.key_facts.length > 0 && (
@@ -502,7 +529,7 @@ function ResearchCard({ data }: { data: ResearchData }) {
           {facts.map((fact, i) => (
             <span
               key={i}
-              className="rounded-md bg-[#0F172A] px-2 py-1 text-[11px] text-[#94A3B8]"
+              className="rounded-md bg-surface-inset px-2 py-1 text-[0.6875rem] text-text-subtle"
             >
               {fact}
             </span>
@@ -511,7 +538,7 @@ function ResearchCard({ data }: { data: ResearchData }) {
             <button
               type="button"
               onClick={() => setExpanded(!expanded)}
-              className="rounded-md bg-[#0F172A] px-2 py-1 text-[11px] text-primary hover:text-primary/80"
+              className="rounded-md bg-surface-inset px-2 py-1 text-[0.6875rem] text-primary hover:text-primary/80"
             >
               {expanded ? "Show less" : `+${data.key_facts.length - 5} more`}
             </button>
@@ -529,27 +556,27 @@ function MusicStatusCard({ info }: { info: MusicInfo }) {
   };
   const providerLabel = musicProviderNames[info.provider ?? ""] ?? info.provider ?? "AI";
   return (
-    <div className="rounded-[10px] border border-[#334155] bg-[#1E293B] px-4 py-2.5 flex items-center gap-2">
+    <div className="rounded-lg border border-border/60 bg-card/60 px-4 py-2.5 flex items-center gap-2">
       {info.status === "generating" && (
         <>
-          <div className="size-3 animate-spin rounded-full border-2 border-[#334155] border-t-[#A78BFA]" />
-          <span className="text-[11px] text-[#94A3B8]">
+          <div className="size-3 animate-spin rounded-full border-2 border-border border-t-primary" />
+          <span className="text-[0.6875rem] text-text-subtle">
             Generating music via {providerLabel}...
           </span>
         </>
       )}
       {info.status === "generated" && (
         <>
-          <span className="size-2 rounded-full bg-[#22C55E]" />
-          <span className="text-[11px] text-[#94A3B8]">
+          <span className="size-2 rounded-full bg-status-success" />
+          <span className="text-[0.6875rem] text-text-subtle">
             Music generated via {providerLabel}
           </span>
         </>
       )}
       {info.status === "fallback" && (
         <>
-          <span className="size-2 rounded-full bg-[#F59E0B]" />
-          <span className="text-[11px] text-[#94A3B8]">
+          <span className="size-2 rounded-full bg-status-warning" />
+          <span className="text-[0.6875rem] text-text-subtle">
             Using bundled track{info.reason ? ` (${info.reason})` : ""}
           </span>
         </>

@@ -189,8 +189,25 @@ export function GalleryPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      <div className="py-8 px-4 sm:px-10">
+        <div className="mb-5 h-8 w-24 animate-pulse rounded-lg bg-card" />
+        <div className="mb-5 h-9 w-full animate-pulse rounded-lg bg-card" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
+              <div className="h-[180px] animate-pulse bg-surface-inset" />
+              <div className="p-3.5 space-y-2">
+                <div className="h-4 w-3/4 animate-pulse rounded bg-surface-inset" />
+                <div className="h-3 w-1/2 animate-pulse rounded bg-surface-inset" />
+                <div className="flex gap-3 pt-1">
+                  <div className="h-3 w-8 animate-pulse rounded bg-surface-inset" />
+                  <div className="h-3 w-10 animate-pulse rounded bg-surface-inset" />
+                  <div className="ml-auto h-3 w-12 animate-pulse rounded bg-surface-inset" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -198,17 +215,16 @@ export function GalleryPage() {
   if (jobs.length === 0) {
     return (
       <div className="py-8 px-4 sm:px-10">
-        <h1 className="mb-6 text-2xl font-bold">Gallery</h1>
+        <h1 className="mb-6 text-2xl font-semibold tracking-tight">Gallery</h1>
         <div
-          className="flex flex-1 flex-col items-center justify-center"
-          style={{ minHeight: "calc(100vh - 160px)" }}
+          className="flex flex-1 flex-col items-center justify-center min-h-[calc(100vh-160px)]"
         >
           <div className="flex flex-col items-center text-center">
-            <div className="mb-5 flex size-20 items-center justify-center rounded-full bg-[#1E293B]">
-              <Film className="size-9 text-[#334155]" />
+            <div className="mb-5 flex size-20 items-center justify-center rounded-full bg-card">
+              <Film className="size-9 text-border" />
             </div>
-            <h2 className="text-xl font-semibold text-[#E2E8F0]">No videos yet</h2>
-            <p className="mt-2 text-sm text-[#64748B]">
+            <h2 className="text-xl font-semibold text-foreground">No videos yet</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
               Create your first Short and it will appear here.
             </p>
             <Button
@@ -230,8 +246,8 @@ export function GalleryPage() {
     <div className="py-8 px-4 sm:px-10">
       {/* Header */}
       <div className="mb-5 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Gallery</h1>
-        <span className="text-[13px] text-[#64748B]">
+        <h1 className="text-2xl font-semibold tracking-tight">Gallery</h1>
+        <span className="text-[13px] text-muted-foreground">
           {filteredJobs.length} of {jobs.length} loaded{jobs.length < total ? ` (${total} total)` : ""}
         </span>
       </div>
@@ -255,7 +271,7 @@ export function GalleryPage() {
 
       {/* Delete error banner */}
       {deleteError && (
-        <div className="mb-4 rounded-lg border border-[#EF444430] bg-[#EF444410] px-4 py-2.5 text-sm text-[#EF4444]">
+        <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/6 px-4 py-2.5 text-sm text-destructive">
           {deleteError}
         </div>
       )}
@@ -278,7 +294,7 @@ export function GalleryPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-1 text-[#94A3B8]"
+            className="gap-1 text-text-subtle"
             onClick={() => setSelectedIds(new Set())}
           >
             <X className="size-3.5" />
@@ -289,7 +305,7 @@ export function GalleryPage() {
 
       {filteredJobs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-sm text-[#64748B]">No videos match your filters.</p>
+          <p className="text-sm text-muted-foreground">No videos match your filters.</p>
         </div>
       ) : viewMode === "grid" ? (
         /* Grid view */
@@ -326,7 +342,7 @@ export function GalleryPage() {
         <div className="mt-6 flex justify-center">
           <Button
             variant="outline"
-            className="rounded-lg border-[#334155] px-6"
+            className="rounded-lg border-border px-6"
             onClick={handleLoadMore}
             disabled={loadingMore}
           >
@@ -402,8 +418,8 @@ function ListCard({
         }
       }}
       className={cn(
-        "flex items-center gap-4 rounded-lg border bg-[#1E293B] px-4 py-3 transition-all hover:border-primary/30",
-        isFailed ? "border-[#EF444430]" : "border-[#334155]",
+        "flex items-center gap-4 rounded-lg border bg-card px-4 py-3 transition-all hover:border-primary/30",
+        isFailed ? "border-destructive/20" : "border-border",
         selected && "ring-2 ring-primary ring-offset-1 ring-offset-background",
       )}
     >
@@ -417,10 +433,10 @@ function ListCard({
       )}
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-[#E2E8F0]">{job.topic}</p>
+        <p className="truncate text-sm font-semibold text-foreground">{job.topic}</p>
         <div className="mt-1 flex items-center gap-2">
           {job.archetype && (
-            <span className="text-[10px] text-[#64748B]">
+            <span className="text-[10px] text-muted-foreground">
               {formatArchetypeName(job.archetype)}
             </span>
           )}
@@ -430,15 +446,15 @@ function ListCard({
             </Badge>
           )}
           {isRunning && (
-            <span className="flex items-center gap-1 text-[10px] text-[#22D3EE]">
-              <span className="size-1.5 rounded-full bg-[#22D3EE] animate-pulse" />
+            <span className="flex items-center gap-1 text-[10px] text-status-info">
+              <span className="size-1.5 rounded-full bg-status-info animate-pulse" />
               Running
             </span>
           )}
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-4 text-[11px] text-[#64748B]">
+      <div className="flex shrink-0 items-center gap-4 text-[11px] text-muted-foreground">
         {sceneCount != null && (
           <span className="flex items-center gap-1">
             <Layers className="size-3" />

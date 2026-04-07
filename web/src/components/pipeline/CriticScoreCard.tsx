@@ -5,9 +5,9 @@ interface CriticScoreCardProps {
 }
 
 function getScoreColor(score: number): { ring: string; text: string; bg: string } {
-  if (score >= 8) return { ring: "#22C55E", text: "text-[#22C55E]", bg: "bg-[#22C55E15]" };
-  if (score >= 5) return { ring: "#F59E0B", text: "text-[#F59E0B]", bg: "bg-[#F59E0B15]" };
-  return { ring: "#EF4444", text: "text-[#EF4444]", bg: "bg-[#EF444415]" };
+  if (score >= 8) return { ring: "var(--status-success)", text: "text-status-success", bg: "bg-status-success/8" };
+  if (score >= 5) return { ring: "var(--status-warning)", text: "text-status-warning", bg: "bg-status-warning/8" };
+  return { ring: "var(--destructive)", text: "text-destructive", bg: "bg-destructive/8" };
 }
 
 export function CriticScoreCard({ review }: CriticScoreCardProps) {
@@ -17,8 +17,8 @@ export function CriticScoreCard({ review }: CriticScoreCardProps) {
   const dashOffset = circumference - progress;
 
   return (
-    <div className="rounded-[10px] border border-[#334155] bg-[#1E293B] p-4 animate-in fade-in duration-500">
-      <span className="text-[10px] font-semibold uppercase tracking-[1.5px] text-[#64748B]">
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm animate-in fade-in duration-500">
+      <span className="text-[10px] font-semibold uppercase tracking-[1.5px] text-muted-foreground">
         QUALITY REVIEW
       </span>
 
@@ -31,7 +31,7 @@ export function CriticScoreCard({ review }: CriticScoreCardProps) {
               cy="40"
               r="36"
               fill="none"
-              stroke="#1E293B"
+              stroke="var(--card)"
               strokeWidth="6"
             />
             <circle
@@ -51,7 +51,7 @@ export function CriticScoreCard({ review }: CriticScoreCardProps) {
             <span className={`text-xl font-bold ${color.text}`}>
               {review.score}
             </span>
-            <span className="text-xs text-[#64748B]">/10</span>
+            <span className="text-xs text-muted-foreground">/10</span>
           </div>
         </div>
 
@@ -59,14 +59,14 @@ export function CriticScoreCard({ review }: CriticScoreCardProps) {
         <div className="flex flex-1 flex-col gap-1.5 min-w-0">
           {review.strengths.map((s, i) => (
             <div key={`s-${i}`} className="flex items-start gap-1.5">
-              <span className="shrink-0 text-[11px] text-[#22C55E]">+</span>
-              <span className="text-[11px] leading-snug text-[#94A3B8]">{s}</span>
+              <span className="shrink-0 text-[11px] text-status-success">+</span>
+              <span className="text-[11px] leading-snug text-text-subtle">{s}</span>
             </div>
           ))}
           {review.weaknesses.map((w, i) => (
             <div key={`w-${i}`} className="flex items-start gap-1.5">
-              <span className="shrink-0 text-[11px] text-[#EF4444]">&minus;</span>
-              <span className="text-[11px] leading-snug text-[#94A3B8]">{w}</span>
+              <span className="shrink-0 text-[11px] text-destructive">&minus;</span>
+              <span className="text-[11px] leading-snug text-text-subtle">{w}</span>
             </div>
           ))}
         </div>

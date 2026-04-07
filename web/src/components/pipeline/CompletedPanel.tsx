@@ -61,7 +61,7 @@ export function CompletedPanel({
       {/* Top row: Video + Stats */}
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Video Player */}
-        <div className="shrink-0 flex w-full sm:w-[220px] md:w-[260px] max-w-[260px] mx-auto sm:mx-0 flex-col items-center justify-center aspect-[9/16] rounded-xl overflow-hidden border border-[#334155] bg-[#0D1526]">
+        <div className="shrink-0 flex w-full sm:w-[220px] md:w-[260px] max-w-[260px] mx-auto sm:mx-0 flex-col items-center justify-center aspect-[9/16] rounded-xl overflow-hidden border border-border bg-surface-sunken">
           {videoUrl ? (
             <video
               src={videoUrl}
@@ -73,8 +73,8 @@ export function CompletedPanel({
             </video>
           ) : (
             <>
-              <Play className="size-10 text-[#818CF8]" />
-              <span className="mt-2.5 text-xs text-[#94A3B8]">
+              <Play className="size-10 text-primary" />
+              <span className="mt-2.5 text-xs text-text-subtle">
                 Video not available
               </span>
             </>
@@ -97,15 +97,15 @@ export function CompletedPanel({
           {/* Emotional arc + archetype badges */}
           {displayScore && (
             <div className="flex flex-wrap gap-1.5">
-              <span className="rounded-[5px] border border-[#6366F130] bg-[#6366F115] px-2 py-0.5 text-xs font-medium text-[#A5B4FC]">
+              <span className="rounded-[5px] border border-primary/20 bg-primary/8 px-2 py-0.5 text-xs font-medium text-primary/80">
                 {displayScore.emotional_arc}
               </span>
               {displayScore.archetype && (
-                <span className="rounded-[5px] border border-[#22D3EE30] bg-[#22D3EE15] px-2 py-0.5 text-xs font-medium text-[#67E8F9]">
+                <span className="rounded-[5px] border border-status-info/20 bg-status-info/8 px-2 py-0.5 text-xs font-medium text-status-info/80">
                   {formatArchetypeName(displayScore.archetype)}
                 </span>
               )}
-              <span className="rounded-[5px] border border-[#A78BFA30] bg-[#A78BFA15] px-2 py-0.5 text-xs font-medium text-[#C4B5FD]">
+              <span className="rounded-[5px] border border-primary/20 bg-primary/8 px-2 py-0.5 text-xs font-medium text-primary/80">
                 {displayScore.music_mood}
               </span>
             </div>
@@ -157,7 +157,7 @@ function MusicPreview({ jobId, runDir }: { jobId: string; runDir: string }) {
 
   return (
     <div>
-      <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[1.5px] text-[#64748B]">
+      <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[1.5px] text-muted-foreground">
         Background Music
       </span>
       <audio
@@ -182,13 +182,13 @@ function StatCard({
   highlight?: boolean;
 }) {
   return (
-    <div className="flex flex-col items-center rounded-[10px] border border-[#334155] bg-[#1E293B] px-3 py-3 sm:px-4 sm:py-3.5 gap-1">
+    <div className="flex flex-col items-center rounded-[10px] border border-border bg-card px-3 py-3 sm:px-4 sm:py-3.5 gap-1">
       <span
-        className={`text-lg font-bold ${highlight ? "text-[#22D3EE]" : "text-[#F1F5F9]"}`}
+        className={`text-lg font-bold ${highlight ? "text-status-info" : "text-foreground"}`}
       >
         {value}
       </span>
-      <span className="text-[11px] text-[#94A3B8]">{label}</span>
+      <span className="text-[11px] text-text-subtle">{label}</span>
     </div>
   );
 }
@@ -204,10 +204,10 @@ function StageDurationBar({
 
   return (
     <div>
-      <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[1.5px] text-[#64748B]">
+      <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[1.5px] text-muted-foreground">
         STAGE TIMING
       </span>
-      <div className="flex h-3 w-full overflow-hidden rounded-full bg-[#0F172A]">
+      <div className="flex h-3 w-full overflow-hidden rounded-full bg-surface-inset">
         {STAGE_ORDER.map((s) => {
           const dur = stages[s]?.durationSec ?? 0;
           if (dur <= 0) return null;
@@ -236,7 +236,7 @@ function StageDurationBar({
                 className="inline-block size-2 rounded-full"
                 style={{ backgroundColor: STAGE_COLORS[s] ?? "#64748B" }}
               />
-              <span className="text-[10px] text-[#94A3B8]">
+              <span className="text-[10px] text-text-subtle">
                 {s} {dur.toFixed(1)}s
               </span>
             </div>
@@ -258,37 +258,37 @@ function CostComparisonRow({
   const savedPct = estimated > 0 ? ((estimated - actual) / estimated) * 100 : 0;
 
   return (
-    <div className="rounded-[10px] border border-[#334155] bg-[#1E293B] p-3">
-      <span className="text-[10px] font-semibold uppercase tracking-[1.5px] text-[#64748B]">
+    <div className="rounded-[10px] border border-border bg-card p-3">
+      <span className="text-[10px] font-semibold uppercase tracking-[1.5px] text-muted-foreground">
         COST: ESTIMATED vs ACTUAL
       </span>
       <div className="mt-2 flex flex-col gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="w-16 text-[10px] text-[#64748B]">Estimated</span>
-          <div className="flex-1 h-2 rounded-full bg-[#0F172A] overflow-hidden">
+          <span className="w-16 text-[10px] text-muted-foreground">Estimated</span>
+          <div className="flex-1 h-2 rounded-full bg-surface-inset overflow-hidden">
             <div
-              className="h-full rounded-full bg-[#64748B]"
+              className="h-full rounded-full bg-muted-foreground"
               style={{ width: `${(estimated / maxCost) * 100}%` }}
             />
           </div>
-          <span className="w-12 text-right text-[11px] text-[#94A3B8]">
+          <span className="w-12 text-right text-[11px] text-text-subtle">
             ${estimated.toFixed(2)}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-16 text-[10px] text-[#64748B]">Actual</span>
-          <div className="flex-1 h-2 rounded-full bg-[#0F172A] overflow-hidden">
+          <span className="w-16 text-[10px] text-muted-foreground">Actual</span>
+          <div className="flex-1 h-2 rounded-full bg-surface-inset overflow-hidden">
             <div
-              className="h-full rounded-full bg-[#22D3EE]"
+              className="h-full rounded-full bg-status-info"
               style={{ width: `${(actual / maxCost) * 100}%` }}
             />
           </div>
-          <span className="w-12 text-right text-[11px] font-semibold text-[#22D3EE]">
+          <span className="w-12 text-right text-[11px] font-semibold text-status-info">
             ${actual.toFixed(2)}
           </span>
         </div>
         {Math.abs(savedPct) >= 1 && (
-          <span className={`text-[10px] text-right ${savedPct > 0 ? "text-[#22C55E]" : "text-[#F59E0B]"}`}>
+          <span className={`text-[10px] text-right ${savedPct > 0 ? "text-status-success" : "text-status-warning"}`}>
             {savedPct > 0 ? `${savedPct.toFixed(0)}% under estimate` : `${Math.abs(savedPct).toFixed(0)}% over estimate`}
           </span>
         )}

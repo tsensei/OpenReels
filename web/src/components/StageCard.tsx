@@ -67,7 +67,7 @@ function IndicatorIcon({ status }: { status: TimelineStatus }) {
     case "running":
       return (
         <svg
-          className="size-4 animate-spin"
+          className="size-4 animate-spin will-change-transform"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -167,35 +167,24 @@ export function StageCard({
 
   return (
     <li
-      className="relative grid"
-      style={{
-        gridTemplateColumns: "32px 1fr",
-        columnGap: 12,
-        paddingBottom: isLast ? 0 : 24,
-      }}
+      className={cn(
+        "relative grid grid-cols-[32px_1fr] gap-x-3",
+        !isLast && "pb-6",
+      )}
     >
       {/* Col 1: Indicator and Timeline lines */}
       <div className="relative flex flex-col items-center justify-center">
         {/* Top line: from top of the grid cell down to the circle */}
         {!isFirst && prevStatus && (
           <div
-            className={cn("absolute w-0.5 transition-colors", statusLineClasses[prevStatus])}
-            style={{
-              top: 0,
-              bottom: "calc(50% + 16px)", // Stops exactly at the top of the 32px circle
-            }}
+            className={cn("absolute top-0 bottom-[calc(50%+16px)] w-0.5 transition-colors will-change-[background-color]", statusLineClasses[prevStatus])}
           />
         )}
 
         {/* Bottom line: from the bottom of the circle, through the padding gap, to the top of the next grid cell */}
         {!isLast && (
           <div
-            className={cn("absolute w-0.5 transition-colors", statusLineClasses[status])}
-            style={{
-              top: "calc(50% + 16px)", // Starts exactly at the bottom of the 32px circle
-              bottom: "-24px", // Reaches down through the 24px paddingBottom
-              zIndex: 1,
-            }}
+            className={cn("absolute top-[calc(50%+16px)] -bottom-6 z-[1] w-0.5 transition-colors will-change-[background-color]", statusLineClasses[status])}
           />
         )}
 
@@ -213,9 +202,9 @@ export function StageCard({
       <div
         className={cn(
           "rounded-lg px-3.5 py-2.5 transition-all min-w-0",
-          status === "running" && "bg-[#1E293B] ring-1 ring-primary/25",
-          status === "error" && "bg-[#1E293B] ring-1 ring-destructive/25",
-          status === "done" && "bg-[#141C2E]",
+          status === "running" && "bg-card ring-1 ring-primary/25",
+          status === "error" && "bg-card ring-1 ring-destructive/25",
+          status === "done" && "bg-card/70",
           (status === "pending" || status === "skipped") && "opacity-50",
         )}
       >

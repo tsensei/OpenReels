@@ -45,18 +45,18 @@ export function GalleryToolbar({
     <div className="flex flex-wrap items-center gap-2.5">
       {/* Search */}
       <div className="relative flex-1 min-w-[180px]">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[#64748B]" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
         <Input
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search topics..."
-          className="h-9 rounded-lg border-[#334155] bg-[#0F172A] pl-9 text-sm text-foreground placeholder:text-[#475569]"
+          className="h-9 rounded-lg border-border bg-surface-inset pl-9 text-sm text-foreground placeholder:text-text-faint"
         />
       </div>
 
       {/* Archetype filter */}
       <Select value={archetypeFilter} onValueChange={(v) => v && onArchetypeChange(v)}>
-        <SelectTrigger className="h-9 w-auto min-w-[120px] rounded-lg border-[#334155] bg-[#0F172A] text-xs">
+        <SelectTrigger className="h-9 w-auto min-w-[120px] rounded-lg border-border bg-surface-inset text-xs">
           <SelectValue placeholder="All Styles" />
         </SelectTrigger>
         <SelectContent>
@@ -74,7 +74,7 @@ export function GalleryToolbar({
         value={statusFilter}
         onValueChange={(v) => onStatusChange(v as StatusFilter)}
       >
-        <SelectTrigger className="h-9 w-auto min-w-[110px] rounded-lg border-[#334155] bg-[#0F172A] text-xs">
+        <SelectTrigger className="h-9 w-auto min-w-[110px] rounded-lg border-border bg-surface-inset text-xs">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -87,7 +87,7 @@ export function GalleryToolbar({
 
       {/* Sort */}
       <Select value={sortBy} onValueChange={(v) => onSortChange(v as SortBy)}>
-        <SelectTrigger className="h-9 w-auto min-w-[100px] rounded-lg border-[#334155] bg-[#0F172A] text-xs">
+        <SelectTrigger className="h-9 w-auto min-w-[100px] rounded-lg border-border bg-surface-inset text-xs">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -99,13 +99,13 @@ export function GalleryToolbar({
       </Select>
 
       {/* View toggle */}
-      <div className="flex rounded-lg border border-[#334155] overflow-hidden">
+      <div className="flex rounded-lg border border-border overflow-hidden">
         <button
           type="button"
           onClick={() => onViewModeChange("grid")}
           className={cn(
             "flex items-center justify-center size-9 transition-colors",
-            viewMode === "grid" ? "bg-primary/15 text-primary" : "text-[#64748B] hover:text-foreground",
+            viewMode === "grid" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
           )}
         >
           <LayoutGrid className="size-3.5" />
@@ -114,8 +114,8 @@ export function GalleryToolbar({
           type="button"
           onClick={() => onViewModeChange("list")}
           className={cn(
-            "flex items-center justify-center size-9 border-l border-[#334155] transition-colors",
-            viewMode === "list" ? "bg-primary/15 text-primary" : "text-[#64748B] hover:text-foreground",
+            "flex items-center justify-center size-9 border-l border-border transition-colors",
+            viewMode === "list" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground",
           )}
         >
           <List className="size-3.5" />

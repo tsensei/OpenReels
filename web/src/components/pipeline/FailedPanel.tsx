@@ -12,28 +12,28 @@ export function FailedPanel({ failedStageName, failedDetail }: FailedPanelProps)
 
   return (
     <div className="flex items-center justify-center h-full">
-      <div className="w-full max-w-[440px] rounded-[14px] border border-[#334155] bg-[#1E293B] p-6 sm:p-8 flex flex-col items-center text-center">
+      <div className="w-full max-w-[440px] rounded-2xl border border-destructive/20 bg-card p-6 sm:p-8 shadow-glow-sm shadow-destructive/10 flex flex-col items-center text-center">
         {/* Warning icon */}
-        <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-[#EF444415]">
+        <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-destructive/8">
           <AlertTriangle className="size-6 text-destructive" />
         </div>
 
         {/* Title */}
-        <h2 className="text-lg font-semibold text-[#F1F5F9]">
+        <h2 className="text-lg font-semibold text-foreground">
           Pipeline Failed at {failedStageName}
         </h2>
 
         {/* Description */}
-        <p className="mt-2 text-sm leading-relaxed text-[#94A3B8]" style={{ maxWidth: 380 }}>
+        <p className="mt-2 max-w-[380px] text-sm leading-relaxed text-text-subtle">
           The pipeline encountered an error during the {failedStageName} stage. See error details below.
         </p>
 
         {/* Error details */}
         {failedDetail && (
           <div className="mt-4 w-full">
-            <p className="mb-1.5 text-left text-[11px] font-medium text-[#64748B]">Error Details</p>
-            <div className="rounded-lg border border-[#1E293B] bg-[#0F172A] p-3 text-left">
-              <code className="text-[11px] leading-relaxed text-[#F87171] font-mono whitespace-pre-wrap break-words">
+            <p className="mb-1.5 text-left text-[11px] font-medium text-muted-foreground">Error Details</p>
+            <div className="rounded-lg border border-card bg-surface-inset p-3 text-left">
+              <code className="text-[11px] leading-relaxed text-destructive font-mono whitespace-pre-wrap break-words">
                 {failedDetail}
               </code>
             </div>
@@ -45,7 +45,7 @@ export function FailedPanel({ failedStageName, failedDetail }: FailedPanelProps)
           <Button
             variant="outline"
             size="sm"
-            className="rounded-lg border-[#334155] px-4 py-2 text-[13px] font-medium text-[#CBD5E1]"
+            className="rounded-lg border-border px-4 py-2 text-[13px] font-medium text-secondary-foreground"
             onClick={() => navigate("/")}
           >
             Start over

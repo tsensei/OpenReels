@@ -23,7 +23,7 @@ export function ArchetypeCard({ archetype, selected, onClick }: ArchetypeCardPro
         "w-[140px] h-[160px]",
         selected
           ? "border-primary shadow-[0_0_16px_-2px] shadow-primary/30"
-          : "border-[#334155] hover:border-[#475569]",
+          : "border-border hover:border-muted-foreground/50",
       )}
       style={
         isAuto
@@ -45,11 +45,11 @@ export function ArchetypeCard({ archetype, selected, onClick }: ArchetypeCardPro
       {/* Auto style shimmer */}
       {isAuto ? (
         <>
-          <div className="mb-3 flex size-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#818CF8] via-[#22D3EE] to-[#A78BFA]">
+          <div className="mb-3 flex size-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary via-status-info to-primary/70">
             <Sparkles className="size-5 text-white" />
           </div>
           <span className="text-sm font-semibold text-foreground">Auto Style</span>
-          <span className="mt-1 text-[10px] text-[#94A3B8]">AI picks the best</span>
+          <span className="mt-1 text-[10px] text-text-subtle">AI picks the best</span>
         </>
       ) : (
         <>
@@ -80,14 +80,14 @@ export function ArchetypeCard({ archetype, selected, onClick }: ArchetypeCardPro
 
           {/* Mood */}
           {mood && (
-            <span className="mt-1 text-center text-[10px] text-[#94A3B8] leading-tight line-clamp-1">
+            <span className="mt-1 text-center text-[10px] text-text-subtle leading-tight line-clamp-1">
               {mood}
             </span>
           )}
 
           {/* Pacing badge */}
           {pacing && (
-            <span className="mt-2 rounded-full bg-[#0F172A] px-2 py-0.5 text-[9px] font-medium text-[#64748B]">
+            <span className="mt-2 rounded-full bg-surface-inset px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
               {pacing}
             </span>
           )}

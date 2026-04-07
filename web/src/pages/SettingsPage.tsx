@@ -41,14 +41,14 @@ export function SettingsPage() {
 
   return (
     <div className="py-8 px-4 sm:px-10">
-      <h1 className="mb-8 text-2xl font-bold">Settings</h1>
+      <h1 className="mb-8 text-2xl font-semibold tracking-tight">Settings</h1>
 
       <div className="max-w-[560px] flex flex-col gap-8">
         {/* Usage Statistics */}
         {stats && stats.totalJobs > 0 && (
           <section>
-            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-[#E2E8F0]">
-              <BarChart3 className="size-4 text-[#64748B]" />
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
+              <BarChart3 className="size-4 text-muted-foreground" />
               Usage Statistics
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -58,26 +58,26 @@ export function SettingsPage() {
                 value={String(stats.totalJobs)}
               />
               <StatBox
-                icon={<CheckCircle className="size-4 text-[#22C55E]" />}
+                icon={<CheckCircle className="size-4 text-status-success" />}
                 label="Completed"
                 value={String(stats.completedJobs)}
-                color="text-[#22C55E]"
+                color="text-status-success"
               />
               <StatBox
-                icon={<XCircle className="size-4 text-[#EF4444]" />}
+                icon={<XCircle className="size-4 text-destructive" />}
                 label="Failed"
                 value={String(stats.failedJobs)}
-                color="text-[#EF4444]"
+                color="text-destructive"
               />
               <StatBox
-                icon={<DollarSign className="size-4 text-[#22D3EE]" />}
+                icon={<DollarSign className="size-4 text-status-info" />}
                 label="Total Spend"
                 value={`$${stats.totalCost.toFixed(2)}`}
-                color="text-[#22D3EE]"
+                color="text-status-info"
               />
             </div>
             {avgCost != null && (
-              <p className="mt-2 text-[11px] text-[#64748B]">
+              <p className="mt-2 text-[11px] text-muted-foreground">
                 Average cost per video: ${avgCost.toFixed(2)}
               </p>
             )}
@@ -86,12 +86,12 @@ export function SettingsPage() {
 
         {/* System Status */}
         <section>
-          <h2 className="mb-4 text-sm font-semibold text-[#E2E8F0]">
+          <h2 className="mb-4 text-sm font-semibold text-foreground">
             System Status
           </h2>
-          <div className="overflow-hidden rounded-[12px] border border-[#334155] bg-[#1E293B]">
+          <div className="overflow-hidden rounded-[12px] border border-border bg-card">
             <div className="flex items-center justify-between px-5 py-3.5">
-              <span className="text-[13px] text-[#94A3B8]">API Server</span>
+              <span className="text-[13px] text-text-subtle">API Server</span>
               <StatusDot
                 ok={health?.status === "healthy"}
                 label={
@@ -105,7 +105,7 @@ export function SettingsPage() {
             </div>
             <div className="border-t border-border" />
             <div className="flex items-center justify-between px-5 py-3.5">
-              <span className="text-[13px] text-[#94A3B8]">Redis Queue</span>
+              <span className="text-[13px] text-text-subtle">Redis Queue</span>
               <StatusDot
                 ok={health?.redis === "connected"}
                 label={
@@ -122,13 +122,13 @@ export function SettingsPage() {
 
         {/* API Keys */}
         <section>
-          <h2 className="mb-1 text-sm font-semibold text-[#E2E8F0]">
+          <h2 className="mb-1 text-sm font-semibold text-foreground">
             API Keys
           </h2>
-          <p className="mb-4 text-[13px] text-[#64748B]">
+          <p className="mb-4 text-[13px] text-muted-foreground">
             API keys are configured server-side via environment variables.
           </p>
-          <div className="overflow-hidden rounded-[12px] border border-[#334155] bg-[#1E293B]">
+          <div className="overflow-hidden rounded-[12px] border border-border bg-card">
             {API_KEY_FIELDS.map((field, i) => {
               const isSet = health?.keys?.[field.key] ?? null;
               return (
@@ -136,10 +136,10 @@ export function SettingsPage() {
                   {i > 0 && <div className="border-t border-border" />}
                   <div className="flex items-center justify-between px-5 py-3.5">
                     <div className="flex flex-col gap-0.5">
-                      <code className="font-mono text-[13px] text-[#94A3B8]">
+                      <code className="font-mono text-[13px] text-text-subtle">
                         {field.key}
                       </code>
-                      <span className="text-[11px] text-[#475569]">{field.label}</span>
+                      <span className="text-[11px] text-text-faint">{field.label}</span>
                     </div>
                     {isSet !== null ? (
                       <StatusDot
@@ -203,12 +203,12 @@ function StatBox({
   color?: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-[10px] border border-[#334155] bg-[#1E293B] py-3 px-2">
-      <div className="text-[#64748B]">{icon}</div>
-      <span className={cn("text-lg font-bold", color ?? "text-[#F1F5F9]")}>
+    <div className="flex flex-col items-center gap-1 rounded-[10px] border border-border bg-card py-3 px-2">
+      <div className="text-muted-foreground">{icon}</div>
+      <span className={cn("text-lg font-bold", color ?? "text-foreground")}>
         {value}
       </span>
-      <span className="text-[10px] text-[#64748B]">{label}</span>
+      <span className="text-[10px] text-muted-foreground">{label}</span>
     </div>
   );
 }

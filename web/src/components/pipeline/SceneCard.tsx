@@ -18,8 +18,8 @@ export function SceneCard({ index, scene, thumbnailUrl }: SceneCardProps) {
   const badge = VISUAL_TYPE_BADGE[scene.visual_type];
 
   return (
-    <div className="flex items-center gap-3 rounded-lg bg-[#0F172A] px-3 py-2.5">
-      <span className="shrink-0 text-xs text-[#64748B] w-4 text-right">{index + 1}</span>
+    <div className="flex items-center gap-3 rounded-lg bg-surface-inset px-3 py-2.5">
+      <span className="shrink-0 text-xs text-muted-foreground w-4 text-right">{index + 1}</span>
 
       {thumbnailUrl ? (
         <img
@@ -37,7 +37,7 @@ export function SceneCard({ index, scene, thumbnailUrl }: SceneCardProps) {
         {badge.label}
       </span>
 
-      <span className="min-w-0 flex-1 text-[13px] leading-snug text-[#CBD5E1] line-clamp-2">
+      <span className="min-w-0 flex-1 text-[13px] leading-snug text-secondary-foreground line-clamp-2">
         {scene.script_line}
       </span>
     </div>

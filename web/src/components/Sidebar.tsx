@@ -36,7 +36,7 @@ export function Sidebar({ collapsed, onToggle, stats }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-30 flex flex-col bg-sidebar border-r border-[#1E293B] transition-[width] duration-200",
+        "fixed inset-y-0 left-0 z-30 flex flex-col bg-sidebar border-r border-border transition-[width] duration-200",
         collapsed ? "w-16" : "w-[240px]",
       )}
     >
@@ -49,7 +49,7 @@ export function Sidebar({ collapsed, onToggle, stats }: SidebarProps) {
       >
         <Clapperboard className="size-6 shrink-0 text-primary" />
         {!collapsed && (
-          <span className="text-lg font-bold tracking-tight text-foreground">
+          <span className="text-lg font-semibold tracking-tight text-foreground">
             OpenReels
           </span>
         )}
@@ -80,7 +80,7 @@ export function Sidebar({ collapsed, onToggle, stats }: SidebarProps) {
               {item.path === "/" && stats && stats.activeJobs > 0 && (
                 <span
                   className={cn(
-                    "size-2 rounded-full bg-[#22D3EE] animate-pulse",
+                    "size-2 rounded-full bg-status-info animate-pulse",
                     collapsed ? "absolute top-1.5 right-1.5" : "ml-auto",
                   )}
                 />
@@ -95,8 +95,8 @@ export function Sidebar({ collapsed, onToggle, stats }: SidebarProps) {
 
       {/* Stats footer */}
       {!collapsed && stats && stats.totalJobs > 0 && (
-        <div className="mx-5 mb-4 rounded-[10px] border border-[#334155] bg-[#0F172A] px-3.5 py-3">
-          <div className="flex items-center gap-2 text-[11px] text-[#64748B]">
+        <div className="mx-5 mb-4 rounded-[10px] border border-border bg-surface-inset px-3.5 py-3">
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
             <Film className="size-3.5" />
             <span>
               {stats.completedJobs} video{stats.completedJobs !== 1 ? "s" : ""}{" "}
@@ -104,7 +104,7 @@ export function Sidebar({ collapsed, onToggle, stats }: SidebarProps) {
             </span>
           </div>
           {stats.totalCost > 0 && (
-            <div className="mt-1.5 flex items-center gap-2 text-[11px] text-[#64748B]">
+            <div className="mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground">
               <DollarSign className="size-3.5" />
               <span>${stats.totalCost.toFixed(2)} total spend</span>
             </div>
@@ -117,7 +117,7 @@ export function Sidebar({ collapsed, onToggle, stats }: SidebarProps) {
         type="button"
         onClick={onToggle}
         className={cn(
-          "flex items-center justify-center border-t border-[#1E293B] py-3 text-[#64748B] hover:text-foreground transition-colors",
+          "flex items-center justify-center border-t border-border py-3 text-muted-foreground hover:text-foreground transition-colors",
           collapsed ? "px-0" : "px-5",
         )}
       >
