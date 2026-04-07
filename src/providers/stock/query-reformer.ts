@@ -1,8 +1,11 @@
 import { z } from "zod";
 import type { LLMProvider, LLMUsage } from "../../schema/providers.js";
 
+// Intentionally omit .min()/.max() on the array — Gemini's structured output
+// rejects minItems > 1. The prompt guides "2-3 queries"; validation is not
+// worth breaking an entire provider over.
 const QueryReformSchema = z.object({
-  queries: z.array(z.string().min(1).max(80)).min(2).max(3),
+  queries: z.array(z.string()),
   reasoning: z.string(),
 });
 

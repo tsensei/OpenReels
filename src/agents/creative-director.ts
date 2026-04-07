@@ -10,23 +10,23 @@ import type { ResearchResult } from "./research.js";
 
 const SYSTEM_PROMPT_PATH = path.join(process.cwd(), "prompts", "creative-director.md");
 
-// Schema for LLM output (before refinements that can't be expressed in JSON Schema)
+// Schema for LLM generation output. Intentionally omits min/max on the scenes
+// array because Gemini's structured-output API rejects minItems > 1 in JSON
+// Schema. Scene count is guided by pacing instructions in the prompt, then
+// enforced by DirectorScore.parse() (which keeps .min(3).max(16)).
 const DirectorScoreRaw = z.object({
   emotional_arc: z.string(),
   archetype: z.enum(listArchetypes() as [string, ...string[]]),
   music_mood: MusicMood,
-  scenes: z
-    .array(
-      z.object({
-        visual_type: VisualType,
-        visual_prompt: z.string(),
-        motion: Motion,
-        script_line: z.string(),
-        transition: TransitionType.nullable(),
-      }),
-    )
-    .min(3)
-    .max(16),
+  scenes: z.array(
+    z.object({
+      visual_type: VisualType,
+      visual_prompt: z.string(),
+      motion: Motion,
+      script_line: z.string(),
+      transition: TransitionType.nullable(),
+    }),
+  ),
 });
 
 export interface DirectorScoreOutput {
