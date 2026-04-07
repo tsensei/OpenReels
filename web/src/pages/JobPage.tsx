@@ -462,7 +462,7 @@ export function JobPage() {
           {/* Asset failure warnings */}
           {assetFailures.length > 0 && !isCompleted && (
             <div className="rounded-[10px] border border-status-warning/20 bg-status-warning/6 p-4">
-              <span className="text-[0.625rem] font-semibold uppercase tracking-[1.5px] text-status-warning">
+              <span className="text-[10px] font-semibold uppercase tracking-[1.5px] text-status-warning">
                 ASSET WARNINGS
               </span>
               <div className="mt-2 flex flex-col gap-1">
@@ -478,7 +478,7 @@ export function JobPage() {
           {/* TTS badge */}
           {job.stages?.tts?.status === "done" && job.stages.tts.detail && !isCompleted && (
             <div className="rounded-lg border border-border/60 bg-card/60 px-4 py-2.5">
-              <span className="text-[0.6875rem] text-text-subtle">
+              <span className="text-[11px] text-text-subtle">
                 Voice synthesis: {job.stages.tts.detail}
               </span>
             </div>
@@ -508,11 +508,11 @@ function ResearchCard({ data }: { data: ResearchData }) {
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm animate-in fade-in duration-500">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-[0.625rem] font-semibold uppercase tracking-[1.5px] text-muted-foreground">
+          <span className="text-[10px] font-semibold uppercase tracking-[1.5px] text-muted-foreground">
             RESEARCH SUMMARY
           </span>
           {data.mood && (
-            <span className="rounded-full bg-surface-inset px-2 py-0.5 text-[0.625rem] text-text-subtle">
+            <span className="rounded-full bg-surface-inset px-2 py-0.5 text-[10px] text-text-subtle">
               {data.mood}
             </span>
           )}
@@ -529,7 +529,7 @@ function ResearchCard({ data }: { data: ResearchData }) {
           {facts.map((fact, i) => (
             <span
               key={i}
-              className="rounded-md bg-surface-inset px-2 py-1 text-[0.6875rem] text-text-subtle"
+              className="rounded-md bg-surface-inset px-2 py-1 text-[11px] text-text-subtle"
             >
               {fact}
             </span>
@@ -538,7 +538,7 @@ function ResearchCard({ data }: { data: ResearchData }) {
             <button
               type="button"
               onClick={() => setExpanded(!expanded)}
-              className="rounded-md bg-surface-inset px-2 py-1 text-[0.6875rem] text-primary hover:text-primary/80"
+              className="rounded-md bg-surface-inset px-2 py-1 text-[11px] text-primary hover:text-primary/80"
             >
               {expanded ? "Show less" : `+${data.key_facts.length - 5} more`}
             </button>
@@ -560,7 +560,7 @@ function MusicStatusCard({ info }: { info: MusicInfo }) {
       {info.status === "generating" && (
         <>
           <div className="size-3 animate-spin rounded-full border-2 border-border border-t-primary" />
-          <span className="text-[0.6875rem] text-text-subtle">
+          <span className="text-[11px] text-text-subtle">
             Generating music via {providerLabel}...
           </span>
         </>
@@ -568,7 +568,7 @@ function MusicStatusCard({ info }: { info: MusicInfo }) {
       {info.status === "generated" && (
         <>
           <span className="size-2 rounded-full bg-status-success" />
-          <span className="text-[0.6875rem] text-text-subtle">
+          <span className="text-[11px] text-text-subtle">
             Music generated via {providerLabel}
           </span>
         </>
@@ -576,7 +576,7 @@ function MusicStatusCard({ info }: { info: MusicInfo }) {
       {info.status === "fallback" && (
         <>
           <span className="size-2 rounded-full bg-status-warning" />
-          <span className="text-[0.6875rem] text-text-subtle">
+          <span className="text-[11px] text-text-subtle">
             Using bundled track{info.reason ? ` (${info.reason})` : ""}
           </span>
         </>
