@@ -137,12 +137,16 @@ function StoryboardScene({
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Reset error state when visuals complete so thumbnails retry loading.
+  // NOTE: intentionally omit imgError from deps — including it creates an infinite
+  // loop: fail → setImgError(true) → effect fires → setImgError(false) → retry → fail…
+  // We only want to reset once, when the visuals stage transitions to complete.
   useEffect(() => {
-    if (visualsComplete && imgError) {
+    if (visualsComplete) {
       setImgError(false);
       setImgLoaded(false);
     }
-  }, [visualsComplete, imgError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visualsComplete]);
 
   const togglePlay = useCallback(() => {
     const vid = videoRef.current;
