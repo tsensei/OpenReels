@@ -2,6 +2,19 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.13.3] - 2026-04-07
+
+### Changed
+- Consolidated 75+ hardcoded hex colors into 7 semantic CSS variables (`surface-inset`, `surface-sunken`, `text-subtle`, `text-faint`, `status-info`, `status-success`, `status-warning`) plus existing theme tokens for consistent theming across all web UI components.
+- Added shadow token system (`shadow-glow-sm/md/lg`) for consistent glow effects.
+- Added skeleton loaders for Gallery and Job pages, replacing generic spinners with layout-aware loading states.
+- Buttons now show tactile hover (`brightness-110`) and press (`scale-0.97`) feedback.
+- Page headings use `font-semibold tracking-tight` instead of `font-bold` for refined typography hierarchy.
+- Cards differentiated by visual weight: primary content cards get `shadow-sm`, inline status cards use lighter borders, failed panel gets destructive glow.
+- Unified archetype color maps into single `ARCHETYPE_THEME` config per archetype (badge classes + accent hex).
+- Converted inline styles (`letterSpacing`, `minHeight`, `gridTemplateColumns`) to Tailwind classes.
+- Added `will-change` hints to animated timeline connectors and spinning indicators.
+
 ## [0.13.2] - 2026-04-07
 
 ### Fixed
