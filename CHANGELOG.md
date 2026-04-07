@@ -2,6 +2,12 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.13.2] - 2026-04-07
+
+### Fixed
+- Gemini structured output compatibility: removed `minItems`/`maxItems` array constraints from LLM generation schemas (`DirectorScoreRaw`, `QueryReformSchema`) that Gemini's API rejects. Scene count and query count are guided by prompt instructions and validated post-generation.
+- Web UI storyboard infinite request loop: removed `imgError` from `useEffect` dependency array in `StoryboardScene` to prevent failed thumbnail loads from triggering an endless retry cycle that could exhaust backend memory.
+
 ## [0.13.1] - 2026-04-06
 
 ### Fixed
