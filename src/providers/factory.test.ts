@@ -1,10 +1,14 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createProviders } from "./factory.js";
 import { GeminiImage } from "./image/gemini.js";
 import { OpenAIImage } from "./image/openai.js";
 import { AnthropicLLM } from "./llm/anthropic.js";
 import { GeminiLLM } from "./llm/gemini.js";
 import { OpenAILLM } from "./llm/openai.js";
+import { OpenAICompatibleLLM } from "./llm/openai-compatible.js";
+import { OpenRouterLLM } from "./llm/openrouter.js";
+import { BundledMusic } from "./music/bundled-adapter.js";
+import { LyriaMusic } from "./music/lyria.js";
 import { PexelsStock } from "./stock/pexels.js";
 import { PixabayStock } from "./stock/pixabay.js";
 import { AlignedTTSProvider } from "./tts/aligned-tts-provider.js";
@@ -13,8 +17,6 @@ import { GeminiTTS } from "./tts/gemini.js";
 import { InworldTTS } from "./tts/inworld.js";
 import { KokoroTTS } from "./tts/kokoro.js";
 import { OpenAITTS } from "./tts/openai.js";
-import { BundledMusic } from "./music/bundled-adapter.js";
-import { LyriaMusic } from "./music/lyria.js";
 
 vi.mock("./llm/anthropic.js", () => ({
   AnthropicLLM: vi.fn().mockImplementation(() => ({ id: "anthropic", generate: vi.fn() })),
@@ -53,16 +55,31 @@ vi.mock("./image/openai.js", () => ({
   OpenAIImage: vi.fn().mockImplementation(() => ({ generate: vi.fn() })),
 }));
 vi.mock("./stock/pexels.js", () => ({
-  PexelsStock: vi.fn().mockImplementation(() => ({ searchVideo: vi.fn(), searchImage: vi.fn(), download: vi.fn() })),
+  PexelsStock: vi
+    .fn()
+    .mockImplementation(() => ({ searchVideo: vi.fn(), searchImage: vi.fn(), download: vi.fn() })),
 }));
 vi.mock("./stock/pixabay.js", () => ({
-  PixabayStock: vi.fn().mockImplementation(() => ({ searchVideo: vi.fn(), searchImage: vi.fn(), download: vi.fn() })),
+  PixabayStock: vi
+    .fn()
+    .mockImplementation(() => ({ searchVideo: vi.fn(), searchImage: vi.fn(), download: vi.fn() })),
 }));
 vi.mock("./music/bundled-adapter.js", () => ({
   BundledMusic: vi.fn().mockImplementation(() => ({ generate: vi.fn() })),
 }));
 vi.mock("./music/lyria.js", () => ({
   LyriaMusic: vi.fn().mockImplementation(() => ({ generate: vi.fn() })),
+}));
+vi.mock("./llm/openrouter.js", () => ({
+  OpenRouterLLM: vi.fn().mockImplementation(() => ({ id: "openrouter", generate: vi.fn() })),
+}));
+vi.mock("./llm/openai-compatible.js", () => ({
+  OpenAICompatibleLLM: vi
+    .fn()
+    .mockImplementation(() => ({ id: "openai-compatible", generate: vi.fn() })),
+}));
+vi.mock("./search/tavily.js", () => ({
+  createTavilySearchTools: vi.fn((apiKey?: string) => ({ tavily_search: { apiKey } })),
 }));
 
 describe("createProviders", () => {
@@ -154,7 +171,7 @@ describe("createProviders", () => {
       },
     });
 
-    expect(AnthropicLLM).toHaveBeenCalledWith(undefined, "test-ant-key");
+    expect(AnthropicLLM).toHaveBeenCalledWith(undefined, "test-ant-key", undefined);
     expect(ElevenLabsTTS).toHaveBeenCalledWith(undefined, "test-el-key");
     expect(GeminiImage).toHaveBeenCalledWith(undefined, "test-goog-key");
     expect(PexelsStock).toHaveBeenCalledWith("test-pex-key");
@@ -167,7 +184,7 @@ describe("createProviders", () => {
       image: "gemini",
     });
 
-    expect(AnthropicLLM).toHaveBeenCalledWith(undefined, undefined);
+    expect(AnthropicLLM).toHaveBeenCalledWith(undefined, undefined, undefined);
   });
 
   it("creates GeminiLLM when llm config is gemini", () => {
@@ -178,7 +195,7 @@ describe("createProviders", () => {
       keys: { GOOGLE_API_KEY: "test-goog-key" },
     });
 
-    expect(GeminiLLM).toHaveBeenCalledWith(undefined, "test-goog-key");
+    expect(GeminiLLM).toHaveBeenCalledWith(undefined, "test-goog-key", undefined);
   });
 
   it("wraps KokoroTTS in AlignedTTSProvider", () => {
@@ -278,5 +295,117 @@ describe("createProviders", () => {
 
     expect(BundledMusic).toHaveBeenCalled();
     expect(LyriaMusic).not.toHaveBeenCalled();
+  });
+
+  it("creates OpenRouterLLM when llm config is openrouter", () => {
+    createProviders({
+      llm: "openrouter",
+      tts: "elevenlabs",
+      image: "gemini",
+      keys: { OPENROUTER_API_KEY: "test-or-key", TAVILY_API_KEY: "test-tv-key" },
+    });
+
+    expect(OpenRouterLLM).toHaveBeenCalled();
+    const args = vi.mocked(OpenRouterLLM).mock.calls[0]!;
+    expect(args[1]).toBe("test-or-key");
+  });
+
+  it("creates OpenAICompatibleLLM when llm config is openai-compatible", () => {
+    createProviders({
+      llm: "openai-compatible",
+      tts: "elevenlabs",
+      image: "gemini",
+      llmBaseUrl: "http://localhost:11434/v1",
+      llmModel: "llama3:8b",
+      keys: { OPENREELS_LLM_API_KEY: "test-compat-key" },
+    });
+
+    expect(OpenAICompatibleLLM).toHaveBeenCalled();
+    const args = vi.mocked(OpenAICompatibleLLM).mock.calls[0]!;
+    expect(args[0]).toBe("http://localhost:11434/v1");
+    expect(args[1]).toBe("llama3:8b");
+    expect(args[2]).toBe("test-compat-key");
+  });
+
+  it("throws when openai-compatible is missing baseUrl", () => {
+    expect(() =>
+      createProviders({
+        llm: "openai-compatible",
+        tts: "elevenlabs",
+        image: "gemini",
+        llmModel: "model",
+      }),
+    ).toThrow("llmBaseUrl is required");
+  });
+
+  it("throws when openai-compatible is missing model", () => {
+    expect(() =>
+      createProviders({
+        llm: "openai-compatible",
+        tts: "elevenlabs",
+        image: "gemini",
+        llmBaseUrl: "http://localhost/v1",
+      }),
+    ).toThrow("llmModel is required");
+  });
+
+  it("uses native search for anthropic by default", () => {
+    createProviders({
+      llm: "anthropic",
+      tts: "elevenlabs",
+      image: "gemini",
+    });
+
+    // searchTools should be undefined (native), so 3rd arg is undefined
+    const args = vi.mocked(AnthropicLLM).mock.calls[0]!;
+    expect(args[2]).toBeUndefined();
+  });
+
+  it("injects Tavily tools when searchProvider is tavily", () => {
+    createProviders({
+      llm: "anthropic",
+      tts: "elevenlabs",
+      image: "gemini",
+      searchProvider: "tavily",
+      keys: { TAVILY_API_KEY: "tv-key" },
+    });
+
+    const args = vi.mocked(AnthropicLLM).mock.calls[0]!;
+    expect(args[2]).toEqual({ tavily_search: { apiKey: "tv-key" } });
+  });
+
+  it("injects empty tools when searchProvider is none", () => {
+    createProviders({
+      llm: "anthropic",
+      tts: "elevenlabs",
+      image: "gemini",
+      searchProvider: "none",
+    });
+
+    const args = vi.mocked(AnthropicLLM).mock.calls[0]!;
+    expect(args[2]).toEqual({});
+  });
+
+  it("throws when native search requested for openrouter", () => {
+    expect(() =>
+      createProviders({
+        llm: "openrouter",
+        tts: "elevenlabs",
+        image: "gemini",
+        searchProvider: "native",
+      }),
+    ).toThrow("does not support native search");
+  });
+
+  it("passes llmModel to existing providers", () => {
+    createProviders({
+      llm: "anthropic",
+      tts: "elevenlabs",
+      image: "gemini",
+      llmModel: "claude-opus-4-6",
+    });
+
+    const args = vi.mocked(AnthropicLLM).mock.calls[0]!;
+    expect(args[0]).toBe("claude-opus-4-6");
   });
 });

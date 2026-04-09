@@ -1,7 +1,9 @@
-import type { LanguageModel } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import type { LanguageModel } from "ai";
 import type {
   ImageProvider,
   ImageProviderKey,
@@ -9,6 +11,7 @@ import type {
   LLMProviderKey,
   MusicProvider,
   MusicProviderKey,
+  SearchProviderKey,
   StockProvider,
   StockProviderKey,
   TTSProvider,
@@ -21,6 +24,11 @@ import { OpenAIImage } from "./image/openai.js";
 import { AnthropicLLM } from "./llm/anthropic.js";
 import { GeminiLLM } from "./llm/gemini.js";
 import { OpenAILLM } from "./llm/openai.js";
+import { OpenAICompatibleLLM } from "./llm/openai-compatible.js";
+import { OpenRouterLLM } from "./llm/openrouter.js";
+import { BundledMusic } from "./music/bundled-adapter.js";
+import { LyriaMusic } from "./music/lyria.js";
+import { createTavilySearchTools } from "./search/tavily.js";
 import { PexelsStock } from "./stock/pexels.js";
 import { PixabayStock } from "./stock/pixabay.js";
 import { AlignedTTSProvider } from "./tts/aligned-tts-provider.js";
@@ -30,10 +38,8 @@ import { InworldTTS } from "./tts/inworld.js";
 import { KokoroTTS } from "./tts/kokoro.js";
 import { OpenAITTS } from "./tts/openai.js";
 import { WhisperAligner } from "./tts/whisper-aligner.js";
-import { GeminiVideo } from "./video/gemini.js";
 import { FalVideo } from "./video/fal.js";
-import { BundledMusic } from "./music/bundled-adapter.js";
-import { LyriaMusic } from "./music/lyria.js";
+import { GeminiVideo } from "./video/gemini.js";
 
 export interface ProviderConfig {
   llm: LLMProviderKey;
@@ -45,6 +51,9 @@ export interface ProviderConfig {
   videoModel?: string;
   kokoroVoice?: string;
   keys?: Record<string, string>;
+  llmModel?: string;
+  llmBaseUrl?: string;
+  searchProvider?: SearchProviderKey;
 }
 
 export interface Providers {
@@ -56,15 +65,78 @@ export interface Providers {
   music: MusicProvider;
 }
 
+/** Providers that have native web search tools built in. */
+const NATIVE_SEARCH_PROVIDERS = new Set<LLMProviderKey>(["anthropic", "openai", "gemini"]);
+
+/**
+ * Resolve which search tools to inject based on provider type and config.
+ * Returns undefined when native tools should be used (no injection needed).
+ */
+function resolveSearchTools(
+  llmProvider: LLMProviderKey,
+  searchProvider: SearchProviderKey | undefined,
+  keys: Record<string, string>,
+): Record<string, unknown> | undefined {
+  // Explicit search provider override
+  if (searchProvider === "tavily") {
+    return createTavilySearchTools(keys["TAVILY_API_KEY"]);
+  }
+  if (searchProvider === "none") {
+    return {};
+  }
+  if (searchProvider === "native") {
+    if (!NATIVE_SEARCH_PROVIDERS.has(llmProvider)) {
+      throw new Error(
+        `Provider "${llmProvider}" does not support native search. Use --search-provider tavily or --search-provider none.`,
+      );
+    }
+    return undefined; // Let the subclass use its native tools
+  }
+
+  // Auto-detect: native providers use their own tools, others try Tavily
+  if (NATIVE_SEARCH_PROVIDERS.has(llmProvider)) {
+    return undefined;
+  }
+  const tavilyKey = keys["TAVILY_API_KEY"] ?? process.env["TAVILY_API_KEY"];
+  if (tavilyKey) {
+    return createTavilySearchTools(tavilyKey);
+  }
+  console.warn(
+    "\nWarning: No search provider configured. TAVILY_API_KEY not set.\n" +
+      "Research agent will use parametric knowledge only (no web search).\n" +
+      "Get a key: https://tavily.com/ or use --search-provider none to suppress this warning.\n",
+  );
+  return {};
+}
+
 export function createProviders(config: ProviderConfig): Providers {
   const k = config.keys ?? {};
+  const searchTools = resolveSearchTools(config.llm, config.searchProvider, k);
 
-  const llm: LLMProvider =
-    config.llm === "openai"
-      ? new OpenAILLM(undefined, k["OPENAI_API_KEY"])
-      : config.llm === "gemini"
-        ? new GeminiLLM(undefined, k["GOOGLE_API_KEY"])
-        : new AnthropicLLM(undefined, k["ANTHROPIC_API_KEY"]);
+  let llm: LLMProvider;
+  switch (config.llm) {
+    case "openai":
+      llm = new OpenAILLM(config.llmModel, k["OPENAI_API_KEY"], searchTools);
+      break;
+    case "gemini":
+      llm = new GeminiLLM(config.llmModel, k["GOOGLE_API_KEY"], searchTools);
+      break;
+    case "openrouter":
+      llm = new OpenRouterLLM(config.llmModel, k["OPENROUTER_API_KEY"], searchTools);
+      break;
+    case "openai-compatible": {
+      const baseUrl = config.llmBaseUrl ?? process.env["OPENREELS_LLM_BASE_URL"];
+      const model = config.llmModel ?? process.env["OPENREELS_LLM_MODEL"];
+      if (!baseUrl) throw new Error("llmBaseUrl is required for openai-compatible provider");
+      if (!model) throw new Error("llmModel is required for openai-compatible provider");
+      const apiKey = k["OPENREELS_LLM_API_KEY"] ?? process.env["OPENREELS_LLM_API_KEY"];
+      llm = new OpenAICompatibleLLM(baseUrl, model, apiKey, searchTools);
+      break;
+    }
+    default:
+      llm = new AnthropicLLM(config.llmModel, k["ANTHROPIC_API_KEY"], searchTools);
+      break;
+  }
 
   // Providers that lack native timestamps get wrapped with the alignment decorator.
   // The aligner is shared (lazy singleton) so the Whisper model loads only once.
@@ -125,9 +197,7 @@ export function createProviders(config: ProviderConfig): Providers {
 
   // Music provider: lyria requires GOOGLE_API_KEY, bundled is always available
   const music: MusicProvider =
-    config.music === "lyria"
-      ? new LyriaMusic(googleKey)
-      : new BundledMusic();
+    config.music === "lyria" ? new LyriaMusic(googleKey) : new BundledMusic();
 
   return { llm, tts, imageGen, stock, videoProviders, music };
 }
@@ -138,17 +208,39 @@ export function createVerificationModel(
   model?: string,
   apiKey?: string,
 ): LanguageModel {
-  if (provider === "openai") {
-    const openai = apiKey ? createOpenAI({ apiKey }) : createOpenAI();
-    return openai(model ?? "gpt-4o");
+  switch (provider) {
+    case "openai": {
+      const openai = apiKey ? createOpenAI({ apiKey }) : createOpenAI();
+      return openai(model ?? "gpt-4o");
+    }
+    case "gemini": {
+      // @ai-sdk/google looks for GOOGLE_GENERATIVE_AI_API_KEY by default,
+      // but OpenReels standardizes on GOOGLE_API_KEY across all providers.
+      const key = apiKey ?? process.env["GOOGLE_API_KEY"];
+      const google = key ? createGoogleGenerativeAI({ apiKey: key }) : createGoogleGenerativeAI();
+      return google(model ?? "gemini-2.5-flash");
+    }
+    case "openrouter": {
+      const openrouter = apiKey ? createOpenRouter({ apiKey }) : createOpenRouter();
+      return openrouter(model ?? "anthropic/claude-sonnet-4");
+    }
+    case "openai-compatible": {
+      const baseUrl = process.env["OPENREELS_LLM_BASE_URL"];
+      if (!baseUrl) {
+        // Fall back to Anthropic for verification if no base URL configured
+        const anthropic = createAnthropic();
+        return anthropic(model ?? "claude-sonnet-4-6");
+      }
+      const compat = createOpenAICompatible({
+        name: "openreels-custom",
+        baseURL: baseUrl,
+        ...(apiKey ? { apiKey } : {}),
+      });
+      return compat(model ?? "gpt-4o");
+    }
+    default: {
+      const anthropic = apiKey ? createAnthropic({ apiKey }) : createAnthropic();
+      return anthropic(model ?? "claude-sonnet-4-6");
+    }
   }
-  if (provider === "gemini") {
-    // @ai-sdk/google looks for GOOGLE_GENERATIVE_AI_API_KEY by default,
-    // but OpenReels standardizes on GOOGLE_API_KEY across all providers.
-    const key = apiKey ?? process.env["GOOGLE_API_KEY"];
-    const google = key ? createGoogleGenerativeAI({ apiKey: key }) : createGoogleGenerativeAI();
-    return google(model ?? "gemini-2.5-flash");
-  }
-  const anthropic = apiKey ? createAnthropic({ apiKey }) : createAnthropic();
-  return anthropic(model ?? "claude-sonnet-4-6");
 }
