@@ -10,6 +10,7 @@ import type {
   ImageProviderKey,
   LLMProviderKey,
   MusicProviderKey,
+  SearchProviderKey,
   StockProviderKey,
   TTSProviderKey,
   VideoProviderKey,
@@ -53,7 +54,7 @@ interface JobData {
     music?: string;
     llmModel?: string;
     llmBaseUrl?: string;
-    searchProvider?: string;
+    searchProvider?: SearchProviderKey;
   };
   keys: Record<string, string>;
   jobsDir: string;

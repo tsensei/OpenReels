@@ -227,8 +227,18 @@ export function createVerificationModel(
     case "openai-compatible": {
       const baseUrl = process.env["OPENREELS_LLM_BASE_URL"];
       if (!baseUrl) {
-        // Fall back to Anthropic for verification if no base URL configured
-        const anthropic = createAnthropic();
+        // BYOK path: base URL was passed via job keys, not env var.
+        // Fall back to Anthropic for stock verification (needs VLM).
+        const antKey = apiKey ?? process.env["ANTHROPIC_API_KEY"];
+        if (!antKey) {
+          throw new Error(
+            "Stock verification requires a VLM. Set OPENREELS_LLM_BASE_URL or ANTHROPIC_API_KEY, or use --no-stock-verify.",
+          );
+        }
+        console.warn(
+          `[openai-compatible] Using Anthropic for stock verification (VLM). Set OPENREELS_LLM_BASE_URL to use your own endpoint.`,
+        );
+        const anthropic = createAnthropic({ apiKey: antKey });
         return anthropic(model ?? "claude-sonnet-4-6");
       }
       const compat = createOpenAICompatible({

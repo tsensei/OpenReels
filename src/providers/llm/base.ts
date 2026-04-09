@@ -94,14 +94,20 @@ export abstract class BaseLLM implements LLMProvider {
     } catch (error: unknown) {
       // Tool-calling errors: model doesn't support tools. Fall back to parametric knowledge.
       const msg = error instanceof Error ? error.message : String(error);
-      if (
-        msg.includes("tool") ||
-        msg.includes("Tool") ||
-        msg.includes("function_call") ||
-        msg.includes("tools_not_supported")
-      ) {
+      const lowerMsg = msg.toLowerCase();
+      const isToolError =
+        lowerMsg.includes("tools_not_supported") ||
+        lowerMsg.includes("tools are not supported") ||
+        lowerMsg.includes("tool_use") ||
+        lowerMsg.includes("tool use") ||
+        lowerMsg.includes("tool_calls") ||
+        lowerMsg.includes("tool calls") ||
+        lowerMsg.includes("function_call") ||
+        lowerMsg.includes("does not support tools") ||
+        lowerMsg.includes("tooling is not supported");
+      if (isToolError) {
         console.warn(
-          `[${this.id}] Model does not support tool calling. Falling back to parametric knowledge.`,
+          `[${this.id}] Model does not support tool calling. Falling back to parametric knowledge.\n  Original error: ${msg}`,
         );
         return this.generateStructured({
           systemPrompt:

@@ -8,6 +8,7 @@ import IORedis from "ioredis";
 import { PACING_CONFIG } from "./agents/creative-director.js";
 import { getArchetype, listArchetypes } from "./config/archetype-registry.js";
 import { PLATFORMS } from "./config/platforms.js";
+import type { SearchProviderKey } from "./schema/providers.js";
 
 const REDIS_URL = process.env["REDIS_URL"] ?? "redis://localhost:6379";
 const PORT = Number(process.env["PORT"] ?? 3000);
@@ -186,7 +187,7 @@ interface CreateJobBody {
     music?: string;
     llmModel?: string;
     llmBaseUrl?: string;
-    searchProvider?: string;
+    searchProvider?: SearchProviderKey;
   };
   keys?: Record<string, string>;
 }
