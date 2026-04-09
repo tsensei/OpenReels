@@ -3,7 +3,7 @@ title: Critic Agent
 description: How the critic evaluates DirectorScore quality using a weighted rubric and flags revision when scores are low.
 ---
 
-The Critic is the final stage of the pipeline. It evaluates the DirectorScore against a structured rubric and produces a quality score. If the score falls below the pass threshold, it identifies the weakest scene and provides specific revision instructions.
+The Critic evaluates the DirectorScore against a structured rubric and produces a quality score. It runs twice in the pipeline: first as a **quality gate** inside the Director stage (before any expensive generation), and again as a **post-mortem** in the final stage. If the score falls below the pass threshold, it identifies the weakest scene and provides specific revision instructions.
 
 ## What it evaluates
 
@@ -73,9 +73,16 @@ interface CritiqueResult {
 }
 ```
 
-## When re-runs happen
+## Quality gate (Director-Critic revision loop)
 
-If `revision_needed` is true and the score is below 7, the Critic logs the weaknesses and notes that revision support is coming in a future release. Currently, the pipeline uses the existing DirectorScore as-is -- the Critic serves as a quality signal rather than triggering automatic re-generation.
+After the Creative Director generates the initial DirectorScore, the Critic evaluates it immediately. If `revision_needed` is true and the score is below 7, the pipeline enters a revision loop:
+
+1. The Critic's `revision_instructions` and `weaknesses` are passed back to the Creative Director
+2. The Director generates a revised DirectorScore addressing the feedback
+3. The Critic re-evaluates the revised plan
+4. The loop runs up to 2 rounds, tracking the highest-scoring revision
+
+This happens before TTS, visuals, or music generation, so revisions cost only LLM calls (~$0.02-0.13) instead of re-running the full pipeline ($0.50-2.00+). If the Critic fails during evaluation, the loop exits gracefully and proceeds with the current best score.
 
 The critique results are emitted through the progress callback so the web UI can display the score, strengths, and weaknesses to the user.
 

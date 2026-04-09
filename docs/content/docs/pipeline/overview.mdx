@@ -14,8 +14,9 @@ Topic
 Research ---- web search grounds the script in facts
   |
   v
-Director ---- writes the DirectorScore (scenes, archetype, music mood)
-  |
+Director ---- writes the DirectorScore, then Critic evaluates it
+  |    ^            (revision loop: up to 2 rounds until score >= 7)
+  |    |
   v
 TTS --------- generates voiceover audio with word-level timestamps
   |
@@ -89,7 +90,7 @@ After all stages complete, actual LLM token usage is aggregated and the real cos
 
 The pipeline supports two early exit paths:
 
-- **Dry run** (`--dry-run`) -- stops after the Director stage and prints the DirectorScore JSON. No assets are generated.
+- **Dry run** (`--dry-run`) -- stops after the Director stage (including the quality gate revision loop) and prints the final DirectorScore JSON. No assets are generated.
 - **Cost rejection** -- if the user declines at the cost estimate prompt, the pipeline exits cleanly.
 
 Both paths still write `log.json` to the output directory.
