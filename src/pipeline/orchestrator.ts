@@ -462,7 +462,23 @@ function buildPipelineWorkflow(
         }
       }
 
-      // Use the highest-scoring revision (not necessarily the last)
+      // Final evaluation: if the last revision was never scored (loop exhausted),
+      // give it a chance to compete with bestScore
+      if (revisionRoundsCompleted > 0 && score !== bestScore) {
+        try {
+          const finalCritique = await evaluate(opts.llm, score, opts.topic, opts.pacing);
+          llmUsages.push(finalCritique.usage);
+          evaluationsCompleted++;
+          if (finalCritique.data.score > bestCritiqueScore) {
+            bestScore = score;
+            bestCritiqueScore = finalCritique.data.score;
+          }
+        } catch {
+          // If final evaluation fails, bestScore from the loop is still valid
+        }
+      }
+
+      // Use the highest-scoring revision
       score = bestScore;
 
       // ── Store final score on shared closure state ──

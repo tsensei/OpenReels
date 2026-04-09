@@ -81,6 +81,20 @@ async function simulateRevisionLoop(opts: {
     }
   }
 
+  // Final evaluation: if the last revision was never scored, give it a chance
+  if (revisionRoundsCompleted > 0 && score !== bestScore) {
+    try {
+      const finalCritique = await evaluateFn(score);
+      llmUsages.push(finalCritique.usage);
+      if (finalCritique.data.score > bestCritiqueScore) {
+        bestScore = score;
+        bestCritiqueScore = finalCritique.data.score;
+      }
+    } catch {
+      // bestScore from the loop is still valid
+    }
+  }
+
   score = bestScore;
   return { finalScore: score, bestCritiqueScore, revisionRoundsCompleted, llmUsages };
 }
@@ -128,13 +142,15 @@ describe("Director-Critic revision loop", () => {
     expect(result.bestCritiqueScore).toBe(8);
   });
 
-  it("exhausts max rounds and uses highest-scoring revision", async () => {
+  it("exhausts max rounds and evaluates the final revision", async () => {
     const round1Score = makeScore("infographic", 9);
     const round2Score = makeScore("infographic", 10);
 
     const evaluateFn = vi.fn()
       .mockResolvedValueOnce({ data: makeCritique(4, true), usage: { inputTokens: 100, outputTokens: 50 } })
-      .mockResolvedValueOnce({ data: makeCritique(6, true), usage: { inputTokens: 100, outputTokens: 50 } });
+      .mockResolvedValueOnce({ data: makeCritique(6, true), usage: { inputTokens: 100, outputTokens: 50 } })
+      // Final evaluation of round2Score after loop exhausts
+      .mockResolvedValueOnce({ data: makeCritique(9, false), usage: { inputTokens: 100, outputTokens: 50 } });
     const reviseFn = vi.fn()
       .mockResolvedValueOnce({ data: round1Score, usage: { inputTokens: 200, outputTokens: 100 } })
       .mockResolvedValueOnce({ data: round2Score, usage: { inputTokens: 200, outputTokens: 100 } });
@@ -145,24 +161,28 @@ describe("Director-Critic revision loop", () => {
       reviseFn,
     });
 
-    expect(evaluateFn).toHaveBeenCalledTimes(2);
+    // 2 in-loop evaluations + 1 final evaluation
+    expect(evaluateFn).toHaveBeenCalledTimes(3);
     expect(reviseFn).toHaveBeenCalledTimes(2);
     expect(result.revisionRoundsCompleted).toBe(2);
-    // Best score is round1Score (scored 6) not round2Score (never evaluated)
-    expect(result.finalScore).toBe(round1Score);
-    expect(result.bestCritiqueScore).toBe(6);
+    // round2Score scored 9 in final eval, beating round1Score's 6
+    expect(result.finalScore).toBe(round2Score);
+    expect(result.bestCritiqueScore).toBe(9);
   });
 
-  it("uses highest-scoring revision when later rounds degrade", async () => {
+  it("uses highest-scoring revision when final evaluation degrades", async () => {
     const round1Score = makeScore("infographic", 9);
     const round2Score = makeScore("infographic", 10);
 
-    // Round 1: score 6, revise
-    // Round 2: score 4 (degradation), revise
+    // Round 0: initial scores 3, revise → round1Score
+    // Round 1: round1Score scores 6, revise → round2Score
+    // Final eval: round2Score scores 4 (degradation)
     // Result: should use round1Score (scored 6), not round2Score (scored 4)
     const evaluateFn = vi.fn()
       .mockResolvedValueOnce({ data: makeCritique(3, true), usage: { inputTokens: 100, outputTokens: 50 } })
-      .mockResolvedValueOnce({ data: makeCritique(6, true), usage: { inputTokens: 100, outputTokens: 50 } });
+      .mockResolvedValueOnce({ data: makeCritique(6, true), usage: { inputTokens: 100, outputTokens: 50 } })
+      // Final evaluation of round2Score — degraded
+      .mockResolvedValueOnce({ data: makeCritique(4, false), usage: { inputTokens: 100, outputTokens: 50 } });
     const reviseFn = vi.fn()
       .mockResolvedValueOnce({ data: round1Score, usage: { inputTokens: 200, outputTokens: 100 } })
       .mockResolvedValueOnce({ data: round2Score, usage: { inputTokens: 200, outputTokens: 100 } });
@@ -173,7 +193,9 @@ describe("Director-Critic revision loop", () => {
       reviseFn,
     });
 
-    // Best is round1Score which was evaluated at 6
+    // 2 in-loop + 1 final = 3 evaluations
+    expect(evaluateFn).toHaveBeenCalledTimes(3);
+    // Best is round1Score which was evaluated at 6 (round2Score's final eval of 4 didn't beat it)
     expect(result.finalScore).toBe(round1Score);
     expect(result.bestCritiqueScore).toBe(6);
   });
