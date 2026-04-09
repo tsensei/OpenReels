@@ -118,7 +118,9 @@ export function estimateCost(
     callCost(TOKEN_ESTIMATES.critic) +
     aiImages * callCost(TOKEN_ESTIMATES.imagePrompter);
 
-  // Revision cost: each round = 1 critic call + 1 director-sized revise call
+  // Revision cost: each evaluation = 1 critic call + 1 director-sized revise call.
+  // Slightly undercounts because revise prompts include the original score JSON (~1-3K extra tokens),
+  // but using the director estimate is a reasonable approximation.
   const revisionCost = revisionRounds * (callCost(TOKEN_ESTIMATES.critic) + callCost(TOKEN_ESTIMATES.creativeDirector));
   const ttsPerChar = PRICING.ttsPerChar[ttsProvider];
   const ttsCost = ttsCharacters * ttsPerChar;

@@ -242,19 +242,38 @@ ${revisionGuidance}
 Revise the DirectorScore to address the weaknesses while preserving the strengths.
 Keep the same archetype. Maintain the GOLDEN RULE: never use the same visual_type more than 2 times in a row.`;
 
-  const result = await llm.generate({
-    systemPrompt,
-    userMessage,
-    schema: DirectorScoreRaw,
-  });
+  const maxRetries = 2;
+  let lastError: Error | null = null;
+  const totalUsage: LLMUsage = { inputTokens: 0, outputTokens: 0 };
 
-  const validated = DirectorScore.parse(result.data);
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const result = await llm.generate({
+        systemPrompt,
+        userMessage:
+          attempt > 0
+            ? `${userMessage}\n\nPREVIOUS ATTEMPT FAILED: ${lastError?.message}. Fix the issue.`
+            : userMessage,
+        schema: DirectorScoreRaw,
+      });
 
-  // Prevent archetype drift: the LLM may change the archetype during revision
-  // despite prompt instructions. Force it back to the original.
-  if (validated.archetype !== originalScore.archetype) {
-    (validated as { archetype: string }).archetype = originalScore.archetype;
+      totalUsage.inputTokens += result.usage.inputTokens;
+      totalUsage.outputTokens += result.usage.outputTokens;
+
+      const validated = DirectorScore.parse(result.data);
+
+      // Prevent archetype drift: the LLM may change the archetype during revision
+      // despite prompt instructions. Force it back to the original.
+      if (validated.archetype !== originalScore.archetype) {
+        (validated as { archetype: string }).archetype = originalScore.archetype;
+      }
+
+      return { data: validated, usage: totalUsage };
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.warn(`[creative-director] Revision attempt ${attempt + 1} failed: ${lastError.message}`);
+    }
   }
 
-  return { data: validated, usage: result.usage };
+  throw new Error(`Revision failed after ${maxRetries} attempts: ${lastError?.message}`);
 }
