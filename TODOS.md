@@ -96,6 +96,13 @@
   **Depends on:** TTS alignment layer (Kokoro + Gemini TTS providers)
   Deferred from plan: Unified TTS Alignment Layer (CEO review: user prefers unified voice interface later)
 
+## Captions
+
+- [ ] **Contextual emphasis on power words** — Creative director marks 1-3 power words per scene with asterisks in script_line. Pipeline strips markers before TTS and records emphasisIndices. CaptionWrapper applies extra animation treatment (larger font-size delta, accent color flash) to emphasis words. Requires: (a) strip asterisks before ALL downstream consumers (critic, image prompter, TTS), not just TTS, (b) creative director prompt update with emphasis marking instructions, (c) emphasisIndices field on CompositionProps (optional, backward compat), (d) CaptionWrapper emphasis detection logic. Per-word asterisks format: `*New* *York*` not `*New York*`.
+  **Priority:** P2
+  **Depends on:** Caption system upgrade v2 (CaptionWrapper + animated styles)
+  Deferred from plan: Caption System Upgrade v2 (CEO review: outside voice flagged cross-layer complexity across prompt+pipeline+schema+render. Ship base upgrade first.)
+
 ## Documentation
 
 - [ ] **Interactive @remotion/player embeds in docs** — Add `@remotion/player` to archetype gallery pages so visitors can see DirectorScore fixtures render in-browser without installing anything. The compositions (`OpenReelsVideo.tsx`) and score-to-props mapper (`src/remotion/lib/`) already exist but are wired for server-side rendering. Porting to client-side player requires: bundle the Remotion player (~500KB), adapt score-to-props for browser context, verify static export compatibility, handle missing assets gracefully. Remotion's own docs site already does this pattern, proving feasibility.

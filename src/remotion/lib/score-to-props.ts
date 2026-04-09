@@ -27,6 +27,10 @@ export interface CompositionProps {
   musicSrc: string | null;
   // Absolute word timestamps for the entire voiceover (timeline-centric captions + music ducking)
   allWords: WordTimestamp[];
+  // Caption theming from archetype
+  captionAccentColor: string;
+  captionChunkSize: number;
+  captionLingerS: number;
 }
 
 export interface ResolvedAssets {
@@ -94,7 +98,10 @@ export function mapScoreToProps(
     captionStyle: archetype.captionStyle,
     voiceoverSrc: assets.voiceoverPath,
     musicSrc: assets.musicPath,
-    allWords: assets.allWords, // absolute timestamps for captions + music ducking (computed in MusicTrack component)
+    allWords: assets.allWords,
+    captionAccentColor: archetype.colorPalette.accent,
+    captionChunkSize: archetype.captionChunkSize ?? 5,
+    captionLingerS: archetype.captionLingerS ?? 0.3,
   };
 }
 

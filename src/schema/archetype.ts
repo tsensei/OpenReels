@@ -12,7 +12,11 @@ export interface ArchetypeConfig {
     | "clean"
     | "karaoke_sweep"
     | "gradient_rise"
-    | "block_impact";
+    | "block_impact"
+    | "box_highlight";
+  // Per-archetype caption tuning (defaults: chunkSize=5, lingerS=0.3)
+  captionChunkSize?: number;
+  captionLingerS?: number;
   colorPalette: { background: string; accent: string; text: string };
   textCardFont: string;
   motionIntensity: number;

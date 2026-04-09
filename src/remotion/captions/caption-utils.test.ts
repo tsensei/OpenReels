@@ -38,4 +38,36 @@ describe("getWordChunk", () => {
     const { chunkStart } = getWordChunk(words, 0.1, 3);
     expect(chunkStart).toBe(0);
   });
+
+  it("uses default lingerS of 0.3 when not specified", () => {
+    // Last word ends at 3.8, so chunk should still be active at 3.8 + 0.29
+    const { chunkStart } = getWordChunk(words, 4.09, 3);
+    expect(chunkStart).toBe(3); // still on last chunk
+  });
+
+  it("respects custom lingerS parameter", () => {
+    // With lingerS=0.05, chunk advances much sooner
+    // Last word of chunk 0 (chunkSize=3) ends at 2.8
+    // At time 2.86 (> 2.8 + 0.05), should advance to chunk 1
+    const { chunkStart } = getWordChunk(words, 2.86, 3, 0.05);
+    expect(chunkStart).toBe(3);
+  });
+
+  it("handles lingerS=0 (instant advance)", () => {
+    // At exactly the last word's end time + epsilon, should advance
+    const { chunkStart } = getWordChunk(words, 2.81, 3, 0);
+    expect(chunkStart).toBe(3);
+  });
+
+  it("handles very large lingerS (chunk lingers forever)", () => {
+    // lingerS=100 means first chunk stays active way past its words
+    const { chunkStart } = getWordChunk(words, 50, 3, 100);
+    expect(chunkStart).toBe(0); // still on first chunk
+  });
+
+  it("handles empty words array", () => {
+    const { chunk, chunkStart } = getWordChunk([], 1.0, 3);
+    expect(chunkStart).toBe(0);
+    expect(chunk).toEqual([]);
+  });
 });

@@ -72,7 +72,7 @@ describe("WhisperAligner", () => {
       expect(result[1]!.word).toBe("world");
     });
 
-    it("handles consecutive missed words", () => {
+    it("handles consecutive missed words with character-based durations", () => {
       const hyp = [
         { word: "Hello", start: 0, end: 0.3 },
         { word: "end", start: 1.0, end: 1.3 },
@@ -81,7 +81,33 @@ describe("WhisperAligner", () => {
       expect(result).toHaveLength(4);
       expect(result[1]!.word).toBe("missed");
       expect(result[2]!.word).toBe("both");
-      expect(result[1]!.end).toBe(result[2]!.start);
+      // Character-based: "missed" = 6 chars * 0.06 = 0.36s
+      expect(result[1]!.start).toBe(0.3);
+      expect(result[1]!.end).toBeCloseTo(0.3 + 6 * 0.06, 5);
+      // "both" starts where "missed" ends
+      expect(result[2]!.start).toBe(result[1]!.end);
+    });
+
+    it("uses character-based duration for interpolated words", () => {
+      const hyp = [
+        { word: "Hello", start: 0, end: 0.3 },
+        { word: "world", start: 0.5, end: 0.8 },
+      ];
+      // "I" is 1 char -> max(0.1, 1*0.06) = 0.1s (floor)
+      const result = aligner.alignToTranscript("Hello I world", hyp);
+      expect(result[1]!.word).toBe("I");
+      expect(result[1]!.end - result[1]!.start).toBeCloseTo(0.1, 5);
+    });
+
+    it("scales interpolation with word length", () => {
+      const hyp = [
+        { word: "The", start: 0, end: 0.2 },
+        { word: "end", start: 2.0, end: 2.3 },
+      ];
+      // "unfortunately" = 13 chars * 0.06 = 0.78s
+      const result = aligner.alignToTranscript("The unfortunately end", hyp);
+      expect(result[1]!.word).toBe("unfortunately");
+      expect(result[1]!.end - result[1]!.start).toBeCloseTo(13 * 0.06, 5);
     });
 
     it("returns empty array for empty text", () => {

@@ -113,10 +113,12 @@ export class WhisperAligner {
         result.push({ word: rw, start: hyp[best]!.start, end: hyp[best]!.end });
         hi = best + 1;
       } else {
-        // Interpolate from last known position
+        // Interpolate from last known position using character-based duration estimate.
+        // ~60ms per character at normal speech pace, with a floor of 100ms.
         const prev = result[result.length - 1];
         const start = prev?.end ?? 0;
-        result.push({ word: rw, start, end: start + 0.2 });
+        const estimatedDuration = Math.max(0.1, rw.length * 0.06);
+        result.push({ word: rw, start, end: start + estimatedDuration });
       }
     }
 

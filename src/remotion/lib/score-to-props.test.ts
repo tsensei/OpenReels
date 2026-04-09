@@ -174,6 +174,23 @@ describe("mapScoreToProps", () => {
     expect(props.scenes[0]!.motion).toBe("zoom_in");
   });
 
+  it("maps caption accent color from archetype palette", () => {
+    const props = mapScoreToProps(baseScore, baseAssets);
+    // editorial_caricature has colorPalette.accent defined
+    expect(props.captionAccentColor).toBeTruthy();
+    expect(typeof props.captionAccentColor).toBe("string");
+  });
+
+  it("defaults captionChunkSize to 5 when archetype has no override", () => {
+    const props = mapScoreToProps(baseScore, baseAssets);
+    expect(props.captionChunkSize).toBe(5);
+  });
+
+  it("defaults captionLingerS to 0.3 when archetype has no override", () => {
+    const props = mapScoreToProps(baseScore, baseAssets);
+    expect(props.captionLingerS).toBe(0.3);
+  });
+
   it("preserves ai_video type when asset is a video file", () => {
     const score: DirectorScore = {
       ...baseScore,

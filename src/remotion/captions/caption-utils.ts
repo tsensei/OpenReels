@@ -1,23 +1,74 @@
 import type { WordTimestamp } from "../../schema/providers";
 
+export type WordState = "unspoken" | "active" | "spoken";
+
+export interface WordRenderState {
+  word: WordTimestamp;
+  state: WordState;
+  springProgress: number;
+  emphasis: boolean;
+  globalIndex: number;
+}
+
 /**
  * Get a sequential fixed-size chunk of words based on current time.
- * Used by progressive/karaoke-style captions that advance in chunks.
+ * lingerS controls how long the chunk stays visible after its last word ends.
  */
 export function getWordChunk(
   words: WordTimestamp[],
   currentTime: number,
   chunkSize: number,
+  lingerS: number = 0.3,
 ): { chunk: WordTimestamp[]; chunkStart: number } {
   let chunkStart = 0;
   for (let i = 0; i < words.length; i += chunkSize) {
     const chunkEnd = Math.min(i + chunkSize, words.length);
     const lastWord = words[chunkEnd - 1];
-    if (lastWord && currentTime <= lastWord.end + 0.3) {
+    if (lastWord && currentTime <= lastWord.end + lingerS) {
       chunkStart = i;
       break;
     }
     chunkStart = i;
   }
   return { chunk: words.slice(chunkStart, chunkStart + chunkSize), chunkStart };
+}
+
+/** Determine the display state of a word at a given time. */
+export function getWordState(word: WordTimestamp, currentTime: number): WordState {
+  if (currentTime < word.start) return "unspoken";
+  if (currentTime < word.end) return "active";
+  return "spoken";
+}
+
+/**
+ * Compute WordRenderState[] for a chunk of words. Pure function, no React hooks.
+ * springProgress is computed from frame-based input, making it seek-safe.
+ *
+ *   frame math (seek-safe):
+ *     wordStartFrame = Math.round(word.start * fps)
+ *     springInput = frame - wordStartFrame
+ *     springProgress = springFn(springInput)   // caller passes in spring()
+ *
+ * For the refactor commit (identical output), springProgress is always
+ * 0 (unspoken) or 1 (active/spoken) -- no actual spring animation yet.
+ */
+export function computeWordStates(
+  chunk: WordTimestamp[],
+  chunkStart: number,
+  currentTime: number,
+  springFn: (wordStartFrame: number) => number,
+  emphasisIndices?: Set<number>,
+): WordRenderState[] {
+  return chunk.map((word, i) => {
+    const globalIndex = chunkStart + i;
+    const state = getWordState(word, currentTime);
+    const springProgress = state === "unspoken" ? 0 : springFn(globalIndex);
+    return {
+      word,
+      state,
+      springProgress,
+      emphasis: emphasisIndices?.has(globalIndex) ?? false,
+      globalIndex,
+    };
+  });
 }

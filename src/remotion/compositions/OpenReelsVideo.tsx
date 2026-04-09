@@ -13,10 +13,12 @@ import { StockVideoBeat } from "../beats/StockVideoBeat";
 import { TextCardBeat } from "../beats/TextCardBeat";
 import { BlockImpact } from "../captions/BlockImpact";
 import { BoldOutline } from "../captions/BoldOutline";
+import { CaptionWrapper, type SpringConfig } from "../captions/CaptionWrapper";
 import { Clean } from "../captions/Clean";
 import { ColorHighlight } from "../captions/ColorHighlight";
 import { GradientRise } from "../captions/GradientRise";
 import { KaraokeSweep } from "../captions/KaraokeSweep";
+import type { CaptionStyleProps } from "../captions/CaptionWrapper";
 import type { CompositionProps, SceneProps } from "../lib/score-to-props";
 
 const BEAT_COMPONENTS: Record<string, React.FC<SceneProps>> = {
@@ -27,13 +29,14 @@ const BEAT_COMPONENTS: Record<string, React.FC<SceneProps>> = {
   text_card: TextCardBeat,
 };
 
-const CAPTION_COMPONENTS: Record<string, React.FC<any>> = {
-  bold_outline: BoldOutline,
-  color_highlight: ColorHighlight,
-  clean: Clean,
-  karaoke_sweep: KaraokeSweep,
-  gradient_rise: GradientRise,
-  block_impact: BlockImpact,
+/** Caption style registry: component + per-style spring physics config. */
+const CAPTION_STYLES: Record<string, { component: React.FC<CaptionStyleProps>; springConfig: SpringConfig }> = {
+  bold_outline:    { component: BoldOutline,    springConfig: { damping: 15, stiffness: 250, mass: 0.5 } },
+  clean:           { component: Clean,          springConfig: { damping: 12, stiffness: 200, mass: 0.5 } },
+  gradient_rise:   { component: GradientRise,   springConfig: { damping: 8,  stiffness: 150, mass: 0.5 } },
+  karaoke_sweep:   { component: KaraokeSweep,   springConfig: { damping: 14, stiffness: 220, mass: 0.5 } },
+  color_highlight: { component: ColorHighlight, springConfig: { damping: 12, stiffness: 200, mass: 0.5 } },
+  block_impact:    { component: BlockImpact,    springConfig: { damping: 18, stiffness: 300, mass: 0.5 } },
 };
 
 const resolveAsset = (relativePath: string | null): string | null => {
@@ -72,10 +75,15 @@ const Main: React.FC<CompositionProps> = ({
   voiceoverSrc,
   musicSrc,
   allWords,
+  captionAccentColor,
+  captionChunkSize,
+  captionLingerS,
 }) => {
+  const style = CAPTION_STYLES[captionStyle] ?? CAPTION_STYLES.clean!;
+
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      {/* Scene beats with transitions — TransitionSeries handles timing and overlaps */}
+      {/* Scene beats with transitions */}
       <TransitionSeries>
         {scenes.map((scene, i) => {
           const BeatComponent = BEAT_COMPONENTS[scene.visualType] ?? TextCardBeat;
@@ -101,18 +109,21 @@ const Main: React.FC<CompositionProps> = ({
       </TransitionSeries>
 
       {/*
-        Captions — ONE component at top level, NOT inside per-scene Sequences.
+        Captions — CaptionWrapper at top level, NOT inside per-scene Sequences.
         Uses absolute timestamps from the full TTS voiceover.
-        useCurrentFrame() here returns the absolute frame in the full video,
-        which matches the absolute word timestamps from ElevenLabs.
-        This is how ReelMistri keeps captions in sync.
+        useCurrentFrame() returns the absolute frame in the full video,
+        which matches the absolute word timestamps.
       */}
-      {allWords &&
-        allWords.length > 0 &&
-        (() => {
-          const CaptionComponent = CAPTION_COMPONENTS[captionStyle] ?? Clean;
-          return <CaptionComponent words={allWords} />;
-        })()}
+      {allWords && allWords.length > 0 && (
+        <CaptionWrapper
+          words={allWords}
+          chunkSize={captionChunkSize}
+          lingerS={captionLingerS}
+          accentColor={captionAccentColor}
+          springConfig={style.springConfig}
+          StyleComponent={style.component}
+        />
+      )}
 
       {/* Voiceover — single continuous audio track */}
       {voiceoverSrc && <Audio src={resolveAsset(voiceoverSrc)!} />}
@@ -140,6 +151,9 @@ export const OpenReelsVideo: React.FC = () => {
             voiceoverSrc: null,
             musicSrc: null,
             allWords: [],
+            captionAccentColor: "#38A169",
+            captionChunkSize: 5,
+            captionLingerS: 0.3,
           } as unknown as Record<string, unknown>
         }
       />
