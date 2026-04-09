@@ -7,6 +7,7 @@ import { loadPlaybook } from "../config/playbook.js";
 import { DirectorScore, Motion, MusicMood, TransitionType, VisualType } from "../schema/director-score.js";
 import type { LLMProvider, LLMUsage } from "../schema/providers.js";
 import type { ResearchResult } from "./research.js";
+import type { CritiqueResult } from "./critic.js";
 
 const SYSTEM_PROMPT_PATH = path.join(process.cwd(), "prompts", "creative-director.md");
 
@@ -34,12 +35,8 @@ export interface DirectorScoreOutput {
   usage: LLMUsage;
 }
 
-export async function generateDirectorScore(
-  llm: LLMProvider,
-  topic: string,
-  researchContext: ResearchResult,
-  options?: { archetype?: string; pacing?: string; videoEnabled?: boolean },
-): Promise<DirectorScoreOutput> {
+/** Load the creative director system prompt with playbook injection */
+function loadDirectorSystemPrompt(): string {
   let systemPrompt = buildDefaultPrompt();
 
   try {
@@ -55,6 +52,17 @@ export async function generateDirectorScore(
   } catch (err) {
     console.warn(`[creative-director] Playbook not loaded: ${err}`);
   }
+
+  return systemPrompt;
+}
+
+export async function generateDirectorScore(
+  llm: LLMProvider,
+  topic: string,
+  researchContext: ResearchResult,
+  options?: { archetype?: string; pacing?: string; videoEnabled?: boolean },
+): Promise<DirectorScoreOutput> {
+  const systemPrompt = loadDirectorSystemPrompt();
 
   const archetypes = listArchetypes();
   const archetypeInstruction = options?.archetype
@@ -180,3 +188,66 @@ Per-scene word budget: ${cfg.wordsPerScene} words. Total word budget: ${cfg.tota
 }
 
 export { PACING_CONFIG };
+
+// ── Revision ─────────────────────────────────────────────────────────────────
+
+export async function reviseDirectorScore(
+  llm: LLMProvider,
+  topic: string,
+  researchContext: ResearchResult,
+  originalScore: DirectorScore,
+  critique: CritiqueResult,
+  options?: { archetype?: string; pacing?: string; videoEnabled?: boolean },
+): Promise<DirectorScoreOutput> {
+  const systemPrompt = loadDirectorSystemPrompt();
+
+  // Build revision instructions from critique, guarding nullable revision_instructions
+  const revisionGuidance = critique.revision_instructions
+    ?? `Address these weaknesses: ${critique.weaknesses.join("; ")}`;
+
+  const pacingInstruction = buildPacingInstruction(options?.archetype, options?.pacing);
+
+  const videoEnabled = options?.videoEnabled ?? false;
+  const visualTypes = videoEnabled
+    ? "all 5 visual types (ai_image, ai_video, stock_image, stock_video, text_card)"
+    : "all 4 visual types (ai_image, stock_image, stock_video, text_card)";
+
+  const userMessage = `Topic: ${topic}
+
+Research context:
+${researchContext.summary}
+
+Key facts:
+${researchContext.key_facts.map((f) => `- ${f}`).join("\n")}
+
+Mood: ${researchContext.mood}
+
+${pacingInstruction}
+Use ${visualTypes}.
+
+## Current Plan (score: ${critique.score}/10)
+
+${JSON.stringify(originalScore, null, 2)}
+
+## Critic Feedback
+
+Strengths: ${critique.strengths.join(", ")}
+Weaknesses: ${critique.weaknesses.join(", ")}
+${critique.weakest_scene_index != null ? `Weakest scene: Scene ${critique.weakest_scene_index}` : ""}
+
+## Revision Instructions
+
+${revisionGuidance}
+
+Revise the DirectorScore to address the weaknesses while preserving the strengths.
+Keep the same archetype. Maintain the GOLDEN RULE: never use the same visual_type more than 2 times in a row.`;
+
+  const result = await llm.generate({
+    systemPrompt,
+    userMessage,
+    schema: DirectorScoreRaw,
+  });
+
+  const validated = DirectorScore.parse(result.data);
+  return { data: validated, usage: result.usage };
+}

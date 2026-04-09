@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { buildPacingInstruction, PACING_CONFIG } from "./creative-director.js";
+import { describe, expect, it, vi } from "vitest";
+import { buildPacingInstruction, PACING_CONFIG, reviseDirectorScore } from "./creative-director.js";
+import type { DirectorScore } from "../schema/director-score.js";
+import type { LLMProvider } from "../schema/providers.js";
+import type { CritiqueResult } from "./critic.js";
+import type { ResearchResult } from "./research.js";
 
 describe("buildPacingInstruction", () => {
   // Path 2: explicit archetype — derive tier from config
@@ -100,5 +104,83 @@ describe("PACING_CONFIG", () => {
 
   it("cinematic tier has lower scene count than fast", () => {
     expect(PACING_CONFIG.cinematic.max).toBeLessThan(PACING_CONFIG.fast.max);
+  });
+});
+
+// ── reviseDirectorScore tests ────────────────────────────────────────────────
+
+const baseScore: DirectorScore = {
+  emotional_arc: "curiosity-to-wisdom",
+  archetype: "infographic",
+  music_mood: "epic_cinematic",
+  scenes: [
+    { visual_type: "text_card", visual_prompt: "Title", motion: "static", script_line: "Did you know this?", transition: null },
+    { visual_type: "ai_image", visual_prompt: "A diagram", motion: "zoom_in", script_line: "Here is the truth.", transition: "crossfade" },
+    { visual_type: "stock_video", visual_prompt: "Ocean", motion: "static", script_line: "It changed everything.", transition: "slide_left" },
+    { visual_type: "ai_image", visual_prompt: "Chart", motion: "pan_right", script_line: "The numbers prove it.", transition: "crossfade" },
+    { visual_type: "stock_image", visual_prompt: "Sunset", motion: "zoom_out", script_line: "Think about that.", transition: "crossfade" },
+    { visual_type: "text_card", visual_prompt: "CTA", motion: "static", script_line: "What do you think?", transition: "wipe" },
+    { visual_type: "ai_image", visual_prompt: "Finale", motion: "zoom_in", script_line: "Comment below!", transition: null },
+    { visual_type: "stock_video", visual_prompt: "Stars", motion: "static", script_line: "Follow for more.", transition: "crossfade" },
+  ],
+};
+
+const baseResearch: ResearchResult = {
+  summary: "Test topic summary",
+  key_facts: ["fact1", "fact2"],
+  mood: "informative",
+  sources: [],
+};
+
+const baseCritique: CritiqueResult = {
+  score: 5,
+  strengths: ["good hook"],
+  weaknesses: ["weak pacing", "repetitive visuals"],
+  revision_needed: true,
+  revision_instructions: "Improve pacing in scenes 3-5 and add more visual variety.",
+  weakest_scene_index: 3,
+};
+
+function mockRevisionLLM(): LLMProvider & { lastUserMessage: string } {
+  const mock = {
+    id: "anthropic" as const,
+    lastUserMessage: "",
+    generate: vi.fn(async ({ userMessage }: { userMessage: string }) => {
+      mock.lastUserMessage = userMessage;
+      return {
+        data: { ...baseScore },
+        usage: { inputTokens: 200, outputTokens: 100 },
+      };
+    }),
+  };
+  return mock as unknown as LLMProvider & { lastUserMessage: string };
+}
+
+describe("reviseDirectorScore", () => {
+  it("generates a revised DirectorScore from critique feedback", async () => {
+    const llm = mockRevisionLLM();
+    const result = await reviseDirectorScore(llm, "test topic", baseResearch, baseScore, baseCritique);
+    expect(result.data.archetype).toBe("infographic");
+    expect(result.data.scenes.length).toBeGreaterThanOrEqual(3);
+    expect(result.usage.inputTokens).toBe(200);
+  });
+
+  it("includes critique details in the user message", async () => {
+    const llm = mockRevisionLLM();
+    await reviseDirectorScore(llm, "test topic", baseResearch, baseScore, baseCritique);
+    expect(llm.lastUserMessage).toContain("score: 5/10");
+    expect(llm.lastUserMessage).toContain("weak pacing");
+    expect(llm.lastUserMessage).toContain("Improve pacing in scenes 3-5");
+    expect(llm.lastUserMessage).toContain("Weakest scene: Scene 3");
+  });
+
+  it("falls back to weaknesses when revision_instructions is null", async () => {
+    const llm = mockRevisionLLM();
+    const critique: CritiqueResult = {
+      ...baseCritique,
+      revision_instructions: null,
+    };
+    await reviseDirectorScore(llm, "test topic", baseResearch, baseScore, critique);
+    expect(llm.lastUserMessage).toContain("weak pacing; repetitive visuals");
   });
 });
