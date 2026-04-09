@@ -72,6 +72,7 @@ interface JobMeta {
   criticReview?: { score: number; strengths: string[]; weaknesses: string[] };
   musicTrack?: { trackId: string; mood: string; requestedMood: string; fallback: boolean };
   musicGeneration?: { provider: string; prompt?: string; metadata?: Record<string, unknown>; fallback: boolean };
+  revisionHistory?: { round: number; score: number }[];
   error?: string;
 }
 
@@ -165,6 +166,13 @@ const worker = new Worker<JobData>(
             metadata: data.metadata as Record<string, unknown> | undefined,
             fallback: data.fallback as boolean,
           };
+          writeMeta(jobDir, meta);
+        } else if (data.type === "revision") {
+          if (!meta.revisionHistory) meta.revisionHistory = [];
+          meta.revisionHistory.push({
+            round: data.round as number,
+            score: data.critiqueScore as number,
+          });
           writeMeta(jobDir, meta);
         } else if (data.type === "review") {
           meta.criticReview = { score: data.score as number, strengths: data.strengths as string[], weaknesses: data.weaknesses as string[] };

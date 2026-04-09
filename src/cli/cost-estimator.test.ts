@@ -70,7 +70,7 @@ describe("estimateCost", () => {
     ]);
     const result = estimateCost(score);
     expect(result.totalCost).toBeCloseTo(
-      result.llmCost + result.ttsCost + result.imageCost + result.videoCost + result.musicCost,
+      result.llmCost + result.revisionCost + result.ttsCost + result.imageCost + result.videoCost + result.musicCost,
     );
   });
 
@@ -117,6 +117,19 @@ describe("estimateCost", () => {
     const gemini = estimateCost(score, "gemini", "elevenlabs", undefined);
     const fal = estimateCost(score, "gemini", "elevenlabs", "fal");
     expect(fal.videoCost).toBeGreaterThan(gemini.videoCost);
+  });
+
+  it("includes revision cost when revisionRounds > 0", () => {
+    const score = makeScore([{ visual_type: "ai_image", script_line: "Test" }]);
+    const noRevision = estimateCost(score, "gemini", "elevenlabs", undefined, "anthropic", "bundled", 0);
+    const withRevision = estimateCost(score, "gemini", "elevenlabs", undefined, "anthropic", "bundled", 2);
+    expect(noRevision.revisionCost).toBe(0);
+    expect(noRevision.details.revisionRounds).toBe(0);
+    expect(withRevision.revisionCost).toBeGreaterThan(0);
+    expect(withRevision.details.revisionRounds).toBe(2);
+    expect(withRevision.totalCost).toBeGreaterThan(noRevision.totalCost);
+    // Revision cost should be approximately 2 × (critic + director) calls
+    expect(withRevision.revisionCost).toBeCloseTo(withRevision.totalCost - noRevision.totalCost, 4);
   });
 
   it("uses gemini LLM pricing when llmProvider is gemini", () => {

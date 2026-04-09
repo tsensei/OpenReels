@@ -10,6 +10,7 @@ import type {
 
 export interface CostBreakdown {
   llmCost: number;
+  revisionCost: number;
   ttsCost: number;
   imageCost: number;
   videoCost: number;
@@ -17,6 +18,7 @@ export interface CostBreakdown {
   totalCost: number;
   details: {
     llmCalls: number;
+    revisionRounds: number;
     ttsCharacters: number;
     aiImages: number;
     aiVideos: number;
@@ -96,6 +98,7 @@ export function estimateCost(
   videoProvider?: VideoProviderKey,
   llmProvider: LLMProviderKey = "anthropic",
   musicProvider: MusicProviderKey = "bundled",
+  revisionRounds = 0,
 ): CostBreakdown {
   const aiImageScenes = score.scenes.filter((s) => s.visual_type === "ai_image").length;
   const aiVideoScenes = score.scenes.filter((s) => s.visual_type === "ai_video").length;
@@ -114,6 +117,9 @@ export function estimateCost(
     callCost(TOKEN_ESTIMATES.creativeDirector) +
     callCost(TOKEN_ESTIMATES.critic) +
     aiImages * callCost(TOKEN_ESTIMATES.imagePrompter);
+
+  // Revision cost: each round = 1 critic call + 1 director-sized revise call
+  const revisionCost = revisionRounds * (callCost(TOKEN_ESTIMATES.critic) + callCost(TOKEN_ESTIMATES.creativeDirector));
   const ttsPerChar = PRICING.ttsPerChar[ttsProvider];
   const ttsCost = ttsCharacters * ttsPerChar;
   const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
@@ -127,7 +133,7 @@ export function estimateCost(
   const musicCost =
     musicProvider === "lyria" ? PRICING.lyriaPerTrack + callCost(TOKEN_ESTIMATES.imagePrompter) : 0;
 
-  const totalCost = llmCost + ttsCost + imageCost + videoCost + musicCost;
+  const totalCost = llmCost + revisionCost + ttsCost + imageCost + videoCost + musicCost;
 
   // Per-scene cost breakdown
   const perScene = score.scenes.map((s) => {
@@ -152,8 +158,8 @@ export function estimateCost(
   });
 
   return {
-    llmCost, ttsCost, imageCost, videoCost, musicCost, totalCost,
-    details: { llmCalls, ttsCharacters, aiImages, aiVideos: aiVideoScenes },
+    llmCost, revisionCost, ttsCost, imageCost, videoCost, musicCost, totalCost,
+    details: { llmCalls, revisionRounds, ttsCharacters, aiImages, aiVideos: aiVideoScenes },
     perScene,
   };
 }
@@ -167,9 +173,14 @@ export function formatCostEstimate(
   const lines = [
     `Estimated cost: $${breakdown.totalCost.toFixed(3)}`,
     `  LLM:    $${breakdown.llmCost.toFixed(4)} (${breakdown.details.llmCalls} calls)`,
+  ];
+  if (breakdown.revisionCost > 0) {
+    lines.push(`  Revise: $${breakdown.revisionCost.toFixed(4)} (${breakdown.details.revisionRounds} revision round${breakdown.details.revisionRounds !== 1 ? "s" : ""})`);
+  }
+  lines.push(
     `  TTS:    $${breakdown.ttsCost.toFixed(4)} (${breakdown.details.ttsCharacters} chars)`,
     `  Images: $${breakdown.imageCost.toFixed(4)} (${breakdown.details.aiImages} AI images @ $${perImage.toFixed(3)}/ea)`,
-  ];
+  );
   if (breakdown.details.aiVideos > 0) {
     lines.push(`  Video:  $${breakdown.videoCost.toFixed(4)} (${breakdown.details.aiVideos} AI videos)`);
   }
