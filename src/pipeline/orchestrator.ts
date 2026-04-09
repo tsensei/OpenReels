@@ -5,7 +5,7 @@ import * as path from "node:path";
 import { Mastra } from "@mastra/core";
 import { createStep, createWorkflow } from "@mastra/core/workflows";
 import { z } from "zod";
-import { generateDirectorScore } from "../agents/creative-director.js";
+import { generateDirectorScore, reviseDirectorScore } from "../agents/creative-director.js";
 import { evaluate } from "../agents/critic.js";
 import { optimizeImagePrompt } from "../agents/image-prompter.js";
 import { research } from "../agents/research.js";
@@ -410,45 +410,93 @@ function buildPipelineWorkflow(
       cb.onStageStart?.("director");
       const start = Date.now();
       const videoEnabled = !opts.noVideo && (opts.videoProviders?.length ?? 0) > 0;
-      const cdOutput = await generateDirectorScore(opts.llm, opts.topic, inputData, {
-        archetype: opts.archetype,
-        pacing: opts.pacing,
-        videoEnabled,
-      });
-      // Store on shared context via closure
-      directorResult.score = cdOutput.data;
-      directorResult.config = getArchetype(cdOutput.data.archetype);
+      const directorOpts = { archetype: opts.archetype, pacing: opts.pacing, videoEnabled };
+
+      // ── Generate initial DirectorScore ──
+      const cdOutput = await generateDirectorScore(opts.llm, opts.topic, inputData, directorOpts);
       llmUsages.push(cdOutput.usage);
+      let score = cdOutput.data;
+
+      // ── Revision loop: evaluate → revise until score >= 7 or max rounds ──
+      //
+      //   generate ──► evaluate ──► score >= 7? ──YES──► done
+      //                   │
+      //                  NO (round < MAX)
+      //                   │
+      //                revise ──► re-evaluate ──► ...
+      //
+      // Tracks the highest-scoring revision (LLM refinement can degrade in later rounds).
+      const MAX_REVISION_ROUNDS = 2;
+      let bestScore = score;
+      let bestCritiqueScore = 0;
+      let revisionRoundsCompleted = 0;
+
+      for (let round = 0; round < MAX_REVISION_ROUNDS; round++) {
+        try {
+          const critiqueOutput = await evaluate(opts.llm, score, opts.topic, opts.pacing);
+          llmUsages.push(critiqueOutput.usage);
+          const critique = critiqueOutput.data;
+
+          // Track highest-scoring revision
+          if (critique.score > bestCritiqueScore) {
+            bestScore = score;
+            bestCritiqueScore = critique.score;
+          }
+
+          if (critique.score >= 7 || !critique.revision_needed) break;
+
+          cb.onProgress?.("director", { type: "revision", round: round + 1, critiqueScore: critique.score });
+          cb.onLog?.(`\n[director] Critic score: ${critique.score}/10 (round ${round + 1}), revising...`);
+
+          const revised = await reviseDirectorScore(opts.llm, opts.topic, inputData, score, critique, directorOpts);
+          llmUsages.push(revised.usage);
+          score = revised.data;
+          revisionRoundsCompleted++;
+        } catch (err) {
+          // Graceful degradation: if the critic fails, proceed with current best score
+          console.warn(`[director] Revision round ${round + 1} failed: ${err}`);
+          break;
+        }
+      }
+
+      // Use the highest-scoring revision (not necessarily the last)
+      score = bestScore;
+
+      // ── Store final score on shared closure state ──
+      directorResult.score = score;
+      directorResult.config = getArchetype(score.archetype);
+
       const dur = (Date.now() - start) / 1000;
       cb.onStageComplete?.(
         "director",
-        `${cdOutput.data.scenes.length} scenes, ${cdOutput.data.archetype}`,
+        `${score.scenes.length} scenes, ${score.archetype}`,
         dur,
       );
       log.stages.push({ name: "creative-director", duration: dur, status: "done" });
 
-      fs.writeFileSync(scorePath, JSON.stringify(cdOutput.data, null, 2));
-      cb.onProgress?.("director", { type: "score", score: cdOutput.data });
+      // Write score.json and emit progress AFTER the revision loop
+      fs.writeFileSync(scorePath, JSON.stringify(score, null, 2));
+      cb.onProgress?.("director", { type: "score", score });
 
-      // Dry run handling
+      // Dry run handling (after revision loop so --dry-run shows revised score)
       if (opts.dryRun) {
         cb.onStageSkip?.("tts", "dry run");
         cb.onStageSkip?.("visuals", "dry run");
         cb.onStageSkip?.("assembly", "dry run");
         cb.onStageSkip?.("critic", "dry run");
         cb.onLog?.("\n--- DirectorScore ---");
-        cb.onLog?.(JSON.stringify(cdOutput.data, null, 2));
+        cb.onLog?.(JSON.stringify(score, null, 2));
         directorResult.dryRunExit = true;
         return { done: true };
       }
 
-      // Cost estimation
-      const costBreakdown = estimateCost(cdOutput.data, opts.imageProvider, opts.ttsProvider, opts.videoProvider, opts.llm.id, opts.musicProviderKey);
+      // Cost estimation (uses the final revised score for accurate scene counts)
+      const costBreakdown = estimateCost(score, opts.imageProvider, opts.ttsProvider, opts.videoProvider, opts.llm.id, opts.musicProviderKey, revisionRoundsCompleted);
       directorResult.costBreakdown = costBreakdown;
       log.totalCost = { estimated: costBreakdown.totalCost };
 
       if (cb.onCostEstimate) {
-        const stockSceneCount = cdOutput.data.scenes.filter(
+        const stockSceneCount = score.scenes.filter(
           (s) => s.visual_type === "stock_image" || s.visual_type === "stock_video",
         ).length;
         const proceed = await cb.onCostEstimate(costBreakdown, opts.imageProvider, stockSceneCount);
@@ -734,13 +782,7 @@ function buildPipelineWorkflow(
         llmUsages.push(critiqueOutput.usage);
         const dur = (Date.now() - start) / 1000;
 
-        if (critique.revision_needed && critique.score < 7) {
-          cb.onStageComplete?.("critic", `score ${critique.score}/10, revision needed`, dur);
-          cb.onLog?.(`\nCritic score: ${critique.score}/10 — ${critique.weaknesses.join(", ")}`);
-          cb.onLog?.("Revision support coming in a future release. Using current version.");
-        } else {
-          cb.onStageComplete?.("critic", `score ${critique.score}/10`, dur);
-        }
+        cb.onStageComplete?.("critic", `score ${critique.score}/10`, dur);
         cb.onProgress?.("critic", {
           type: "review",
           score: critique.score,

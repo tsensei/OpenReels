@@ -76,12 +76,13 @@ describe("createCliCallbacks", () => {
     const result = await callbacks.onCostEstimate!(
       {
         llmCost: 0,
+        revisionCost: 0,
         ttsCost: 0,
         imageCost: 0,
         totalCost: 0.1,
         videoCost: 0,
         musicCost: 0,
-        details: { llmCalls: 3, ttsCharacters: 500, aiImages: 2, aiVideos: 0 },
+        details: { llmCalls: 3, revisionRounds: 0, ttsCharacters: 500, aiImages: 2, aiVideos: 0 },
       },
       "gemini",
     );
