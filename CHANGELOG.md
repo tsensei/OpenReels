@@ -2,6 +2,19 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.15.0] - 2026-04-09
+
+### Added
+- **Director-Critic quality gate**: the pipeline now evaluates and revises the DirectorScore before any expensive generation begins. A Critic agent scores the plan (1-10) and if below 7, provides revision instructions. The Creative Director revises the plan and re-submits. Up to 2 revision rounds, tracking the highest-scoring version. Revision costs ~$0.02-0.13 in LLM calls vs $0.50-2.00+ for regenerating the full pipeline.
+- **Revision cost tracking**: cost estimates now include a "Revise" line item showing actual revision LLM cost. The `CostBreakdown` interface includes `revisionCost` and `revisionRounds` fields.
+- **Worker revision history**: `meta.json` now includes a `revisionHistory` array with per-round critic scores, enabling future UI display of the revision journey.
+
+### Changed
+- The Creative Director's system prompt loading is now a shared `loadDirectorSystemPrompt()` helper, used by both initial generation and revision.
+- The step-6 critic no longer displays "Revision support coming in a future release" since revision is now active.
+- Cost estimation uses the final revised DirectorScore for accurate scene counts when visual types change during revision.
+- Dry-run mode now runs after the revision loop, showing the revised plan instead of the first draft.
+
 ## [0.14.0] - 2026-04-09
 
 ### Added

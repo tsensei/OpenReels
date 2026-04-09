@@ -96,6 +96,13 @@
   **Depends on:** TTS alignment layer (Kokoro + Gemini TTS providers)
   Deferred from plan: Unified TTS Alignment Layer (CEO review: user prefers unified voice interface later)
 
+## Critic / Quality Gate
+
+- [ ] **Deterministic structural validation for DirectorScore** — Extract pacing checks (total word count, scene count, per-scene word bounds, consecutive visual_type runs) into a TypeScript validation function. Run it after DirectorScore.parse() in the existing retry loop. Structural violations become retry errors (fed back as error context to the director), not LLM critic concerns. Saves 1-2 LLM calls when the issue is structural, and makes structural quality a guaranteed invariant rather than probabilistic.
+  **Priority:** P3
+  **Depends on:** Director-Critic quality gate (v0.15.0)
+  Deferred from plan: Director-Critic Quality Gate (eng review: outside voice recommended splitting deterministic vs subjective evaluation)
+
 ## Captions
 
 - [ ] **Contextual emphasis on power words** — Creative director marks 1-3 power words per scene with asterisks in script_line. Pipeline strips markers before TTS and records emphasisIndices. CaptionWrapper applies extra animation treatment (larger font-size delta, accent color flash) to emphasis words. Requires: (a) strip asterisks before ALL downstream consumers (critic, image prompter, TTS), not just TTS, (b) creative director prompt update with emphasis marking instructions, (c) emphasisIndices field on CompositionProps (optional, backward compat), (d) CaptionWrapper emphasis detection logic. Per-word asterisks format: `*New* *York*` not `*New York*`.
