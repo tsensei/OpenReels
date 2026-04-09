@@ -2,6 +2,22 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.16.0] - 2026-04-09
+
+### Added
+- **Universal LLM provider gateway**: use any OpenAI-compatible endpoint as an LLM provider. New `--provider openrouter` and `--provider openai-compatible` options with `--llm-model` and `--llm-base-url` flags. OpenRouter gives access to 300+ models; openai-compatible supports Ollama, Together, Groq, vLLM, and any endpoint speaking the OpenAI API.
+- **Pluggable search backends**: independently configure web search with `--search-provider native|tavily|none`. Native uses each provider's built-in search (Anthropic, OpenAI, Gemini). Tavily adds web search to providers that lack it. None disables search and uses the model's training knowledge instead.
+- **Tavily web search integration**: `@tavily/ai-sdk` powers web research for OpenRouter and custom providers. Auto-detected when `TAVILY_API_KEY` is set, with graceful degradation when absent.
+- **Parametric knowledge fallback**: when no search tools are available, the research agent uses a single-pass structured output call with a "use your training knowledge" prompt instead of wasting tokens on an empty two-pass search loop.
+- **Tool-calling error recovery**: if a model doesn't support tool calling, the pipeline catches the error and falls back to parametric knowledge with a warning instead of crashing.
+- **Pass 2 retry with cached search**: when structuring search results fails (model can't produce valid JSON schema), the pipeline retries Pass 2 up to 2 times reusing cached search results from Pass 1 instead of re-running Tavily and burning search credits.
+- **Web UI provider expansion**: OpenRouter and Custom (OpenAI-compatible) options in the LLM dropdown with conditional model ID and base URL inputs. Search provider dropdown (native/tavily/none).
+
+### Changed
+- `BaseLLM` now accepts optional `searchTools` via constructor for search tool injection. Existing providers (Anthropic, OpenAI, Gemini) are unaffected when no tools are injected.
+- LLM cost estimation uses a separate `LLM_PRICING` lookup with zero-cost fallback for unknown providers instead of crashing on unrecognized provider keys.
+- Worker key resolution uses a lookup map instead of hardcoded if/else chain.
+
 ## [0.15.0] - 2026-04-09
 
 ### Added

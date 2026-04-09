@@ -24,6 +24,12 @@
 - [ ] **Atomic cache downloads** — Write to temp file then rename to prevent corrupt partial files from race conditions or network drops
   **Priority:** P3
 
+## Provider Gateway
+
+- [ ] **Model capability detection for openai-compatible** — Probe openai-compatible providers for structured output + tool calling support. Gracefully degrade unsupported features with clear error messages instead of opaque SDK errors. Llama 3 8B via Ollama can't do schema-constrained output; user should see "this model doesn't support structured output" not a stack trace.
+  **Priority:** P2
+  **Depends on:** Universal provider gateway (v0.16.0)
+
 ## Transitions
 
 - [ ] **Per-transition-type duration mapping** — Add per-type duration overrides to archetypes (e.g., `transitionDurations: { crossfade: 15, flip: 20, wipe: 12 }`). Different transition types need different durations to look natural. Current single-value approach works but flip at 12 frames looks rushed while crossfade at 12 frames is fine.
