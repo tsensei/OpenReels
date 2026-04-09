@@ -59,15 +59,59 @@ describe("getWordChunk", () => {
     expect(chunkStart).toBe(3);
   });
 
-  it("handles very large lingerS (chunk lingers forever)", () => {
-    // lingerS=100 means first chunk stays active way past its words
+  it("handles very large lingerS but advances when next chunk has started", () => {
+    // lingerS=100 but words are continuous, so linger is cut short
+    // At time 50, all words are past. Last chunk stays.
     const { chunkStart } = getWordChunk(words, 50, 3, 100);
-    expect(chunkStart).toBe(0); // still on first chunk
+    expect(chunkStart).toBe(3); // last chunk (words are all spoken, no next chunk to advance to)
+  });
+
+  it("lingers on last chunk indefinitely when no next chunk exists", () => {
+    // The very last chunk has no "next chunk" to check, so linger applies fully
+    const { chunkStart } = getWordChunk(words, 4.0, 3, 100);
+    expect(chunkStart).toBe(3); // stays on last chunk
   });
 
   it("handles empty words array", () => {
     const { chunk, chunkStart } = getWordChunk([], 1.0, 3);
     expect(chunkStart).toBe(0);
     expect(chunk).toEqual([]);
+  });
+
+  it("advances to next chunk when next chunk's first word has started, even during linger", () => {
+    // Regression: linger window hid the first word of the next chunk.
+    // Words are continuous (no gap between chunks), lingerS=0.5.
+    // At time 1.05 (chunk 1's "know" has started at 1.0), chunk 0 should
+    // NOT linger. It should advance so "know" can be shown as "active".
+    const continuous: WordTimestamp[] = [
+      { word: "Did", start: 0.1, end: 0.3 },
+      { word: "you", start: 0.3, end: 0.5 },
+      { word: "know", start: 0.5, end: 0.8 },
+      { word: "we", start: 0.8, end: 1.0 },
+      { word: "know", start: 1.0, end: 1.3 },
+      { word: "more", start: 1.3, end: 1.6 },
+      { word: "about", start: 1.6, end: 1.9 },
+      { word: "Mars", start: 1.9, end: 2.2 },
+    ];
+    // At time 1.05: chunk 0 last word "we" ended at 1.0, linger would last to 1.5.
+    // But chunk 1 first word "know" started at 1.0. Should advance.
+    const { chunkStart, chunk } = getWordChunk(continuous, 1.05, 4, 0.5);
+    expect(chunkStart).toBe(4);
+    expect(chunk[0]?.word).toBe("know");
+  });
+
+  it("still lingers when there is a gap before next chunk starts", () => {
+    // When there IS a genuine gap between chunks, linger should work.
+    const gapped: WordTimestamp[] = [
+      { word: "Hello", start: 0.0, end: 0.3 },
+      { word: "world", start: 0.3, end: 0.6 },
+      // 0.9s gap here
+      { word: "Next", start: 1.5, end: 1.8 },
+      { word: "chunk", start: 1.8, end: 2.0 },
+    ];
+    // At time 0.8: chunk 0 last word "world" ended at 0.6, linger to 0.9.
+    // Next chunk starts at 1.5 (not started yet). Should stay on chunk 0.
+    const { chunkStart } = getWordChunk(gapped, 0.8, 2, 0.3);
+    expect(chunkStart).toBe(0);
   });
 });

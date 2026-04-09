@@ -12,7 +12,10 @@ export interface WordRenderState {
 
 /**
  * Get a sequential fixed-size chunk of words based on current time.
- * lingerS controls how long the chunk stays visible after its last word ends.
+ * lingerS controls how long the chunk stays visible after its last word ends,
+ * BUT the linger is cut short if the next chunk's first word has already started.
+ * This prevents words from being hidden during the linger window and appearing
+ * only in "spoken" state (never showing as "active").
  */
 export function getWordChunk(
   words: WordTimestamp[],
@@ -24,7 +27,17 @@ export function getWordChunk(
   for (let i = 0; i < words.length; i += chunkSize) {
     const chunkEnd = Math.min(i + chunkSize, words.length);
     const lastWord = words[chunkEnd - 1];
-    if (lastWord && currentTime <= lastWord.end + lingerS) {
+    if (!lastWord) break;
+
+    // Check if we should stay on this chunk:
+    // 1. Current time is within the chunk's words, OR
+    // 2. Current time is in the linger window AND the next chunk hasn't started speaking
+    const withinWords = currentTime <= lastWord.end;
+    const nextChunkFirstWord = words[chunkEnd];
+    const inLingerWindow = currentTime <= lastWord.end + lingerS;
+    const nextChunkStarted = nextChunkFirstWord && currentTime >= nextChunkFirstWord.start;
+
+    if (withinWords || (inLingerWindow && !nextChunkStarted)) {
       chunkStart = i;
       break;
     }
