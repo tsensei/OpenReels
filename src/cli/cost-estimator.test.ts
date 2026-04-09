@@ -119,17 +119,28 @@ describe("estimateCost", () => {
     expect(fal.videoCost).toBeGreaterThan(gemini.videoCost);
   });
 
-  it("includes revision cost when revisionRounds > 0", () => {
+  it("includes revision cost with separate evaluation and revision counts", () => {
     const score = makeScore([{ visual_type: "ai_image", script_line: "Test" }]);
-    const noRevision = estimateCost(score, "gemini", "elevenlabs", undefined, "anthropic", "bundled", 0);
-    const withRevision = estimateCost(score, "gemini", "elevenlabs", undefined, "anthropic", "bundled", 2);
-    expect(noRevision.revisionCost).toBe(0);
-    expect(noRevision.details.revisionRounds).toBe(0);
-    expect(withRevision.revisionCost).toBeGreaterThan(0);
-    expect(withRevision.details.revisionRounds).toBe(2);
-    expect(withRevision.totalCost).toBeGreaterThan(noRevision.totalCost);
-    // Revision cost should be approximately 2 × (critic + director) calls
-    expect(withRevision.revisionCost).toBeCloseTo(withRevision.totalCost - noRevision.totalCost, 4);
+    // No gate activity
+    const noGate = estimateCost(score, "gemini", "elevenlabs", undefined, "anthropic", "bundled", 0, 0);
+    expect(noGate.revisionCost).toBe(0);
+    expect(noGate.details.gateEvaluations).toBe(0);
+    expect(noGate.details.revisionRounds).toBe(0);
+
+    // Gate only (score >= 7 on first try): 1 eval, 0 revisions
+    const gateOnly = estimateCost(score, "gemini", "elevenlabs", undefined, "anthropic", "bundled", 1, 0);
+    expect(gateOnly.revisionCost).toBeGreaterThan(0);
+    expect(gateOnly.details.gateEvaluations).toBe(1);
+    expect(gateOnly.details.revisionRounds).toBe(0);
+
+    // Full revision: 2 evals + 1 revision
+    const fullRevision = estimateCost(score, "gemini", "elevenlabs", undefined, "anthropic", "bundled", 2, 1);
+    expect(fullRevision.revisionCost).toBeGreaterThan(gateOnly.revisionCost);
+    expect(fullRevision.details.gateEvaluations).toBe(2);
+    expect(fullRevision.details.revisionRounds).toBe(1);
+
+    // Gate-only should cost less than a full revision (no director call)
+    expect(gateOnly.revisionCost).toBeLessThan(fullRevision.revisionCost);
   });
 
   it("uses gemini LLM pricing when llmProvider is gemini", () => {

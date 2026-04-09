@@ -18,6 +18,7 @@ export interface CostBreakdown {
   totalCost: number;
   details: {
     llmCalls: number;
+    gateEvaluations: number;
     revisionRounds: number;
     ttsCharacters: number;
     aiImages: number;
@@ -98,6 +99,7 @@ export function estimateCost(
   videoProvider?: VideoProviderKey,
   llmProvider: LLMProviderKey = "anthropic",
   musicProvider: MusicProviderKey = "bundled",
+  gateEvaluations = 0,
   revisionRounds = 0,
 ): CostBreakdown {
   const aiImageScenes = score.scenes.filter((s) => s.visual_type === "ai_image").length;
@@ -118,10 +120,10 @@ export function estimateCost(
     callCost(TOKEN_ESTIMATES.critic) +
     aiImages * callCost(TOKEN_ESTIMATES.imagePrompter);
 
-  // Revision cost: each evaluation = 1 critic call + 1 director-sized revise call.
-  // Slightly undercounts because revise prompts include the original score JSON (~1-3K extra tokens),
-  // but using the director estimate is a reasonable approximation.
-  const revisionCost = revisionRounds * (callCost(TOKEN_ESTIMATES.critic) + callCost(TOKEN_ESTIMATES.creativeDirector));
+  // Quality gate cost: critic calls for evaluation + director calls for revision.
+  // Split because evaluations > revisions (gate always evaluates, only revises if score < 7).
+  // Slightly undercounts revise calls because the prompt includes the original score JSON (~1-3K extra tokens).
+  const revisionCost = gateEvaluations * callCost(TOKEN_ESTIMATES.critic) + revisionRounds * callCost(TOKEN_ESTIMATES.creativeDirector);
   const ttsPerChar = PRICING.ttsPerChar[ttsProvider];
   const ttsCost = ttsCharacters * ttsPerChar;
   const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
@@ -161,7 +163,7 @@ export function estimateCost(
 
   return {
     llmCost, revisionCost, ttsCost, imageCost, videoCost, musicCost, totalCost,
-    details: { llmCalls, revisionRounds, ttsCharacters, aiImages, aiVideos: aiVideoScenes },
+    details: { llmCalls, gateEvaluations, revisionRounds, ttsCharacters, aiImages, aiVideos: aiVideoScenes },
     perScene,
   };
 }
@@ -177,7 +179,10 @@ export function formatCostEstimate(
     `  LLM:    $${breakdown.llmCost.toFixed(4)} (${breakdown.details.llmCalls} calls)`,
   ];
   if (breakdown.revisionCost > 0) {
-    lines.push(`  Gate:   $${breakdown.revisionCost.toFixed(4)} (${breakdown.details.revisionRounds} quality gate eval${breakdown.details.revisionRounds !== 1 ? "s" : ""})`);
+    const evals = breakdown.details.gateEvaluations;
+    const revs = breakdown.details.revisionRounds;
+    const detail = revs > 0 ? `${evals} eval${evals !== 1 ? "s" : ""}, ${revs} revision${revs !== 1 ? "s" : ""}` : `${evals} eval${evals !== 1 ? "s" : ""}`;
+    lines.push(`  Gate:   $${breakdown.revisionCost.toFixed(4)} (${detail})`);
   }
   lines.push(
     `  TTS:    $${breakdown.ttsCost.toFixed(4)} (${breakdown.details.ttsCharacters} chars)`,

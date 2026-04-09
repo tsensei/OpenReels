@@ -82,7 +82,7 @@ describe("createCliCallbacks", () => {
         totalCost: 0.1,
         videoCost: 0,
         musicCost: 0,
-        details: { llmCalls: 3, revisionRounds: 0, ttsCharacters: 500, aiImages: 2, aiVideos: 0 },
+        details: { llmCalls: 3, gateEvaluations: 0, revisionRounds: 0, ttsCharacters: 500, aiImages: 2, aiVideos: 0 },
       },
       "gemini",
     );

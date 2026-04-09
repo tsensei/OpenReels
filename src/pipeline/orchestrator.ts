@@ -510,8 +510,9 @@ function buildPipelineWorkflow(
       }
 
       // Cost estimation (uses the final revised score for accurate scene counts)
-      // Pass evaluationsCompleted so the cost includes the gate evaluation + any revision rounds
-      const costBreakdown = estimateCost(score, opts.imageProvider, opts.ttsProvider, opts.videoProvider, opts.llm.id, opts.musicProviderKey, evaluationsCompleted);
+      // Pass evaluations and revisions separately: evaluations count critic calls,
+      // revisions count director calls (evaluations >= revisions since gate always evaluates)
+      const costBreakdown = estimateCost(score, opts.imageProvider, opts.ttsProvider, opts.videoProvider, opts.llm.id, opts.musicProviderKey, evaluationsCompleted, revisionRoundsCompleted);
       directorResult.costBreakdown = costBreakdown;
       log.totalCost = { estimated: costBreakdown.totalCost };
 
