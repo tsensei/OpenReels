@@ -5,13 +5,12 @@ All notable changes to OpenReels will be documented in this file.
 ## [0.14.0] - 2026-04-09
 
 ### Added
-- **CaptionWrapper abstraction** that owns timing, word-state computation, spring physics, and chunk entrance animation. Style components are now thin renderers (~25-45 LOC each).
-- **Spring-animated captions**: words smoothly scale up when spoken via Remotion `spring()` with per-style physics configs (punchy, elegant, snappy, smooth).
-- **Three-state word rendering**: unspoken (dim), active (bright, spring-animated), spoken (settled). The currently-spoken word is visually distinct from already-spoken words.
-- **BoxHighlight** caption style (7th style): spring-animated background rectangle tracks the active word.
-- **KaraokeSweep** gradient wipe: accent-colored fill progresses left-to-right during active word.
-- **ColorHighlight** spotlight effect: only the active word gets a background (bouncing spotlight).
-- **Visual snapshot script** (`npx tsx src/remotion/captions/visual-snapshot.ts`) for manual QA of all 7 styles.
+- **Spring-animated captions**: words now smoothly scale up when spoken, with per-style physics (punchy, elegant, snappy, smooth). Captions feel alive instead of toggling on/off.
+- **Three-state word rendering**: each word transitions through unspoken (dim), active (bright, animated), and spoken (settled). The currently-spoken word is always visually distinct.
+- **BoxHighlight** caption style (7th style): a spring-animated background rectangle tracks the active word across the chunk.
+- **KaraokeSweep** gradient wipe: an accent-colored fill sweeps left-to-right behind each word as it's spoken.
+- **ColorHighlight** spotlight effect: only the active word gets a background highlight, creating a bouncing spotlight.
+- **Visual snapshot script** for QA testing all 7 caption styles (`npx tsx src/remotion/captions/visual-snapshot.ts`).
 
 ### Changed
 - Caption accent colors now use the archetype's `colorPalette.accent` instead of hardcoded green/red.

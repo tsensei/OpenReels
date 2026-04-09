@@ -70,7 +70,7 @@ Give it a topic. It handles everything:
 | **Voiceover** | Generates TTS audio with word-level timestamps for karaoke-style captions |
 | **Visuals** | AI images (Gemini, DALL-E), AI video clips (Google Veo, fal.ai Kling), and vision-verified stock footage that rejects bad matches and retries automatically |
 | **Music** | AI-generated background score via Google Lyria 3 Pro, scene-synced to match the video's emotional arc. Or pick from 25 bundled royalty-free tracks |
-| **Captions** | Styled, animated captions with proper Unicode, CJK, and RTL support across 6 caption styles |
+| **Captions** | Spring-animated 3-state captions with 7 distinct styles, per-archetype theming, and word-level karaoke highlighting |
 | **Assembly** | Composites everything into a vertical MP4 via Remotion with crossfade, slide, wipe, and flip transitions |
 | **Critique** | AI critic scores the output. If quality is below threshold, the pipeline re-runs |
 

@@ -28,7 +28,7 @@ src/
   remotion/
     compositions/       # OpenReelsVideo.tsx (main composition)
     beats/              # AIImageBeat, StockImageBeat, StockVideoBeat, TextCardBeat
-    captions/           # 6 caption styles + timing utils
+    captions/           # 7 caption styles + CaptionWrapper + timing utils
     audio/              # MusicTrack (ducking), VoiceoverTrack
     lib/                # score-to-props mapper, font loading
 web/                    # React + Tailwind SPA (Vite)
@@ -46,7 +46,7 @@ fixtures/               # sample DirectorScore JSONs
 ```bash
 pnpm install          # install dependencies
 pnpm start "topic"    # run full pipeline (CLI)
-pnpm test             # run vitest suite (288 tests)
+pnpm test             # run vitest suite (338 tests)
 ```
 
 ### Web UI (Docker Compose)
