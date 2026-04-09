@@ -129,9 +129,7 @@ const worker = new Worker<JobData>(
       keys,
       llmModel: providers.llmModel,
       llmBaseUrl: providers.llmBaseUrl,
-      searchProvider: providers.searchProvider as
-        | import("./schema/providers.js").SearchProviderKey
-        | undefined,
+      searchProvider: providers.searchProvider,
     });
 
     // Build callbacks that emit BullMQ progress events and update meta.json

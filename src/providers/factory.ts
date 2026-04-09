@@ -229,7 +229,7 @@ export function createVerificationModel(
       if (!baseUrl) {
         // BYOK path: base URL was passed via job keys, not env var.
         // Fall back to Anthropic for stock verification (needs VLM).
-        const antKey = apiKey ?? process.env["ANTHROPIC_API_KEY"];
+        const antKey = process.env["ANTHROPIC_API_KEY"];
         if (!antKey) {
           throw new Error(
             "Stock verification requires a VLM. Set OPENREELS_LLM_BASE_URL or ANTHROPIC_API_KEY, or use --no-stock-verify.",

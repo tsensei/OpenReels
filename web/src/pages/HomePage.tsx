@@ -61,7 +61,8 @@ const DISPLAY_NAMES: Record<string, string> = {
   anthropic: "Anthropic (Claude)",
   openai: "OpenAI (GPT)",
   gemini: "Google Gemini",
-  ollama: "Ollama (Local)",
+  openrouter: "OpenRouter",
+  "openai-compatible": "Custom (OpenAI-compatible)",
   // TTS
   elevenlabs: "ElevenLabs",
   inworld: "Inworld",
