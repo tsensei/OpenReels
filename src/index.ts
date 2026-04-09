@@ -22,6 +22,7 @@ async function main(): Promise<void> {
     imageProvider: opts.imageProvider,
     videoProvider: opts.videoProvider,
     musicProvider: opts.musicProvider,
+    searchProvider: opts.searchProvider,
   });
 
   // Initialize providers via factory
@@ -33,6 +34,9 @@ async function main(): Promise<void> {
     videoModel: opts.videoModel,
     music: opts.musicProvider,
     kokoroVoice: opts.kokoroVoice,
+    llmModel: opts.llmModel,
+    llmBaseUrl: opts.llmBaseUrl,
+    searchProvider: opts.searchProvider,
   });
 
   // Create CLI callbacks for terminal progress display

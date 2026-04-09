@@ -70,7 +70,12 @@ describe("estimateCost", () => {
     ]);
     const result = estimateCost(score);
     expect(result.totalCost).toBeCloseTo(
-      result.llmCost + result.revisionCost + result.ttsCost + result.imageCost + result.videoCost + result.musicCost,
+      result.llmCost +
+        result.revisionCost +
+        result.ttsCost +
+        result.imageCost +
+        result.videoCost +
+        result.musicCost,
     );
   });
 
@@ -122,19 +127,46 @@ describe("estimateCost", () => {
   it("includes revision cost with separate evaluation and revision counts", () => {
     const score = makeScore([{ visual_type: "ai_image", script_line: "Test" }]);
     // No gate activity
-    const noGate = estimateCost(score, "gemini", "elevenlabs", undefined, "anthropic", "bundled", 0, 0);
+    const noGate = estimateCost(
+      score,
+      "gemini",
+      "elevenlabs",
+      undefined,
+      "anthropic",
+      "bundled",
+      0,
+      0,
+    );
     expect(noGate.revisionCost).toBe(0);
     expect(noGate.details.gateEvaluations).toBe(0);
     expect(noGate.details.revisionRounds).toBe(0);
 
     // Gate only (score >= 7 on first try): 1 eval, 0 revisions
-    const gateOnly = estimateCost(score, "gemini", "elevenlabs", undefined, "anthropic", "bundled", 1, 0);
+    const gateOnly = estimateCost(
+      score,
+      "gemini",
+      "elevenlabs",
+      undefined,
+      "anthropic",
+      "bundled",
+      1,
+      0,
+    );
     expect(gateOnly.revisionCost).toBeGreaterThan(0);
     expect(gateOnly.details.gateEvaluations).toBe(1);
     expect(gateOnly.details.revisionRounds).toBe(0);
 
     // Full revision: 2 evals + 1 revision
-    const fullRevision = estimateCost(score, "gemini", "elevenlabs", undefined, "anthropic", "bundled", 2, 1);
+    const fullRevision = estimateCost(
+      score,
+      "gemini",
+      "elevenlabs",
+      undefined,
+      "anthropic",
+      "bundled",
+      2,
+      1,
+    );
     expect(fullRevision.revisionCost).toBeGreaterThan(gateOnly.revisionCost);
     expect(fullRevision.details.gateEvaluations).toBe(2);
     expect(fullRevision.details.revisionRounds).toBe(1);
@@ -150,6 +182,19 @@ describe("estimateCost", () => {
     // Gemini is ~30x cheaper than Anthropic for LLM
     expect(geminiLlm.llmCost).toBeLessThan(anthropic.llmCost);
     expect(geminiLlm.llmCost).toBeGreaterThan(0);
+  });
+
+  it("uses zero-cost fallback for unknown providers (openrouter)", () => {
+    const score = makeScore([{ visual_type: "ai_image", script_line: "Test" }]);
+    const result = estimateCost(score, "gemini", "elevenlabs", undefined, "openrouter");
+    expect(result.llmCost).toBe(0);
+    expect(result.totalCost).toBeGreaterThan(0); // still has image/TTS cost
+  });
+
+  it("uses zero-cost fallback for unknown providers (openai-compatible)", () => {
+    const score = makeScore([{ visual_type: "ai_image", script_line: "Test" }]);
+    const result = estimateCost(score, "gemini", "elevenlabs", undefined, "openai-compatible");
+    expect(result.llmCost).toBe(0);
   });
 });
 
@@ -170,7 +215,9 @@ describe("formatCostEstimate", () => {
 
   it("includes music line when lyria provider specified", () => {
     const score = makeScore([{ visual_type: "ai_image", script_line: "Test" }]);
-    const formatted = formatCostEstimate(estimateCost(score, "gemini", "elevenlabs", undefined, "anthropic", "lyria"));
+    const formatted = formatCostEstimate(
+      estimateCost(score, "gemini", "elevenlabs", undefined, "anthropic", "lyria"),
+    );
     expect(formatted).toContain("Music:");
     expect(formatted).toContain("Lyria AI generation");
   });
@@ -256,6 +303,12 @@ describe("computeActualLLMCost", () => {
     const gemini = computeActualLLMCost(usages, { aiImages: 0, ttsCharacters: 0 }, "gemini");
     expect(gemini.llmCost).toBeLessThan(anthropic.llmCost);
     expect(gemini.llmCost).toBeGreaterThan(0);
+  });
+
+  it("uses zero-cost fallback for unknown LLM provider (openrouter)", () => {
+    const usages: LLMUsage[] = [{ inputTokens: 1_000_000, outputTokens: 1_000_000 }];
+    const result = computeActualLLMCost(usages, { aiImages: 0, ttsCharacters: 0 }, "openrouter");
+    expect(result.llmCost).toBe(0);
   });
 
   it("uses Inworld TTS pricing when specified", () => {

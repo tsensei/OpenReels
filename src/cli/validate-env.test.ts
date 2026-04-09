@@ -107,7 +107,12 @@ describe("validateEnv", () => {
     process.env["ANTHROPIC_API_KEY"] = "test";
     process.env["ELEVENLABS_API_KEY"] = "test";
 
-    validateEnv({ provider: "anthropic", ttsProvider: "elevenlabs", imageProvider: "openai", videoProvider: "gemini" });
+    validateEnv({
+      provider: "anthropic",
+      ttsProvider: "elevenlabs",
+      imageProvider: "openai",
+      videoProvider: "gemini",
+    });
 
     expect(exitSpy).toHaveBeenCalledWith(1);
     const output = errorSpy.mock.calls.flat().join("");
@@ -184,7 +189,12 @@ describe("validateEnv", () => {
     process.env["ANTHROPIC_API_KEY"] = "test";
     process.env["ELEVENLABS_API_KEY"] = "test";
 
-    validateEnv({ provider: "anthropic", ttsProvider: "elevenlabs", imageProvider: "openai", musicProvider: "lyria" });
+    validateEnv({
+      provider: "anthropic",
+      ttsProvider: "elevenlabs",
+      imageProvider: "openai",
+      musicProvider: "lyria",
+    });
 
     expect(exitSpy).toHaveBeenCalledWith(1);
     const output = errorSpy.mock.calls.flat().join("");
@@ -200,12 +210,86 @@ describe("validateEnv", () => {
     process.env["OPENAI_API_KEY"] = "test";
     delete process.env["GOOGLE_API_KEY"];
 
-    validateEnv({ provider: "anthropic", ttsProvider: "elevenlabs", imageProvider: "openai", musicProvider: "bundled" });
+    validateEnv({
+      provider: "anthropic",
+      ttsProvider: "elevenlabs",
+      imageProvider: "openai",
+      musicProvider: "bundled",
+    });
 
     expect(exitSpy).not.toHaveBeenCalled();
 
     delete process.env["ANTHROPIC_API_KEY"];
     delete process.env["ELEVENLABS_API_KEY"];
     delete process.env["OPENAI_API_KEY"];
+  });
+
+  it("requires OPENROUTER_API_KEY when --provider openrouter", () => {
+    delete process.env["OPENROUTER_API_KEY"];
+    process.env["ELEVENLABS_API_KEY"] = "test";
+    process.env["GOOGLE_API_KEY"] = "test";
+
+    validateEnv({ provider: "openrouter", ttsProvider: "elevenlabs", imageProvider: "gemini" });
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const output = errorSpy.mock.calls.flat().join("");
+    expect(output).toContain("OPENROUTER_API_KEY");
+
+    delete process.env["ELEVENLABS_API_KEY"];
+    delete process.env["GOOGLE_API_KEY"];
+  });
+
+  it("requires TAVILY_API_KEY when --search-provider tavily is explicit", () => {
+    process.env["ANTHROPIC_API_KEY"] = "test";
+    process.env["ELEVENLABS_API_KEY"] = "test";
+    process.env["GOOGLE_API_KEY"] = "test";
+    delete process.env["TAVILY_API_KEY"];
+
+    validateEnv({
+      provider: "anthropic",
+      ttsProvider: "elevenlabs",
+      imageProvider: "gemini",
+      searchProvider: "tavily",
+    });
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const output = errorSpy.mock.calls.flat().join("");
+    expect(output).toContain("TAVILY_API_KEY");
+
+    delete process.env["ANTHROPIC_API_KEY"];
+    delete process.env["ELEVENLABS_API_KEY"];
+    delete process.env["GOOGLE_API_KEY"];
+  });
+
+  it("warns when openrouter without TAVILY_API_KEY and no explicit search", () => {
+    process.env["OPENROUTER_API_KEY"] = "test";
+    process.env["ELEVENLABS_API_KEY"] = "test";
+    process.env["GOOGLE_API_KEY"] = "test";
+    delete process.env["TAVILY_API_KEY"];
+
+    validateEnv({ provider: "openrouter", ttsProvider: "elevenlabs", imageProvider: "gemini" });
+
+    const output = warnSpy.mock.calls.flat().join("");
+    expect(output).toContain("TAVILY_API_KEY not set");
+
+    delete process.env["OPENROUTER_API_KEY"];
+    delete process.env["ELEVENLABS_API_KEY"];
+    delete process.env["GOOGLE_API_KEY"];
+  });
+
+  it("does not warn about TAVILY when using anthropic provider", () => {
+    process.env["ANTHROPIC_API_KEY"] = "test";
+    process.env["ELEVENLABS_API_KEY"] = "test";
+    process.env["GOOGLE_API_KEY"] = "test";
+    delete process.env["TAVILY_API_KEY"];
+
+    validateEnv({ provider: "anthropic", ttsProvider: "elevenlabs", imageProvider: "gemini" });
+
+    const output = warnSpy.mock.calls.flat().join("");
+    expect(output).not.toContain("TAVILY_API_KEY");
+
+    delete process.env["ANTHROPIC_API_KEY"];
+    delete process.env["ELEVENLABS_API_KEY"];
+    delete process.env["GOOGLE_API_KEY"];
   });
 });

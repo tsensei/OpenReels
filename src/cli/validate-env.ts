@@ -1,4 +1,11 @@
-import type { ImageProviderKey, LLMProviderKey, MusicProviderKey, TTSProviderKey, VideoProviderKey } from "../schema/providers.js";
+import type {
+  ImageProviderKey,
+  LLMProviderKey,
+  MusicProviderKey,
+  SearchProviderKey,
+  TTSProviderKey,
+  VideoProviderKey,
+} from "../schema/providers.js";
 
 interface EnvRequirement {
   key: string;
@@ -13,6 +20,7 @@ export function validateEnv(opts: {
   imageProvider: ImageProviderKey;
   videoProvider?: VideoProviderKey;
   musicProvider?: MusicProviderKey;
+  searchProvider?: SearchProviderKey;
 }): void {
   const requirements: EnvRequirement[] = [
     {
@@ -25,7 +33,10 @@ export function validateEnv(opts: {
       key: "OPENAI_API_KEY",
       provider: "OpenAI (LLM/Image)",
       signupUrl: "https://platform.openai.com/api-keys",
-      required: opts.provider === "openai" || opts.imageProvider === "openai" || opts.ttsProvider === "openai-tts",
+      required:
+        opts.provider === "openai" ||
+        opts.imageProvider === "openai" ||
+        opts.ttsProvider === "openai-tts",
     },
     {
       key: "GOOGLE_API_KEY",
@@ -50,6 +61,18 @@ export function validateEnv(opts: {
       signupUrl: "https://inworld.ai/",
       required: opts.ttsProvider === "inworld",
     },
+    {
+      key: "OPENROUTER_API_KEY",
+      provider: "OpenRouter (LLM)",
+      signupUrl: "https://openrouter.ai/",
+      required: opts.provider === "openrouter",
+    },
+    {
+      key: "TAVILY_API_KEY",
+      provider: "Tavily (Web Search)",
+      signupUrl: "https://tavily.com/",
+      required: opts.searchProvider === "tavily",
+    },
   ];
 
   const missing = requirements.filter((r) => r.required && !process.env[r.key]);
@@ -62,6 +85,19 @@ export function validateEnv(opts: {
       "\nWarning: No stock media API key found (PEXELS_API_KEY or PIXABAY_API_KEY).\n" +
         "Scenes using stock_image or stock_video will render as blank frames.\n" +
         "Get a free key: https://www.pexels.com/api/ or https://pixabay.com/api/docs/\n",
+    );
+  }
+
+  // Warn when openrouter/openai-compatible without explicit search provider and no Tavily key
+  const needsSearchWarning =
+    (opts.provider === "openrouter" || opts.provider === "openai-compatible") &&
+    !opts.searchProvider &&
+    !process.env["TAVILY_API_KEY"];
+  if (needsSearchWarning) {
+    console.warn(
+      "\nWarning: TAVILY_API_KEY not set. Web search will be disabled for this provider.\n" +
+        "Research agent will use parametric knowledge only.\n" +
+        "Get a key: https://tavily.com/ or use --search-provider none to suppress this warning.\n",
     );
   }
 

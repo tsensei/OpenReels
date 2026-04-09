@@ -49,8 +49,9 @@ export interface ActualCostBreakdown {
 //   OpenAI GPT-4.1: $2/M input, $8/M output (openai.com/api/pricing)
 //   ElevenLabs: ~$0.30 per 10k chars on Creator tier (elevenlabs.io/pricing/api)
 //   Gemini 3.1 Flash Image: $0.04/image at 1024px (ai.google.dev/gemini-api/docs/pricing)
-const PRICING = {
-  // Using Anthropic as default (higher of the two, conservative estimate)
+const LLM_PRICING_DEFAULT = { perInputToken: 0, perOutputToken: 0 };
+
+const LLM_PRICING = {
   anthropic: {
     perInputToken: 3 / 1_000_000, // $3 per 1M input tokens
     perOutputToken: 15 / 1_000_000, // $15 per 1M output tokens
@@ -60,9 +61,12 @@ const PRICING = {
     perOutputToken: 8 / 1_000_000, // $8 per 1M output tokens
   },
   gemini: {
-    perInputToken: 0.10 / 1_000_000, // $0.10 per 1M input tokens (Gemini 2.5 Flash)
-    perOutputToken: 0.40 / 1_000_000, // $0.40 per 1M output tokens (Gemini 2.5 Flash)
+    perInputToken: 0.1 / 1_000_000, // $0.10 per 1M input tokens (Gemini 2.5 Flash)
+    perOutputToken: 0.4 / 1_000_000, // $0.40 per 1M output tokens (Gemini 2.5 Flash)
   },
+};
+
+const PRICING = {
   ttsPerChar: {
     elevenlabs: 0.00018, // $0.18 per 1K chars (avg of Creator $0.20 and Pro $0.17, Multilingual v2)
     inworld: 0.00001, // $0.01 per 1K chars (Inworld TTS-1.5 Max: $10/1M chars)
@@ -110,7 +114,7 @@ export function estimateCost(
   // research + CD + critic + 1 per ai_image + 2 per ai_video (image prompt + motion prompt)
   const llmCalls = 3 + aiImageScenes + aiVideoScenes * 2;
 
-  const p = PRICING[llmProvider];
+  const p = LLM_PRICING[llmProvider as keyof typeof LLM_PRICING] ?? LLM_PRICING_DEFAULT;
   const callCost = (est: { input: number; output: number }) =>
     est.input * p.perInputToken + est.output * p.perOutputToken;
 
@@ -123,14 +127,17 @@ export function estimateCost(
   // Quality gate cost: critic calls for evaluation + director calls for revision.
   // Split because evaluations > revisions (gate always evaluates, only revises if score < 7).
   // Slightly undercounts revise calls because the prompt includes the original score JSON (~1-3K extra tokens).
-  const revisionCost = gateEvaluations * callCost(TOKEN_ESTIMATES.critic) + revisionRounds * callCost(TOKEN_ESTIMATES.creativeDirector);
+  const revisionCost =
+    gateEvaluations * callCost(TOKEN_ESTIMATES.critic) +
+    revisionRounds * callCost(TOKEN_ESTIMATES.creativeDirector);
   const ttsPerChar = PRICING.ttsPerChar[ttsProvider];
   const ttsCost = ttsCharacters * ttsPerChar;
   const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
   const imageCost = aiImages * perImage;
 
   // Video generation cost: ~6 seconds per clip at provider rate
-  const videoPerSecond = videoProvider === "fal" ? PRICING.falKlingPerSecond : PRICING.veoLitePerSecond;
+  const videoPerSecond =
+    videoProvider === "fal" ? PRICING.falKlingPerSecond : PRICING.veoLitePerSecond;
   const videoCost = aiVideoScenes * 6 * videoPerSecond;
 
   // Music generation cost: Lyria $0.08/track + ~1 LLM call for prompter
@@ -162,8 +169,21 @@ export function estimateCost(
   });
 
   return {
-    llmCost, revisionCost, ttsCost, imageCost, videoCost, musicCost, totalCost,
-    details: { llmCalls, gateEvaluations, revisionRounds, ttsCharacters, aiImages, aiVideos: aiVideoScenes },
+    llmCost,
+    revisionCost,
+    ttsCost,
+    imageCost,
+    videoCost,
+    musicCost,
+    totalCost,
+    details: {
+      llmCalls,
+      gateEvaluations,
+      revisionRounds,
+      ttsCharacters,
+      aiImages,
+      aiVideos: aiVideoScenes,
+    },
     perScene,
   };
 }
@@ -181,7 +201,10 @@ export function formatCostEstimate(
   if (breakdown.revisionCost > 0) {
     const evals = breakdown.details.gateEvaluations;
     const revs = breakdown.details.revisionRounds;
-    const detail = revs > 0 ? `${evals} eval${evals !== 1 ? "s" : ""}, ${revs} revision${revs !== 1 ? "s" : ""}` : `${evals} eval${evals !== 1 ? "s" : ""}`;
+    const detail =
+      revs > 0
+        ? `${evals} eval${evals !== 1 ? "s" : ""}, ${revs} revision${revs !== 1 ? "s" : ""}`
+        : `${evals} eval${evals !== 1 ? "s" : ""}`;
     lines.push(`  Gate:   $${breakdown.revisionCost.toFixed(4)} (${detail})`);
   }
   lines.push(
@@ -189,7 +212,9 @@ export function formatCostEstimate(
     `  Images: $${breakdown.imageCost.toFixed(4)} (${breakdown.details.aiImages} AI images @ $${perImage.toFixed(3)}/ea)`,
   );
   if (breakdown.details.aiVideos > 0) {
-    lines.push(`  Video:  $${breakdown.videoCost.toFixed(4)} (${breakdown.details.aiVideos} AI videos)`);
+    lines.push(
+      `  Video:  $${breakdown.videoCost.toFixed(4)} (${breakdown.details.aiVideos} AI videos)`,
+    );
   }
   if (breakdown.musicCost > 0) {
     lines.push(`  Music:  $${breakdown.musicCost.toFixed(4)} (Lyria AI generation)`);
@@ -197,7 +222,9 @@ export function formatCostEstimate(
   lines.push(`  Stock:  free`);
   if (stockSceneCount && stockSceneCount > 0) {
     const maxAdditional = stockSceneCount * perImage;
-    lines.push(`  Max additional if stock falls back: +$${maxAdditional.toFixed(3)} (${stockSceneCount} stock scenes × $${perImage.toFixed(3)}/ea)`);
+    lines.push(
+      `  Max additional if stock falls back: +$${maxAdditional.toFixed(3)} (${stockSceneCount} stock scenes × $${perImage.toFixed(3)}/ea)`,
+    );
   }
   // Per-scene breakdown
   if (breakdown.perScene && breakdown.perScene.length > 0) {
@@ -223,7 +250,7 @@ export function computeActualLLMCost(
   videoProvider?: VideoProviderKey,
   musicProvider?: MusicProviderKey,
 ): ActualCostBreakdown {
-  const p = PRICING[provider];
+  const p = LLM_PRICING[provider as keyof typeof LLM_PRICING] ?? LLM_PRICING_DEFAULT;
   const totalInputTokens = usages.reduce((sum, u) => sum + u.inputTokens, 0);
   const totalOutputTokens = usages.reduce((sum, u) => sum + u.outputTokens, 0);
 
@@ -232,7 +259,8 @@ export function computeActualLLMCost(
   const ttsCost = nonLlm.ttsCharacters * ttsPerChar;
   const perImage = imageProvider === "openai" ? PRICING.openaiPerImage : PRICING.geminiPerImage;
   const imageCost = nonLlm.aiImages * perImage;
-  const videoPerSecond = videoProvider === "fal" ? PRICING.falKlingPerSecond : PRICING.veoLitePerSecond;
+  const videoPerSecond =
+    videoProvider === "fal" ? PRICING.falKlingPerSecond : PRICING.veoLitePerSecond;
   const aiVideos = nonLlm.aiVideos ?? 0;
   const videoCost = aiVideos * 6 * videoPerSecond;
   const musicCost = nonLlm.musicGenerated && musicProvider === "lyria" ? PRICING.lyriaPerTrack : 0;
@@ -263,7 +291,9 @@ export function formatActualCost(breakdown: ActualCostBreakdown): string {
     `  Images: $${breakdown.imageCost.toFixed(4)} (${breakdown.details.aiImages} AI images)`,
   ];
   if (breakdown.details.aiVideos > 0) {
-    lines.push(`  Video:  $${breakdown.videoCost.toFixed(4)} (${breakdown.details.aiVideos} AI videos)`);
+    lines.push(
+      `  Video:  $${breakdown.videoCost.toFixed(4)} (${breakdown.details.aiVideos} AI videos)`,
+    );
   }
   if (breakdown.musicCost > 0) {
     lines.push(`  Music:  $${breakdown.musicCost.toFixed(4)} (Lyria AI generation)`);

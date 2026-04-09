@@ -1,7 +1,14 @@
 import { createRequire } from "node:module";
 import { Command, Option } from "commander";
 import { PACING_CONFIG } from "../agents/creative-director.js";
-import type { ImageProviderKey, LLMProviderKey, MusicProviderKey, TTSProviderKey, VideoProviderKey } from "../schema/providers.js";
+import type {
+  ImageProviderKey,
+  LLMProviderKey,
+  MusicProviderKey,
+  SearchProviderKey,
+  TTSProviderKey,
+  VideoProviderKey,
+} from "../schema/providers.js";
 
 const require = createRequire(import.meta.url);
 const { version } = require("../../package.json") as { version: string };
@@ -15,6 +22,9 @@ export interface CLIOptions {
   videoModel?: string;
   musicProvider: MusicProviderKey;
   kokoroVoice?: string;
+  llmModel?: string;
+  llmBaseUrl?: string;
+  searchProvider?: SearchProviderKey;
   noVideo: boolean;
   archetype?: string;
   pacing?: string;
@@ -72,9 +82,34 @@ export function parseArgs(): CLIOptions {
     .version(version)
     .argument("[topic]", "The topic for your video")
     .addOption(
-      new Option("-p, --provider <provider>", "LLM provider (use 'google' to set LLM+image+video to Gemini)")
-        .choices(["anthropic", "openai", "gemini", "google", "local"])
+      new Option(
+        "-p, --provider <provider>",
+        "LLM provider (use 'google' to set LLM+image+video to Gemini)",
+      )
+        .choices([
+          "anthropic",
+          "openai",
+          "gemini",
+          "openrouter",
+          "openai-compatible",
+          "google",
+          "local",
+        ])
         .default("anthropic"),
+    )
+    .option(
+      "--llm-model <model>",
+      "Model ID override (e.g. anthropic/claude-sonnet-4 for OpenRouter)",
+    )
+    .option(
+      "--llm-base-url <url>",
+      "Base URL for openai-compatible provider (e.g. http://localhost:11434/v1)",
+    )
+    .addOption(
+      new Option(
+        "--search-provider <provider>",
+        "Search provider for web research (native uses provider built-in, tavily uses Tavily API)",
+      ).choices(["native", "tavily", "none"]),
     )
     .addOption(
       new Option("-i, --image-provider <provider>", "Image generation provider")
@@ -86,11 +121,16 @@ export function parseArgs(): CLIOptions {
         .choices(["elevenlabs", "inworld", "kokoro", "gemini-tts", "openai-tts"])
         .default("elevenlabs"),
     )
-    .option("--kokoro-voice <voice>", "Kokoro voice preset (e.g. af_heart, bf_emma, am_fenrir)", "af_heart")
+    .option(
+      "--kokoro-voice <voice>",
+      "Kokoro voice preset (e.g. af_heart, bf_emma, am_fenrir)",
+      "af_heart",
+    )
     .option("-a, --archetype <archetype>", "Visual archetype override")
     .addOption(
-      new Option("--pacing <tier>", "Pacing tier override (overrides archetype default)")
-        .choices(Object.keys(PACING_CONFIG)),
+      new Option("--pacing <tier>", "Pacing tier override (overrides archetype default)").choices(
+        Object.keys(PACING_CONFIG),
+      ),
     )
     .option("--platform <platform>", "Target platform (youtube, tiktok, instagram)", "youtube")
     .option("--dry-run", "Output DirectorScore JSON without generating assets", false)
@@ -103,15 +143,29 @@ export function parseArgs(): CLIOptions {
         .default("bundled"),
     )
     .option("--music", "Include background music (use --no-music to disable)", true)
-    .option("--stock-verify", "Verify stock footage with vision model (use --no-stock-verify to disable)", true)
-    .option("--stock-confidence <n>", "Min confidence threshold for stock verification (0-1)", parseFloat, 0.6)
+    .option(
+      "--stock-verify",
+      "Verify stock footage with vision model (use --no-stock-verify to disable)",
+      true,
+    )
+    .option(
+      "--stock-confidence <n>",
+      "Min confidence threshold for stock verification (0-1)",
+      parseFloat,
+      0.6,
+    )
     .option("--stock-max-attempts <n>", "Max stock API calls per scene", parseInt, 4)
     .option("--verification-model <model>", "Model override for stock verification VLM")
     .addOption(
-      new Option("--video-provider <provider>", "Video generation provider")
-        .choices(["gemini", "fal"])
+      new Option("--video-provider <provider>", "Video generation provider").choices([
+        "gemini",
+        "fal",
+      ]),
     )
-    .option("--video-model <model>", "Video model override (e.g. veo-3.1-lite-preview, fal-ai/kling-video/v2.1/standard/image-to-video)")
+    .option(
+      "--video-model <model>",
+      "Video model override (e.g. veo-3.1-lite-preview, fal-ai/kling-video/v2.1/standard/image-to-video)",
+    )
     .option("--video", "Enable AI video generation (use --no-video to disable)", true)
     .option("--usage", "Show cost usage report from past runs in the output directory", false)
     .parse();
@@ -150,6 +204,13 @@ export function parseArgs(): CLIOptions {
     if (!musicSource || musicSource === "default") {
       opts["musicProvider"] = "lyria";
     }
+  } else if (opts["provider"] === "openai-compatible") {
+    if (!opts["llmBaseUrl"]) {
+      program.error("--llm-base-url is required when using --provider openai-compatible");
+    }
+    if (!opts["llmModel"]) {
+      program.error("--llm-model is required when using --provider openai-compatible");
+    }
   } else if (opts["provider"] === "local") {
     opts["provider"] = "anthropic"; // LLM defaults unchanged
     const ttsSource = program.getOptionValueSource("ttsProvider");
@@ -167,6 +228,9 @@ export function parseArgs(): CLIOptions {
     videoModel: opts["videoModel"] as string | undefined,
     musicProvider: opts["musicProvider"] as MusicProviderKey,
     kokoroVoice: opts["kokoroVoice"] as string | undefined,
+    llmModel: opts["llmModel"] as string | undefined,
+    llmBaseUrl: opts["llmBaseUrl"] as string | undefined,
+    searchProvider: opts["searchProvider"] as SearchProviderKey | undefined,
     noVideo: opts["video"] === false,
     archetype: opts["archetype"] as string | undefined,
     pacing: opts["pacing"] as string | undefined,
