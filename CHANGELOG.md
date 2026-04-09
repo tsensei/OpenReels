@@ -14,8 +14,10 @@ All notable changes to OpenReels will be documented in this file.
 - **Web UI provider expansion**: OpenRouter and Custom (OpenAI-compatible) options in the LLM dropdown with conditional model ID and base URL inputs. Search provider dropdown (native/tavily/none).
 
 ### Changed
-- `BaseLLM` now accepts optional `searchTools` via constructor for search tool injection. Existing providers (Anthropic, OpenAI, Gemini) are unaffected when no tools are injected.
-- LLM cost estimation uses a separate `LLM_PRICING` lookup with zero-cost fallback for unknown providers instead of crashing on unrecognized provider keys.
+- Cost estimation gracefully handles unknown providers (shows $0.00 with a note) instead of crashing.
+
+### For contributors
+- `BaseLLM` now accepts optional `searchTools` via constructor for search tool injection. Existing providers are unaffected.
 - Worker key resolution uses a lookup map instead of hardcoded if/else chain.
 
 ## [0.15.0] - 2026-04-09

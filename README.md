@@ -82,7 +82,8 @@ Mix and match providers or go all-in on one ecosystem:
 
 | Capability | Providers |
 |-----------|-----------|
-| **LLM** | Anthropic Claude, OpenAI GPT, Google Gemini |
+| **LLM** | Anthropic Claude, OpenAI GPT, Google Gemini, OpenRouter (300+ models), any OpenAI-compatible endpoint |
+| **Search** | Native (provider built-in), Tavily, or parametric knowledge |
 | **TTS** | ElevenLabs, Inworld, OpenAI TTS, Gemini TTS, Kokoro (free, local) |
 | **Images** | Gemini Imagen, OpenAI DALL-E |
 | **Video** | Google Veo, fal.ai Kling (with cross-provider fallback) |
@@ -159,7 +160,10 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--provider <name>` | LLM provider (`anthropic`, `openai`, `gemini`, `google`, `local`) | `anthropic` |
+| `--provider <name>` | LLM provider (`anthropic`, `openai`, `gemini`, `openrouter`, `openai-compatible`, `google`, `local`) | `anthropic` |
+| `--llm-model <model>` | Model ID override (e.g. `anthropic/claude-sonnet-4` for OpenRouter) | provider default |
+| `--llm-base-url <url>` | Base URL for `openai-compatible` (e.g. `http://localhost:11434/v1`) | — |
+| `--search-provider <name>` | Search provider (`native`, `tavily`, `none`) | auto-detect |
 | `--image-provider <name>` | Image provider (`gemini`, `openai`) | `gemini` |
 | `--tts-provider <name>` | TTS provider (`elevenlabs`, `inworld`, `kokoro`, `gemini-tts`, `openai-tts`) | `elevenlabs` |
 | `--music-provider <name>` | Music provider (`bundled`, `lyria`) | `bundled` |

@@ -26,7 +26,7 @@ LLM providers power the research, director, image-prompter, and critic agents.
 In `src/schema/providers.ts`, add your key to the union type:
 
 ```typescript
-export type LLMProviderKey = "anthropic" | "openai" | "gemini" | "your-provider";
+export type LLMProviderKey = "anthropic" | "openai" | "gemini" | "openrouter" | "openai-compatible" | "your-provider";
 ```
 
 ### 2. Create the implementation

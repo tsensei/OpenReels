@@ -9,7 +9,8 @@ OpenReels uses a pluggable provider system. Each stage of the pipeline (scriptin
 
 | Capability | Providers | Env var |
 |-----------|-----------|---------|
-| **LLM** | Anthropic Claude, OpenAI GPT, Google Gemini | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY` |
+| **LLM** | Anthropic Claude, OpenAI GPT, Google Gemini, OpenRouter, any OpenAI-compatible | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `OPENROUTER_API_KEY`, `OPENREELS_LLM_API_KEY` |
+| **Search** | Native (provider built-in), Tavily, None (parametric) | `TAVILY_API_KEY` |
 | **TTS** | ElevenLabs, Inworld, OpenAI TTS, Gemini TTS, Kokoro (free, local) | `ELEVENLABS_API_KEY`, `INWORLD_TTS_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`, none |
 | **Images** | Gemini Imagen, OpenAI DALL-E | `GOOGLE_API_KEY`, `OPENAI_API_KEY` |
 | **Video** | Google Veo, fal.ai Kling | `GOOGLE_API_KEY`, `FAL_API_KEY` |

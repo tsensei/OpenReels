@@ -60,10 +60,14 @@ Provider implementations behind stable interfaces. Each category has a base inte
 providers/
   factory.ts          # createProviders() — wires everything together
   llm/
-    base.ts           # BaseLLM abstract class
-    anthropic.ts      # AnthropicLLM (Claude)
-    openai.ts         # OpenAILLM (GPT)
-    gemini.ts         # GeminiLLM (Gemini)
+    base.ts           # BaseLLM abstract class (search injection, parametric fallback)
+    anthropic.ts      # AnthropicLLM (Claude, native web search)
+    openai.ts         # OpenAILLM (GPT, native web search)
+    gemini.ts         # GeminiLLM (Gemini, native Google Search)
+    openrouter.ts     # OpenRouterLLM (300+ models via OpenRouter)
+    openai-compatible.ts  # OpenAICompatibleLLM (Ollama, Together, Groq, etc.)
+  search/
+    tavily.ts         # Tavily search tools for providers without native search
   tts/
     elevenlabs.ts     # ElevenLabsTTS (native word timestamps)
     inworld.ts        # InworldTTS (native word timestamps)

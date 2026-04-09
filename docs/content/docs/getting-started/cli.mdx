@@ -22,7 +22,10 @@ The topic is a required positional argument. Everything else is optional.
 
 | Flag | Description | Default |
 |---|---|---|
-| `-p, --provider <name>` | LLM provider: `anthropic`, `openai`, `gemini`, `google`, `local` | `anthropic` |
+| `-p, --provider <name>` | LLM provider: `anthropic`, `openai`, `gemini`, `openrouter`, `openai-compatible`, `google`, `local` | `anthropic` |
+| `--llm-model <model>` | Model ID override (e.g. `anthropic/claude-sonnet-4` for OpenRouter) | provider default |
+| `--llm-base-url <url>` | Base URL for `openai-compatible` provider (e.g. `http://localhost:11434/v1`) | — |
+| `--search-provider <name>` | Search provider: `native`, `tavily`, `none` | auto-detect |
 | `-i, --image-provider <name>` | Image provider: `gemini`, `openai` | `gemini` |
 | `--tts-provider <name>` | TTS provider: `elevenlabs`, `inworld`, `kokoro`, `gemini-tts`, `openai-tts` | `elevenlabs` |
 | `--music-provider <name>` | Music provider: `bundled`, `lyria` | `bundled` |
