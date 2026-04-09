@@ -62,7 +62,6 @@ export function getWordState(word: WordTimestamp, currentTime: number): WordStat
 }
 
 /**
- /**
  * Compute WordRenderState[] for a chunk of words. Pure function, no React hooks.
  *
  * springFn receives a globalIndex and returns the spring progress (0-1) for that

@@ -14,12 +14,11 @@ import { TextCardBeat } from "../beats/TextCardBeat";
 import { BlockImpact } from "../captions/BlockImpact";
 import { BoldOutline } from "../captions/BoldOutline";
 import { BoxHighlight } from "../captions/BoxHighlight";
-import { CaptionWrapper, type SpringConfig } from "../captions/CaptionWrapper";
+import { CaptionWrapper, type SpringConfig, type CaptionStyleProps } from "../captions/CaptionWrapper";
 import { Clean } from "../captions/Clean";
 import { ColorHighlight } from "../captions/ColorHighlight";
 import { GradientRise } from "../captions/GradientRise";
 import { KaraokeSweep } from "../captions/KaraokeSweep";
-import type { CaptionStyleProps } from "../captions/CaptionWrapper";
 import type { CompositionProps, SceneProps } from "../lib/score-to-props";
 
 const BEAT_COMPONENTS: Record<string, React.FC<SceneProps>> = {

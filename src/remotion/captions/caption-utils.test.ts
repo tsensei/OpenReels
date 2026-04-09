@@ -114,4 +114,12 @@ describe("getWordChunk", () => {
     const { chunkStart } = getWordChunk(gapped, 0.8, 2, 0.3);
     expect(chunkStart).toBe(0);
   });
+
+  it("returns empty chunk after voiceover ends plus linger", () => {
+    // After the last word ends + lingerS, captions should fade out
+    // instead of showing stale text during a musical outro.
+    const { chunk, chunkStart } = getWordChunk(words, 5.0, 3, 0.3);
+    expect(chunk).toEqual([]);
+    expect(chunkStart).toBe(words.length);
+  });
 });

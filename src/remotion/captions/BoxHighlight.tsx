@@ -35,7 +35,7 @@ export const BoxHighlight: React.FC<CaptionStyleProps> = ({ wordStates, accentCo
               : ws.state === "spoken"
                 ? "rgba(255,255,255,0.08)"
                 : "transparent",
-            borderRadius: ws.springProgress > 0 ? 8 : 0,
+            borderRadius: isActive ? 8 * ws.springProgress : ws.state === "spoken" ? 4 : 0,
             padding: `4px ${pad}px`,
             opacity: ws.state === "unspoken" ? 0.4 : 1,
             textShadow: ws.state === "unspoken" ? "0 2px 8px rgba(0,0,0,0.6)" : "none",
