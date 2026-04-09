@@ -431,10 +431,13 @@ function buildPipelineWorkflow(
       let bestCritiqueScore = 0;
       let revisionRoundsCompleted = 0;
 
+      let evaluationsCompleted = 0;
+
       for (let round = 0; round < MAX_REVISION_ROUNDS; round++) {
         try {
           const critiqueOutput = await evaluate(opts.llm, score, opts.topic, opts.pacing);
           llmUsages.push(critiqueOutput.usage);
+          evaluationsCompleted++;
           const critique = critiqueOutput.data;
 
           // Track highest-scoring revision
@@ -453,7 +456,7 @@ function buildPipelineWorkflow(
           score = revised.data;
           revisionRoundsCompleted++;
         } catch (err) {
-          // Graceful degradation: if the critic fails, proceed with current best score
+          // Graceful degradation: if the critic or revision fails, proceed with current best score
           console.warn(`[director] Revision round ${round + 1} failed: ${err}`);
           break;
         }
@@ -491,7 +494,8 @@ function buildPipelineWorkflow(
       }
 
       // Cost estimation (uses the final revised score for accurate scene counts)
-      const costBreakdown = estimateCost(score, opts.imageProvider, opts.ttsProvider, opts.videoProvider, opts.llm.id, opts.musicProviderKey, revisionRoundsCompleted);
+      // Pass evaluationsCompleted so the cost includes the gate evaluation + any revision rounds
+      const costBreakdown = estimateCost(score, opts.imageProvider, opts.ttsProvider, opts.videoProvider, opts.llm.id, opts.musicProviderKey, evaluationsCompleted);
       directorResult.costBreakdown = costBreakdown;
       log.totalCost = { estimated: costBreakdown.totalCost };
 

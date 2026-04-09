@@ -249,5 +249,12 @@ Keep the same archetype. Maintain the GOLDEN RULE: never use the same visual_typ
   });
 
   const validated = DirectorScore.parse(result.data);
+
+  // Prevent archetype drift: the LLM may change the archetype during revision
+  // despite prompt instructions. Force it back to the original.
+  if (validated.archetype !== originalScore.archetype) {
+    (validated as { archetype: string }).archetype = originalScore.archetype;
+  }
+
   return { data: validated, usage: result.usage };
 }

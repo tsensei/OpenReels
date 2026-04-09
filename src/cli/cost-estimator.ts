@@ -175,7 +175,7 @@ export function formatCostEstimate(
     `  LLM:    $${breakdown.llmCost.toFixed(4)} (${breakdown.details.llmCalls} calls)`,
   ];
   if (breakdown.revisionCost > 0) {
-    lines.push(`  Revise: $${breakdown.revisionCost.toFixed(4)} (${breakdown.details.revisionRounds} revision round${breakdown.details.revisionRounds !== 1 ? "s" : ""})`);
+    lines.push(`  Gate:   $${breakdown.revisionCost.toFixed(4)} (${breakdown.details.revisionRounds} quality gate eval${breakdown.details.revisionRounds !== 1 ? "s" : ""})`);
   }
   lines.push(
     `  TTS:    $${breakdown.ttsCost.toFixed(4)} (${breakdown.details.ttsCharacters} chars)`,
