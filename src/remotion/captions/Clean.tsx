@@ -4,7 +4,7 @@ import type { CaptionStyleProps } from "./CaptionWrapper";
 
 /**
  * Clean caption style: minimalist white text with subtle shadow.
- * Spoken words are brighter and slightly larger than unspoken.
+ * Active word springs slightly larger and brighter. Spoken words settle.
  */
 export const Clean: React.FC<CaptionStyleProps> = ({ wordStates }) => (
   <div
@@ -17,14 +17,19 @@ export const Clean: React.FC<CaptionStyleProps> = ({ wordStates }) => (
     }}
   >
     {wordStates.map((ws) => {
-      const isSpoken = ws.state !== "unspoken";
+      const fontSize = 44 + ws.springProgress * 8; // 44 -> 52
       return (
         <span
           key={`${ws.word.word}-${ws.globalIndex}`}
           style={{
-            fontSize: isSpoken ? 56 : 44,
-            fontWeight: isSpoken ? 700 : 500,
-            color: isSpoken ? "#FFFFFF" : "rgba(255,255,255,0.5)",
+            fontSize,
+            fontWeight: ws.state === "unspoken" ? 500 : 700,
+            color:
+              ws.state === "unspoken"
+                ? "rgba(255,255,255,0.4)"
+                : ws.state === "active"
+                  ? "#FFFFFF"
+                  : "rgba(255,255,255,0.75)",
             fontFamily: CAPTION_FONTS.inter,
             textShadow: "0 2px 10px rgba(0,0,0,0.7)",
           }}

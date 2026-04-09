@@ -3,11 +3,11 @@ import { CAPTION_FONTS } from "../lib/fonts";
 import type { CaptionStyleProps } from "./CaptionWrapper";
 
 /**
- * Color highlight caption style: spotlight effect. Only the ACTIVE word gets
- * an accent-colored background. Spoken words lose the background (unlike
- * KaraokeSweep where spoken words keep it). Creates a "bouncing spotlight."
+ * Box highlight caption style: spring-animated background rectangle on the active word.
+ * The "box" appears via spring-driven padding expansion on the active word's span.
+ * Non-active words have no background. Creates a tracking highlight effect.
  */
-export const ColorHighlight: React.FC<CaptionStyleProps> = ({ wordStates, accentColor }) => (
+export const BoxHighlight: React.FC<CaptionStyleProps> = ({ wordStates, accentColor }) => (
   <div
     style={{
       display: "flex",
@@ -19,6 +19,8 @@ export const ColorHighlight: React.FC<CaptionStyleProps> = ({ wordStates, accent
   >
     {wordStates.map((ws) => {
       const isActive = ws.state === "active";
+      // Spring-animated padding: grows from 2px to 10px as the word activates.
+      const pad = 2 + ws.springProgress * 8;
       return (
         <span
           key={`${ws.word.word}-${ws.globalIndex}`}
@@ -28,11 +30,15 @@ export const ColorHighlight: React.FC<CaptionStyleProps> = ({ wordStates, accent
             color: "#FFFFFF",
             fontFamily: CAPTION_FONTS.montserrat,
             textTransform: "uppercase",
-            backgroundColor: isActive ? accentColor : "transparent",
-            borderRadius: isActive ? 6 : 0,
-            padding: isActive ? "4px 10px" : "4px 2px",
+            backgroundColor: isActive
+              ? accentColor
+              : ws.state === "spoken"
+                ? "rgba(255,255,255,0.08)"
+                : "transparent",
+            borderRadius: ws.springProgress > 0 ? 8 : 0,
+            padding: `4px ${pad}px`,
             opacity: ws.state === "unspoken" ? 0.4 : 1,
-            textShadow: !isActive ? "0 2px 8px rgba(0,0,0,0.6)" : "none",
+            textShadow: ws.state === "unspoken" ? "0 2px 8px rgba(0,0,0,0.6)" : "none",
           }}
         >
           {ws.word.word}

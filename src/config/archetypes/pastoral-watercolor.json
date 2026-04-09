@@ -3,6 +3,8 @@
   "defaultTransition": "crossfade",
   "transitionDurationFrames": 20,
   "captionStyle": "gradient_rise",
+  "captionChunkSize": 4,
+  "captionLingerS": 0.5,
   "colorPalette": {
     "background": "#2a3a2a",
     "accent": "#7cb342",

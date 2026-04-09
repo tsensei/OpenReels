@@ -2,7 +2,9 @@
   "scenePacing": "fast",
   "defaultTransition": "slide_left",
   "transitionDurationFrames": 10,
-  "captionStyle": "block_impact",
+  "captionStyle": "box_highlight",
+  "captionChunkSize": 6,
+  "captionLingerS": 0.15,
   "colorPalette": {
     "background": "#0f0f0f",
     "accent": "#00d4ff",

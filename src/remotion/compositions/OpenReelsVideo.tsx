@@ -13,6 +13,7 @@ import { StockVideoBeat } from "../beats/StockVideoBeat";
 import { TextCardBeat } from "../beats/TextCardBeat";
 import { BlockImpact } from "../captions/BlockImpact";
 import { BoldOutline } from "../captions/BoldOutline";
+import { BoxHighlight } from "../captions/BoxHighlight";
 import { CaptionWrapper, type SpringConfig } from "../captions/CaptionWrapper";
 import { Clean } from "../captions/Clean";
 import { ColorHighlight } from "../captions/ColorHighlight";
@@ -37,6 +38,7 @@ const CAPTION_STYLES: Record<string, { component: React.FC<CaptionStyleProps>; s
   karaoke_sweep:   { component: KaraokeSweep,   springConfig: { damping: 14, stiffness: 220, mass: 0.5 } },
   color_highlight: { component: ColorHighlight, springConfig: { damping: 12, stiffness: 200, mass: 0.5 } },
   block_impact:    { component: BlockImpact,    springConfig: { damping: 18, stiffness: 300, mass: 0.5 } },
+  box_highlight:   { component: BoxHighlight,   springConfig: { damping: 10, stiffness: 180, mass: 0.5 } },
 };
 
 const resolveAsset = (relativePath: string | null): string | null => {

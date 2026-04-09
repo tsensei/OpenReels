@@ -3,6 +3,8 @@
   "defaultTransition": "crossfade",
   "transitionDurationFrames": 20,
   "captionStyle": "karaoke_sweep",
+  "captionChunkSize": 4,
+  "captionLingerS": 0.5,
   "colorPalette": {
     "background": "#2d1b00",
     "accent": "#ff9f43",

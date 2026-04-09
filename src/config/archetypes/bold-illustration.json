@@ -3,6 +3,8 @@
   "defaultTransition": "slide_left",
   "transitionDurationFrames": 12,
   "captionStyle": "color_highlight",
+  "captionChunkSize": 6,
+  "captionLingerS": 0.15,
   "colorPalette": {
     "background": "#0a1628",
     "accent": "#ff6b4a",
