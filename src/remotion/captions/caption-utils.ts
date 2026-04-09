@@ -43,6 +43,14 @@ export function getWordChunk(
     }
     chunkStart = i;
   }
+
+  // After voiceover ends + linger, return empty chunk so captions fade out
+  // instead of lingering stale text during a musical outro.
+  const lastWord = words[words.length - 1];
+  if (lastWord && currentTime > lastWord.end + lingerS) {
+    return { chunk: [], chunkStart: words.length };
+  }
+
   return { chunk: words.slice(chunkStart, chunkStart + chunkSize), chunkStart };
 }
 
@@ -54,22 +62,18 @@ export function getWordState(word: WordTimestamp, currentTime: number): WordStat
 }
 
 /**
+ /**
  * Compute WordRenderState[] for a chunk of words. Pure function, no React hooks.
- * springProgress is computed from frame-based input, making it seek-safe.
  *
- *   frame math (seek-safe):
- *     wordStartFrame = Math.round(word.start * fps)
- *     springInput = frame - wordStartFrame
- *     springProgress = springFn(springInput)   // caller passes in spring()
- *
- * For the refactor commit (identical output), springProgress is always
- * 0 (unspoken) or 1 (active/spoken) -- no actual spring animation yet.
+ * springFn receives a globalIndex and returns the spring progress (0-1) for that
+ * word. The caller (CaptionWrapper) maps globalIndex -> frame-based spring
+ * computation internally, keeping it seek-safe.
  */
 export function computeWordStates(
   chunk: WordTimestamp[],
   chunkStart: number,
   currentTime: number,
-  springFn: (wordStartFrame: number) => number,
+  springFn: (globalIndex: number) => number,
   emphasisIndices?: Set<number>,
 ): WordRenderState[] {
   return chunk.map((word, i) => {

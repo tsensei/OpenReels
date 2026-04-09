@@ -27,13 +27,17 @@ export const KaraokeSweep: React.FC<CaptionStyleProps> = ({ wordStates, accentCo
         let background: string;
         if (ws.state === "active") {
           // Gradient wipe: fill progresses left-to-right during the word's duration.
-          // Uses linear interpolate with clamp to avoid overshoot past 100%.
-          const fillProgress = interpolate(
-            currentTime,
-            [ws.word.start, ws.word.end],
-            [0, 100],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
-          );
+          // Guard: zero-duration words (start === end) crash interpolate() with
+          // "inputRange must be strictly monotonically non-decreasing".
+          const fillProgress =
+            ws.word.start >= ws.word.end
+              ? 100
+              : interpolate(
+                  currentTime,
+                  [ws.word.start, ws.word.end],
+                  [0, 100],
+                  { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+                );
           background = `linear-gradient(90deg, ${accentColor} ${fillProgress}%, rgba(255,255,255,0.1) ${fillProgress}%)`;
         } else if (ws.state === "spoken") {
           background = accentColor;
