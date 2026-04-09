@@ -25,8 +25,10 @@ const STYLES = [
   "box_highlight",
 ] as const;
 
-// Test frames: word 1 unspoken (frame 0), word 3 active (frame 60), word 5 spoken (frame 120)
-const TEST_FRAMES = [0, 60, 120] as const;
+// Test frames: all unspoken (frame 0), mid-chunk active (frame 60), final word active (frame 85 = 2.83s)
+// Frame 85 lands during "percent" (2.5-3.0s) so we see a mix of spoken + active states.
+// (Frame 120 = 4.0s is past linger window and renders blank.)
+const TEST_FRAMES = [0, 60, 85] as const;
 
 const TEST_WORDS = [
   { word: "The", start: 0.5, end: 0.8 },

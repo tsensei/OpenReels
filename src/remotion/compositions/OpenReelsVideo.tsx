@@ -34,6 +34,8 @@ const CAPTION_STYLES: Record<string, { component: React.FC<CaptionStyleProps>; s
   bold_outline:    { component: BoldOutline,    springConfig: { damping: 15, stiffness: 250, mass: 0.5 } },
   clean:           { component: Clean,          springConfig: { damping: 12, stiffness: 200, mass: 0.5 } },
   gradient_rise:   { component: GradientRise,   springConfig: { damping: 8,  stiffness: 150, mass: 0.5 } },
+  // KaraokeSweep uses linear interpolation for its gradient wipe (not spring),
+  // so this springConfig is unused by the style. Kept for registry type uniformity.
   karaoke_sweep:   { component: KaraokeSweep,   springConfig: { damping: 14, stiffness: 220, mass: 0.5 } },
   color_highlight: { component: ColorHighlight, springConfig: { damping: 12, stiffness: 200, mass: 0.5 } },
   block_impact:    { component: BlockImpact,    springConfig: { damping: 18, stiffness: 300, mass: 0.5 } },
