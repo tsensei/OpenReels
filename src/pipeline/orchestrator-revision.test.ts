@@ -16,13 +16,16 @@ const makeScore = (archetype = "infographic", sceneCount = 8): DirectorScore => 
   emotional_arc: "curiosity-to-wisdom",
   archetype,
   music_mood: "epic_cinematic",
-  scenes: Array.from({ length: sceneCount }, (_, i) => ({
-    visual_type: (["text_card", "ai_image", "stock_video", "ai_image", "stock_image", "text_card", "ai_image", "stock_video"] as const)[i % 8],
-    visual_prompt: `Scene ${i + 1}`,
-    motion: "static" as const,
-    script_line: `This is scene ${i + 1}.`,
-    transition: i < sceneCount - 1 ? ("crossfade" as const) : null,
-  })),
+  scenes: Array.from({ length: sceneCount }, (_, i) => {
+    const visualTypes = ["text_card", "ai_image", "stock_video", "ai_image", "stock_image", "text_card", "ai_image", "stock_video"] as const;
+    return {
+      visual_type: visualTypes[i % 8]!,
+      visual_prompt: `Scene ${i + 1}`,
+      motion: "static" as const,
+      script_line: `This is scene ${i + 1}.`,
+      transition: i < sceneCount - 1 ? ("crossfade" as const) : null,
+    };
+  }),
 });
 
 const makeCritique = (score: number, revisionNeeded: boolean): CritiqueResult => ({
