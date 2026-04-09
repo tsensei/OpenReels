@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { type Archetype, api, type Platform, type ProviderOptions } from "@/hooks/useApi";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -86,6 +87,9 @@ export function HomePage() {
   const [archetype, setArchetype] = useState("");
   const [platform, setPlatform] = useState("youtube");
   const [llmProvider, setLlmProvider] = useState("anthropic");
+  const [llmModel, setLlmModel] = useState("");
+  const [llmBaseUrl, setLlmBaseUrl] = useState("");
+  const [searchProvider, setSearchProvider] = useState("");
   const [ttsProvider, setTtsProvider] = useState("elevenlabs");
   const [imageProvider, setImageProvider] = useState("gemini");
   const [musicProvider, setMusicProvider] = useState("bundled");
@@ -136,6 +140,9 @@ export function HomePage() {
           tts: ttsProvider,
           image: imageProvider,
           music: musicProvider,
+          ...(llmModel ? { llmModel } : {}),
+          ...(llmBaseUrl ? { llmBaseUrl } : {}),
+          ...(searchProvider ? { searchProvider } : {}),
         },
       });
       navigate(`/jobs/${result.id}`);
@@ -314,6 +321,54 @@ export function HomePage() {
                       <SelectContent>
                         <SelectItem value="bundled">Bundled (Free)</SelectItem>
                         <SelectItem value="lyria">Lyria 3 Pro ($0.08)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Conditional LLM config fields */}
+                  {(llmProvider === "openrouter" || llmProvider === "openai-compatible") && (
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                        Model ID
+                      </label>
+                      <Input
+                        className="h-9 rounded-lg text-sm"
+                        placeholder={llmProvider === "openrouter" ? "anthropic/claude-sonnet-4" : "llama3:8b"}
+                        value={llmModel}
+                        onChange={(e) => setLlmModel(e.target.value)}
+                      />
+                    </div>
+                  )}
+
+                  {llmProvider === "openai-compatible" && (
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                        Base URL
+                      </label>
+                      <Input
+                        className="h-9 rounded-lg text-sm"
+                        placeholder="http://localhost:11434/v1"
+                        value={llmBaseUrl}
+                        onChange={(e) => setLlmBaseUrl(e.target.value)}
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                      Search Provider
+                    </label>
+                    <Select value={searchProvider} onValueChange={(v) => setSearchProvider(v ?? "")}>
+                      <SelectTrigger className="h-9 w-full rounded-lg">
+                        <SelectValue placeholder="Auto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Auto</SelectItem>
+                        {providers?.search?.map((p) => (
+                          <SelectItem key={p.key} value={p.key}>
+                            {p.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

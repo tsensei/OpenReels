@@ -98,7 +98,13 @@ app.get("/api/v1/stats", async () => {
     }),
   );
 
-  return { totalJobs, completedJobs, failedJobs, activeJobs, totalCost: Math.round(totalCost * 100) / 100 };
+  return {
+    totalJobs,
+    completedJobs,
+    failedJobs,
+    activeJobs,
+    totalCost: Math.round(totalCost * 100) / 100,
+  };
 });
 
 // --- Archetypes ---
@@ -136,6 +142,13 @@ app.get("/api/v1/providers", async () => ({
     { key: "anthropic", label: "Anthropic (Claude)" },
     { key: "openai", label: "OpenAI (GPT)" },
     { key: "gemini", label: "Google Gemini" },
+    { key: "openrouter", label: "OpenRouter" },
+    { key: "openai-compatible", label: "Custom (OpenAI-compatible)" },
+  ],
+  search: [
+    { key: "native", label: "Native (provider built-in)" },
+    { key: "tavily", label: "Tavily" },
+    { key: "none", label: "None (parametric knowledge)" },
   ],
   tts: [
     { key: "elevenlabs", label: "ElevenLabs" },
@@ -171,12 +184,16 @@ interface CreateJobBody {
     video?: string;
     videoModel?: string;
     music?: string;
+    llmModel?: string;
+    llmBaseUrl?: string;
+    searchProvider?: string;
   };
   keys?: Record<string, string>;
 }
 
 app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
-  const { topic, archetype, pacing, platform, dryRun, noMusic, noVideo, providers, keys } = request.body ?? {};
+  const { topic, archetype, pacing, platform, dryRun, noMusic, noVideo, providers, keys } =
+    request.body ?? {};
 
   if (!topic || typeof topic !== "string" || topic.trim().length === 0) {
     return reply.status(400).send({ error: "topic is required" });
@@ -226,6 +243,9 @@ app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
       video: providers?.video,
       videoModel: providers?.videoModel,
       music: providers?.music ?? "bundled",
+      llmModel: providers?.llmModel,
+      llmBaseUrl: providers?.llmBaseUrl,
+      searchProvider: providers?.searchProvider,
     },
     keys: keys ?? {},
     jobsDir: JOBS_DIR,
@@ -319,7 +339,11 @@ app.get<{ Params: { id: string } }>("/api/v1/jobs/:id/events", async (request, r
     if (fs.existsSync(metaPath)) {
       try {
         const meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
-        if (meta.status === "completed" || meta.status === "failed" || meta.status === "cancelled") {
+        if (
+          meta.status === "completed" ||
+          meta.status === "failed" ||
+          meta.status === "cancelled"
+        ) {
           reply.raw.writeHead(200, {
             "Content-Type": "text/event-stream",
             "Cache-Control": "no-cache",
@@ -327,7 +351,9 @@ app.get<{ Params: { id: string } }>("/api/v1/jobs/:id/events", async (request, r
           });
           reply.raw.write(`event: job:snapshot\ndata: ${JSON.stringify(meta)}\n\n`);
           const terminalEvent = meta.status === "completed" ? "job:completed" : "job:failed";
-          reply.raw.write(`event: ${terminalEvent}\ndata: ${JSON.stringify({ state: meta.status })}\n\n`);
+          reply.raw.write(
+            `event: ${terminalEvent}\ndata: ${JSON.stringify({ state: meta.status })}\n\n`,
+          );
           reply.raw.end();
           return;
         }
@@ -373,7 +399,9 @@ app.get<{ Params: { id: string } }>("/api/v1/jobs/:id/events", async (request, r
 
   const onCompleted = ({ jobId: completedJobId }: { jobId: string }) => {
     if (completedJobId === jobId) {
-      try { reply.raw.write(`event: job:completed\ndata: {}\n\n`); } catch {}
+      try {
+        reply.raw.write(`event: job:completed\ndata: {}\n\n`);
+      } catch {}
       cleanup();
     }
   };
@@ -386,7 +414,9 @@ app.get<{ Params: { id: string } }>("/api/v1/jobs/:id/events", async (request, r
     failedReason: string;
   }) => {
     if (failedJobId === jobId) {
-      try { reply.raw.write(`event: job:failed\ndata: ${JSON.stringify({ error: failedReason })}\n\n`); } catch {}
+      try {
+        reply.raw.write(`event: job:failed\ndata: ${JSON.stringify({ error: failedReason })}\n\n`);
+      } catch {}
       cleanup();
     }
   };
@@ -397,7 +427,9 @@ app.get<{ Params: { id: string } }>("/api/v1/jobs/:id/events", async (request, r
     queueEvents.off("progress", onProgress);
     queueEvents.off("completed", onCompleted);
     queueEvents.off("failed", onFailed);
-    try { reply.raw.end(); } catch {}
+    try {
+      reply.raw.end();
+    } catch {}
   };
 
   queueEvents.on("progress", onProgress);
@@ -515,7 +547,13 @@ async function pruneOldJobs() {
         return { id: d.name, status: "unknown", createdAt: "" };
       }
     })
-    .filter((j) => j.status === "completed" || j.status === "failed" || j.status === "cancelled" || j.status === "unknown")
+    .filter(
+      (j) =>
+        j.status === "completed" ||
+        j.status === "failed" ||
+        j.status === "cancelled" ||
+        j.status === "unknown",
+    )
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
   while (dirs.length > MAX_JOBS) {

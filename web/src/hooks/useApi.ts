@@ -64,6 +64,7 @@ export interface ProviderOptions {
   tts: ProviderOption[];
   image: ProviderOption[];
   video: ProviderOption[];
+  search?: ProviderOption[];
 }
 
 export interface StatsResponse {

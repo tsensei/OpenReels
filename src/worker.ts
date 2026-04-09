@@ -27,7 +27,9 @@ const redis = new IORedis(REDIS_URL, { maxRetriesPerRequest: null });
 try {
   const { valid, missing } = validateManifest();
   if (!valid) {
-    console.warn(`[worker] Music manifest warning: ${missing.length} tracks missing: ${missing.join(", ")}`);
+    console.warn(
+      `[worker] Music manifest warning: ${missing.length} tracks missing: ${missing.join(", ")}`,
+    );
   }
 } catch {
   // Music manifest not available — music selection will gracefully degrade
@@ -49,6 +51,9 @@ interface JobData {
     video?: string;
     videoModel?: string;
     music?: string;
+    llmModel?: string;
+    llmBaseUrl?: string;
+    searchProvider?: string;
   };
   keys: Record<string, string>;
   jobsDir: string;
@@ -71,7 +76,12 @@ interface JobMeta {
   score?: unknown; // DirectorScore
   criticReview?: { score: number; strengths: string[]; weaknesses: string[] };
   musicTrack?: { trackId: string; mood: string; requestedMood: string; fallback: boolean };
-  musicGeneration?: { provider: string; prompt?: string; metadata?: Record<string, unknown>; fallback: boolean };
+  musicGeneration?: {
+    provider: string;
+    prompt?: string;
+    metadata?: Record<string, unknown>;
+    fallback: boolean;
+  };
   revisionHistory?: { round: number; score: number }[];
   error?: string;
 }
@@ -85,7 +95,8 @@ function writeMeta(jobDir: string, meta: JobMeta) {
 const worker = new Worker<JobData>(
   "openreels",
   async (job: Job<JobData>) => {
-    const { topic, archetype, pacing, platform, dryRun, noMusic, noVideo, providers, keys } = job.data;
+    const { topic, archetype, pacing, platform, dryRun, noMusic, noVideo, providers, keys } =
+      job.data;
     const jobDir = path.join(JOBS_DIR, job.id!);
     fs.mkdirSync(jobDir, { recursive: true });
 
@@ -115,6 +126,11 @@ const worker = new Worker<JobData>(
       videoModel: providers.videoModel,
       music: (providers.music as MusicProviderKey) ?? "bundled",
       keys,
+      llmModel: providers.llmModel,
+      llmBaseUrl: providers.llmBaseUrl,
+      searchProvider: providers.searchProvider as
+        | import("./schema/providers.js").SearchProviderKey
+        | undefined,
     });
 
     // Build callbacks that emit BullMQ progress events and update meta.json
@@ -151,13 +167,22 @@ const worker = new Worker<JobData>(
       onProgress(stage: StageName, data: Record<string, unknown>) {
         // Store rich data in meta for SSE reconnection support
         if (data.type === "results") {
-          meta.researchData = { summary: data.summary as string, key_facts: data.key_facts as string[], mood: data.mood as string };
+          meta.researchData = {
+            summary: data.summary as string,
+            key_facts: data.key_facts as string[],
+            mood: data.mood as string,
+          };
           writeMeta(jobDir, meta);
         } else if (data.type === "score") {
           meta.score = data.score;
           writeMeta(jobDir, meta);
         } else if (data.type === "music") {
-          meta.musicTrack = { trackId: data.track as string, mood: data.mood as string, requestedMood: data.requestedMood as string, fallback: data.fallback as boolean };
+          meta.musicTrack = {
+            trackId: data.track as string,
+            mood: data.mood as string,
+            requestedMood: data.requestedMood as string,
+            fallback: data.fallback as boolean,
+          };
           writeMeta(jobDir, meta);
         } else if (data.type === "music_resolved") {
           meta.musicGeneration = {
@@ -175,7 +200,11 @@ const worker = new Worker<JobData>(
           });
           writeMeta(jobDir, meta);
         } else if (data.type === "review") {
-          meta.criticReview = { score: data.score as number, strengths: data.strengths as string[], weaknesses: data.weaknesses as string[] };
+          meta.criticReview = {
+            score: data.score as number,
+            strengths: data.strengths as string[],
+            weaknesses: data.weaknesses as string[],
+          };
           writeMeta(jobDir, meta);
         }
         job.updateProgress({ stage, ...data });
@@ -215,13 +244,18 @@ const worker = new Worker<JobData>(
     };
 
     // Create verification model with per-job API keys
-    const llmKey =
-      providers.llm === "openai" ? keys["OPENAI_API_KEY"]
-      : providers.llm === "gemini" ? keys["GOOGLE_API_KEY"]
-      : keys["ANTHROPIC_API_KEY"];
+    const LLM_KEY_MAP: Record<string, string> = {
+      anthropic: "ANTHROPIC_API_KEY",
+      openai: "OPENAI_API_KEY",
+      gemini: "GOOGLE_API_KEY",
+      openrouter: "OPENROUTER_API_KEY",
+      "openai-compatible": "OPENREELS_LLM_API_KEY",
+    };
+    const llmKeyName = LLM_KEY_MAP[providers.llm] ?? "ANTHROPIC_API_KEY";
+    const llmKey = keys[llmKeyName];
     const verifyModel = createVerificationModel(
       providers.llm as LLMProviderKey,
-      undefined,
+      providers.llmModel,
       llmKey,
     );
 
@@ -290,7 +324,13 @@ function pruneOldJobs(jobsDir: string, maxJobs: number) {
         return { id: d.name, status: "unknown", createdAt: "" };
       }
     })
-    .filter((j) => j.status === "completed" || j.status === "failed" || j.status === "cancelled" || j.status === "unknown")
+    .filter(
+      (j) =>
+        j.status === "completed" ||
+        j.status === "failed" ||
+        j.status === "cancelled" ||
+        j.status === "unknown",
+    )
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
   while (dirs.length > maxJobs) {
