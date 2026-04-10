@@ -135,10 +135,7 @@ describe("score replay cost estimation", () => {
 });
 
 describe("direction + score conflict", () => {
-  it("direction and score are independent fields in PipelineOptions", async () => {
-    const { type } = await import("../pipeline/utils.js");
-    // Type verification: both fields exist on PipelineOptions
-    // This is a compile-time check more than a runtime test
+  it("direction and score are independent fields in PipelineOptions", () => {
     const opts = {
       direction: "some direction",
       replayScore: DirectorScore.parse(VALID_SCORE),
