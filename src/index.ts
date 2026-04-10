@@ -4,6 +4,7 @@ import * as fs from "node:fs";
 import { parseArgs } from "./cli/args.js";
 import { showUsageReport } from "./cli/usage-report.js";
 import { validateEnv } from "./cli/validate-env.js";
+import { getArchetype } from "./config/archetype-registry.js";
 import { createCliCallbacks, runPipeline } from "./pipeline/orchestrator.js";
 import { createProviders, createVerificationModel } from "./providers/factory.js";
 import { DirectorScore } from "./schema/director-score.js";
@@ -53,6 +54,8 @@ async function main(): Promise<void> {
     try {
       const raw = fs.readFileSync(opts.score, "utf-8");
       replayScore = DirectorScore.parse(JSON.parse(raw));
+      // Validate archetype exists in the registry
+      getArchetype(replayScore.archetype);
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === "ENOENT") {
         console.error(`Score file not found: ${opts.score}`);

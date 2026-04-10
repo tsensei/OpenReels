@@ -248,6 +248,14 @@ app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
     if (!result.success) {
       return reply.status(400).send({ error: `Invalid DirectorScore: ${result.error.message}` });
     }
+    // Validate archetype exists in the registry (Zod accepts any string, but getArchetype throws for unknown names)
+    try {
+      getArchetype((result.data as { archetype: string }).archetype);
+    } catch {
+      return reply.status(400).send({
+        error: `Score references unknown archetype: ${(result.data as { archetype: string }).archetype}`,
+      });
+    }
     validatedScore = result.data;
   }
 

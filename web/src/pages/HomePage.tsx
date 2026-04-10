@@ -424,12 +424,14 @@ export function HomePage() {
                       className="w-full rounded-lg border border-border bg-transparent px-3 py-2 text-sm placeholder:text-text-faint focus:outline-none focus:ring-1 focus:ring-primary/40 resize-y min-h-[60px]"
                       placeholder="Describe your creative vision: visual style, mood, script notes, scene ideas, music preference..."
                       value={directionText}
-                      onChange={(e) => setDirectionText(e.target.value)}
-                      maxLength={10000}
+                      onChange={(e) => {
+                        const bytes = new TextEncoder().encode(e.target.value).length;
+                        if (bytes <= 10240) setDirectionText(e.target.value);
+                      }}
                       rows={3}
                     />
                     <p className="mt-1 text-right text-[10px] text-muted-foreground">
-                      {directionText.length.toLocaleString()} / 10,000
+                      {new TextEncoder().encode(directionText).length.toLocaleString()} / 10,240 bytes
                     </p>
                   </div>
 

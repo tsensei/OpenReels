@@ -122,7 +122,6 @@ interface RunLog {
   musicResolution?: { provider: string; prompt?: string; metadata?: Record<string, unknown>; fallback: boolean };
   direction?: string;
   replay?: boolean;
-  replayScorePath?: string;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
