@@ -122,11 +122,9 @@ describe("FalVideo", () => {
     if (fs.existsSync(result.filePath)) fs.unlinkSync(result.filePath);
   });
 
-  it("uses Kling v2.6 Pro model by default", () => {
+  it("uses Kling v2.6 Pro model by default", async () => {
     const provider = new FalVideo(undefined, "test-key");
-    // Access the modelId via a generate call check
-    expect(provider).toBeDefined();
-    // The default model is verified through the subscribe call
+
     mockUpload.mockResolvedValueOnce("https://fal.storage/image.png");
     mockSubscribe.mockResolvedValueOnce({
       data: { video: { url: "https://fal.storage/video.mp4" } },
@@ -136,12 +134,15 @@ describe("FalVideo", () => {
       arrayBuffer: () => Promise.resolve(new ArrayBuffer(100)),
     });
 
-    provider.generate({
+    const result = await provider.generate({
       sourceImage: Buffer.from("fake-image"),
       prompt: "test",
-    }).then(() => {
-      const subscribeCall = mockSubscribe.mock.calls.at(-1)!;
-      expect(subscribeCall[0]).toBe("fal-ai/kling-video/v2.6/pro/image-to-video");
     });
+
+    const subscribeCall = mockSubscribe.mock.lastCall!;
+    expect(subscribeCall[0]).toBe("fal-ai/kling-video/v2.6/pro/image-to-video");
+
+    const fs = await import("node:fs");
+    if (fs.existsSync(result.filePath)) fs.unlinkSync(result.filePath);
   });
 });
