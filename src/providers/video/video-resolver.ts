@@ -58,11 +58,13 @@ export async function resolveAIVideo(
   usage: LLMUsage | null;
   durationSeconds: number | null;
   videoResolution: VideoResolution;
+  prompterUsage?: LLMUsage | null;
 }> {
   const imageGenTimeMs = 0; // Already tracked by caller
 
   // Generate motion-aware prompt via LLM
   let motionPrompt = scene.visual_prompt;
+  let prompterUsage: LLMUsage | null = null;
   try {
     const optimized = await optimizeImagePrompt(
       opts.llm,
@@ -74,6 +76,7 @@ export async function resolveAIVideo(
       { mode: "video" },
     );
     motionPrompt = optimized.prompt;
+    prompterUsage = optimized.usage;
   } catch (err) {
     console.warn(`[video] Scene ${sceneIndex} motion prompt gen failed, using visual_prompt: ${err}`);
   }
@@ -135,6 +138,7 @@ export async function resolveAIVideo(
           motionPrompt,
           negativePrompt,
         },
+        prompterUsage,
       };
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
@@ -160,6 +164,7 @@ export async function resolveAIVideo(
             imageGenTimeMs,
             videoGenTimeMs: null,
           },
+          prompterUsage,
         };
       }
       // Otherwise try next provider
@@ -179,5 +184,6 @@ export async function resolveAIVideo(
       imageGenTimeMs,
       videoGenTimeMs: null,
     },
+    prompterUsage,
   };
 }

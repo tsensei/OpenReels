@@ -132,6 +132,7 @@ interface VisualAssetResult {
   durationSeconds: number | null;
   stockResolution?: StockResolution;
   videoResolution?: VideoResolution;
+  prompterUsage?: LLMUsage | null;
 }
 
 /** Generate an AI image with optional rejection context from failed stock searches */
@@ -291,6 +292,7 @@ async function resolveVisualAsset(
         usage: videoResult.usage,
         durationSeconds: videoResult.durationSeconds,
         videoResolution: videoResult.videoResolution,
+        prompterUsage: videoResult.prompterUsage ?? null,
       };
     }
 
@@ -611,6 +613,7 @@ function buildPipelineWorkflow(
       visualsResult.sceneSourceDurations = sceneResults.map((r) => r.durationSeconds);
       for (const r of sceneResults) {
         if (r.usage) llmUsages.push(r.usage);
+        if (r.prompterUsage) llmUsages.push(r.prompterUsage);
       }
 
       // Track music prompter LLM usage

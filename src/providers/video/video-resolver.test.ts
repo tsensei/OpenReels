@@ -202,6 +202,33 @@ describe("resolveAIVideo", () => {
     expect(result.videoResolution.negativePrompt).toContain("blur");
   });
 
+  it("surfaces motion prompter LLM usage for cost tracking", async () => {
+    const primary = makeProvider();
+    const result = await resolveAIVideo(mockScene, mockImageResult, 0, path.join(tmpDir, "assets"), {
+      videoProviders: [primary],
+      llm: mockLlm,
+      archetype: mockArchetype,
+      callbacks: mockCallbacks,
+    });
+
+    expect(result.prompterUsage).toEqual({ inputTokens: 100, outputTokens: 50 });
+  });
+
+  it("returns null prompterUsage when motion prompt LLM fails", async () => {
+    const { optimizeImagePrompt } = await import("../../agents/image-prompter.js");
+    (optimizeImagePrompt as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("LLM failed"));
+
+    const primary = makeProvider();
+    const result = await resolveAIVideo(mockScene, mockImageResult, 0, path.join(tmpDir, "assets"), {
+      videoProviders: [primary],
+      llm: mockLlm,
+      archetype: mockArchetype,
+      callbacks: mockCallbacks,
+    });
+
+    expect(result.prompterUsage).toBeNull();
+  });
+
   it("uses raw visual_prompt as motion prompt when LLM optimization fails", async () => {
     const { optimizeImagePrompt } = await import("../../agents/image-prompter.js");
     (optimizeImagePrompt as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("LLM failed"));
