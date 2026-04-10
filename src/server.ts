@@ -8,6 +8,7 @@ import IORedis from "ioredis";
 import { PACING_CONFIG } from "./agents/creative-director.js";
 import { getArchetype, listArchetypes } from "./config/archetype-registry.js";
 import { PLATFORMS } from "./config/platforms.js";
+import { DirectorScore } from "./schema/director-score.js";
 import type { SearchProviderKey } from "./schema/providers.js";
 
 const REDIS_URL = process.env["REDIS_URL"] ?? "redis://localhost:6379";
@@ -177,6 +178,8 @@ interface CreateJobBody {
   dryRun?: boolean;
   noMusic?: boolean;
   noVideo?: boolean;
+  direction?: string;
+  score?: Record<string, unknown>;
   providers?: {
     llm?: string;
     tts?: string;
@@ -193,7 +196,7 @@ interface CreateJobBody {
 }
 
 app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
-  const { topic, archetype, pacing, platform, dryRun, noMusic, noVideo, providers, keys } =
+  const { topic, archetype, pacing, platform, dryRun, noMusic, noVideo, direction, score, providers, keys } =
     request.body ?? {};
 
   if (!topic || typeof topic !== "string" || topic.trim().length === 0) {
@@ -228,6 +231,26 @@ app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
       .send({ error: `Unknown platform: ${platform}. Available: ${validPlatforms.join(", ")}` });
   }
 
+  // Validate direction text size if provided
+  if (direction != null) {
+    if (typeof direction !== "string") {
+      return reply.status(400).send({ error: "direction must be a string" });
+    }
+    if (Buffer.byteLength(direction, "utf-8") > 10240) {
+      return reply.status(400).send({ error: "direction exceeds 10KB limit" });
+    }
+  }
+
+  // Validate score (DirectorScore) if provided for replay
+  let validatedScore: unknown | undefined;
+  if (score != null) {
+    const result = DirectorScore.safeParse(score);
+    if (!result.success) {
+      return reply.status(400).send({ error: `Invalid DirectorScore: ${result.error.message}` });
+    }
+    validatedScore = result.data;
+  }
+
   const job = await queue.add("render", {
     topic: topic.trim(),
     archetype,
@@ -236,6 +259,8 @@ app.post<{ Body: CreateJobBody }>("/api/v1/jobs", async (request, reply) => {
     dryRun: dryRun ?? false,
     noMusic: noMusic === true,
     noVideo: noVideo === true,
+    ...(direction?.trim() ? { direction: direction.trim() } : {}),
+    ...(validatedScore ? { score: validatedScore } : {}),
     providers: {
       llm: providers?.llm ?? "anthropic",
       tts: providers?.tts ?? "elevenlabs",

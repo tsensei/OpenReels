@@ -139,6 +139,8 @@ export interface CreateJobRequest {
   pacing?: string;
   platform?: string;
   dryRun?: boolean;
+  direction?: string;
+  score?: Record<string, unknown>;
   providers?: {
     llm?: string;
     tts?: string;

@@ -96,6 +96,9 @@ export function HomePage() {
   const [musicProvider, setMusicProvider] = useState("bundled");
   const [pacing, setPacing] = useState("");
   const [dryRun, setDryRun] = useState(false);
+  const [directionText, setDirectionText] = useState("");
+  const [scoreJson, setScoreJson] = useState<Record<string, unknown> | null>(null);
+  const [scoreFileName, setScoreFileName] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const [archetypes, setArchetypes] = useState<Archetype[]>([]);
@@ -136,6 +139,8 @@ export function HomePage() {
         pacing: pacing || undefined,
         platform,
         dryRun,
+        ...(directionText.trim() ? { direction: directionText.trim() } : {}),
+        ...(scoreJson ? { score: scoreJson } : {}),
         providers: {
           llm: llmProvider,
           tts: ttsProvider,
@@ -406,6 +411,64 @@ export function HomePage() {
                     <span className="text-xs text-muted-foreground">
                       {dryRun ? "On" : "Off"}
                     </span>
+                  </div>
+                </div>
+
+                {/* Direction & Replay */}
+                <div className="mt-4 border-t border-border pt-4 space-y-3">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                      Creative Direction
+                    </label>
+                    <textarea
+                      className="w-full rounded-lg border border-border bg-transparent px-3 py-2 text-sm placeholder:text-text-faint focus:outline-none focus:ring-1 focus:ring-primary/40 resize-y min-h-[60px]"
+                      placeholder="Describe your creative vision: visual style, mood, script notes, scene ideas, music preference..."
+                      value={directionText}
+                      onChange={(e) => setDirectionText(e.target.value)}
+                      maxLength={10000}
+                      rows={3}
+                    />
+                    <p className="mt-1 text-right text-[10px] text-muted-foreground">
+                      {directionText.length.toLocaleString()} / 10,000
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                      Replay from Score
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="file"
+                        accept=".json"
+                        className="h-9 rounded-lg text-sm file:mr-2 file:rounded-md file:border-0 file:bg-primary/10 file:px-2 file:py-1 file:text-xs file:font-medium file:text-primary"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) {
+                            setScoreJson(null);
+                            setScoreFileName("");
+                            return;
+                          }
+                          try {
+                            const text = await file.text();
+                            setScoreJson(JSON.parse(text));
+                            setScoreFileName(file.name);
+                          } catch {
+                            setError("Invalid JSON in score file");
+                            setScoreJson(null);
+                            setScoreFileName("");
+                          }
+                        }}
+                      />
+                      {scoreFileName && (
+                        <span className="text-xs text-muted-foreground truncate max-w-[120px]">
+                          {scoreFileName}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      Load a previous score.json to skip research &amp; director stages
+                    </p>
                   </div>
                 </div>
               </div>

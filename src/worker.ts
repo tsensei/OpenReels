@@ -6,6 +6,7 @@ import type { PipelineCallbacks, StageName } from "./pipeline/orchestrator.js";
 import { runPipeline } from "./pipeline/orchestrator.js";
 import { createProviders, createVerificationModel } from "./providers/factory.js";
 import { validateManifest } from "./providers/music/bundled.js";
+import { DirectorScore } from "./schema/director-score.js";
 import type {
   ImageProviderKey,
   LLMProviderKey,
@@ -44,6 +45,8 @@ interface JobData {
   dryRun: boolean;
   noMusic?: boolean;
   noVideo?: boolean;
+  direction?: string;
+  score?: Record<string, unknown>;
   providers: {
     llm: string;
     tts: string;
@@ -96,7 +99,7 @@ function writeMeta(jobDir: string, meta: JobMeta) {
 const worker = new Worker<JobData>(
   "openreels",
   async (job: Job<JobData>) => {
-    const { topic, archetype, pacing, platform, dryRun, noMusic, noVideo, providers, keys } =
+    const { topic, archetype, pacing, platform, dryRun, noMusic, noVideo, direction, score, providers, keys } =
       job.data;
     const jobDir = path.join(JOBS_DIR, job.id!);
     fs.mkdirSync(jobDir, { recursive: true });
@@ -258,6 +261,12 @@ const worker = new Worker<JobData>(
       llmKey,
     );
 
+    // Parse replay score if provided
+    const replayScore = score ? DirectorScore.parse(score) : undefined;
+
+    // Direction is ignored when replaying (score already incorporates creative intent)
+    const effectiveDirection = replayScore ? undefined : direction;
+
     // Run the pipeline
     const result = await runPipeline(
       {
@@ -282,6 +291,8 @@ const worker = new Worker<JobData>(
         outputDir: jobDir,
         yes: true,
         verifyModel,
+        direction: effectiveDirection,
+        replayScore,
       },
       callbacks,
     );
