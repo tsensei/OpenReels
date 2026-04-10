@@ -30,6 +30,10 @@ export class GeminiVideo implements VideoProvider {
     const durationSeconds = opts.durationSeconds ?? 6;
     const aspectRatio = opts.aspectRatio ?? "9:16";
 
+    if (opts.negativePrompt) {
+      console.warn(`[video] negativePrompt ignored: ${this.model} does not support it`);
+    }
+
     // Pass the source image as inline base64
     let operation = await this.client.models.generateVideos({
       model: this.model,
