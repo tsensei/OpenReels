@@ -38,6 +38,7 @@ web/                    # React + Tailwind SPA (Vite)
     hooks/              # useApi, useSSE
     components/         # Layout, StageCard, pipeline/, shadcn/ui
     lib/                # scene-assets, utils
+examples/                 # direction-brief.md (sample creative brief for --direction)
 prompts/                # system prompts for each agent + playbook
 fixtures/               # sample DirectorScore JSONs
 ```

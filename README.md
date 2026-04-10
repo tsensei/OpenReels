@@ -145,6 +145,12 @@ pnpm start "your topic" --dry-run
 
 # Specific archetype and provider combo
 pnpm start "your topic" --archetype anime_illustration --provider openai
+
+# Creative direction file (guide the AI with a brief)
+pnpm start "deep sea exploration" --direction examples/direction-brief.md
+
+# Replay from a previous score (skip research + director, re-render)
+pnpm start "your topic" --score output/2026-04-10-111939-.../score.json
 ```
 
 ### API keys
@@ -180,6 +186,8 @@ pnpm start "your topic" --archetype anime_illustration --provider openai
 | `--stock-max-attempts <n>` | Max stock API calls per scene | `4` |
 | `--video-model <model>` | Video model override | provider default |
 | `--kokoro-voice <voice>` | Kokoro voice preset | `af_heart` |
+| `--direction <file>` | Creative brief file (markdown) to guide the AI | — |
+| `--score <path>` | Replay from a saved `score.json`, skipping research + director | — |
 | `-y, --yes` | Auto-confirm cost estimation (Docker/CI) | off |
 
 ## Cost transparency
