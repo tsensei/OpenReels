@@ -69,6 +69,12 @@ pnpm start "5 stoic lessons" --provider local
 
 # Dry run — outputs the DirectorScore JSON without generating any assets
 pnpm start "your topic" --dry-run
+
+# Creative direction — guide the AI with a brief
+pnpm start "deep sea exploration" --direction examples/direction-brief.md
+
+# Replay — reuse a previous score, re-render with different config
+pnpm start "your topic" --score output/2026-04-10-.../score.json
 ```
 
 See [CLI Usage](/docs/getting-started/cli) for all available flags.

@@ -50,6 +50,10 @@ The research system prompt (`prompts/researcher.md`) instructs the agent to:
 4. Focus on **vivid, lesser-known details** for timeless topics (history, science)
 5. Note when web search returns nothing useful and knowledge is used instead
 
+## Skipping during replay
+
+When replaying from a saved score (`--score`), the Research stage is skipped entirely. It returns the same minimal fallback as the web search failure case (below) and emits an `onStageSkip` event with reason "Replaying from saved score." No LLM call is made. The research output is unused since the Director stage also short-circuits during replay.
+
 ## Graceful degradation
 
 If web search fails entirely (network error, provider unavailable), the Research stage does not crash the pipeline. Instead it returns a minimal fallback:

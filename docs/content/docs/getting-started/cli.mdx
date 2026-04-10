@@ -44,6 +44,8 @@ The topic is a required positional argument. Everything else is optional.
 | `--stock-max-attempts <n>` | Max stock API calls per scene | `4` |
 | `--verification-model <model>` | Model override for stock verification VLM | provider default |
 | `--kokoro-voice <voice>` | Kokoro voice preset (e.g. `af_heart`, `bf_emma`, `am_fenrir`) | `af_heart` |
+| `--direction <file>` | Creative brief file (markdown) to guide the AI's creative decisions | — |
+| `--score <path>` | Replay from a saved `score.json`, skipping research and director stages | — |
 | `-y, --yes` | Auto-confirm cost estimation prompt (for Docker/CI) | off |
 
 ## Provider meta-flags
@@ -119,6 +121,26 @@ Generate only AI images and stock footage, no AI video:
 ```bash
 pnpm start "your topic" --no-video
 ```
+
+### Creative direction file
+
+Guide the AI with a free-form creative brief. Describe visual style, mood, script notes, scene ideas, and music preferences in a markdown file:
+
+```bash
+pnpm start "deep sea exploration" --direction examples/direction-brief.md
+```
+
+The AI reads the brief like a human editor would, honoring your constraints while still exercising creative judgment. See `examples/direction-brief.md` for a sample.
+
+### Replay from a saved score
+
+If a previous run produced a great DirectorScore but downstream stages failed (e.g., TTS generated wrong-duration audio), replay from the saved score without re-running research and director:
+
+```bash
+pnpm start "your topic" --score output/2026-04-10-.../score.json
+```
+
+This skips research, director, and critic stages, saving $0.50-2.00 and 10-30 seconds. The topic argument is still required for the output directory name but is otherwise unused during replay.
 
 ## Cost estimation
 

@@ -86,11 +86,41 @@ After the Director stage produces the DirectorScore, the pipeline computes an es
 
 After all stages complete, actual LLM token usage is aggregated and the real cost is computed and reported.
 
+## Score replay
+
+If you already have a `score.json` from a previous run, you can replay it with `--score <path>` (CLI) or the `score` field (API). This skips three stages:
+
+```
+score.json (loaded)
+  |
+  v
+Director ---- populates closure bindings, runs cost estimation (no LLM calls)
+  |
+  v
+TTS --------- generates voiceover from the replayed score's script lines
+  |
+  v
+Visuals ----- resolves assets and music
+  |
+  v
+Assembly ---- renders the final video
+```
+
+Research and Critic are skipped entirely. The Director step still runs to populate the shared state that downstream stages depend on (archetype config, cost breakdown), but it uses the provided score directly instead of calling the LLM. Cost estimates during replay accurately omit the skipped LLM calls.
+
+This is useful when a previous run produced a great creative plan but downstream stages failed (wrong audio duration, image generation error, etc.). Replay saves $0.50-2.00 and 10-30 seconds per run.
+
+## Creative direction
+
+The `--direction <file>` flag lets you attach a free-form markdown brief that influences the DirectorScore generation. The AI reads it like a creative brief from a producer, honoring your constraints on visual style, mood, script notes, and scene ideas while still exercising creative judgment on anything not specified.
+
+Direction text is injected into both the initial generation and revision prompts, so the critic/revise loop stays aligned with your intent. See `examples/direction-brief.md` for a sample.
+
 ## Early exits
 
 The pipeline supports two early exit paths:
 
-- **Dry run** (`--dry-run`) -- stops after the Director stage (including the quality gate revision loop) and prints the final DirectorScore JSON. No assets are generated.
+- **Dry run** (`--dry-run`) -- stops after the Director stage (including the quality gate revision loop) and prints the final DirectorScore JSON. No assets are generated. Works with both `--direction` and `--score`.
 - **Cost rejection** -- if the user declines at the cost estimate prompt, the pipeline exits cleanly.
 
 Both paths still write `log.json` to the output directory.

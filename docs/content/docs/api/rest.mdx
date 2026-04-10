@@ -108,6 +108,8 @@ Creates a new video generation job and adds it to the processing queue.
 | `dryRun` | boolean | No | `false` | Skip rendering, produce only the DirectorScore |
 | `noMusic` | boolean | No | `false` | Skip music generation/selection |
 | `noVideo` | boolean | No | `false` | Skip AI video generation for scenes |
+| `direction` | string | No | — | Creative direction text (free-form markdown, max 10KB). Guides the AI's DirectorScore generation. |
+| `score` | object | No | — | A previous DirectorScore JSON for replay. Skips research, director, and critic stages. Must be a valid DirectorScore schema. |
 | `providers` | object | No | see defaults | Provider selection per category |
 | `keys` | object | No | `{}` | BYOK (Bring Your Own Key) API keys |
 
@@ -133,6 +135,9 @@ Creates a new video generation job and adds it to the processing queue.
 | `400` | Unknown `archetype` |
 | `400` | Unknown `pacing` tier |
 | `400` | Unknown `platform` |
+| `400` | `direction` exceeds 10KB |
+| `400` | `direction` is not a string |
+| `400` | `score` is not a valid DirectorScore schema |
 
 ---
 

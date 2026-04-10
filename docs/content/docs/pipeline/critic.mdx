@@ -95,6 +95,10 @@ The Critic's system prompt is augmented with two sections extracted from the pla
 
 This ensures the Critic evaluates against the same standards the Creative Director was instructed to follow.
 
+## Skipping during replay
+
+When replaying from a saved score (`--score`), the final Critic stage is skipped entirely. The Critic evaluates the DirectorScore text plan, not the rendered video, so re-evaluating an already-accepted score provides no value. This saves one LLM call (~$0.03-0.10). The stage emits an `onStageSkip` event with reason "Replaying from saved score."
+
 ## Graceful degradation
 
 If the Critic evaluation fails (LLM error, parsing failure), the stage is skipped rather than crashing the pipeline. The rendered video is still usable -- it just lacks a quality score. The failure is logged in `log.json`.

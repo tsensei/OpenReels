@@ -92,6 +92,22 @@ The full content playbook (`prompts/playbook.md`) is injected into the Creative 
 - CTA patterns for the final scene
 - Audience psychology triggers
 
+## Creative direction file
+
+The `--direction <file>` flag (or API `direction` field) lets you attach a free-form markdown brief that influences how the Director generates the score. The direction text is appended to the user message as a `## Creative Direction (from the producer)` section.
+
+Direction is injected into both the initial generation and the revision prompts, so the critic/revise loop stays aligned with your creative intent. The AI treats it like a creative brief from a producer: it honors your constraints on visual style, mood, script notes, and scene ideas while still exercising judgment on anything you didn't specify.
+
+An empty direction file is treated as no direction. Direction is ignored when replaying from `--score` (the score already incorporates creative intent from its original generation).
+
+See `examples/direction-brief.md` for a sample brief.
+
+## Score replay
+
+When `--score <path>` is provided, the Director stage skips LLM generation entirely. Instead, it loads the provided `score.json`, populates the shared closure state (archetype config, cost breakdown), and passes the score to downstream stages.
+
+The revision loop is skipped completely. Cost estimation runs with a `replay: true` flag that omits the research, director, and critic LLM cost terms, giving users an accurate estimate of only the execution costs (TTS, images, video, music).
+
 ## Retry logic
 
 The Director has a built-in retry loop (up to 3 attempts). If the LLM output fails Zod validation (wrong field types, golden rule violation, too few scenes), the error message is appended to the next attempt's prompt so the LLM can self-correct. Token usage is accumulated across retries.
