@@ -2,6 +2,20 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.18.0] - 2026-04-10
+
+### Added
+- **Creative direction file** (`--direction <file>`): attach a free-form markdown brief describing visual style, script notes, music mood, and scene ideas. The AI reads it like a human editor would, constraining the DirectorScore while preserving creative judgment. Works across CLI, API (`direction` field), and web UI (textarea in Advanced panel).
+- **Score replay** (`--score <path>`): reuse a previous `score.json` to skip research, director, and critic stages. Re-renders with different provider config without regenerating the creative plan. Saves $0.50-2.00 and 10-30 seconds per replay.
+- **Replay-aware cost estimation**: cost estimates during replay accurately omit skipped LLM calls (research, creative director, critic), so users see the true execution cost.
+- **Direction provenance in log.json**: direction text, replay flag, and source score path are recorded in the run log for auditability.
+- **Example creative brief**: `examples/direction-brief.md` demonstrates the direction file format with a deep-sea exploration theme.
+
+### For contributors
+- `PipelineOptions` has new optional fields: `direction?: string` and `replayScore?: DirectorScore`.
+- `estimateCost()` accepts an optional `{ replay?: boolean }` options object as the last parameter.
+- `CreateJobBody` (server) and `CreateJobRequest` (web) support `direction` and `score` fields.
+
 ## [0.17.0] - 2026-04-10
 
 ### Added

@@ -61,7 +61,7 @@
   **Priority:** P3
   Deferred from plan: tsensei-main-design-20260401-202558.md
 
-- [ ] **Retry from failed stage** — Add POST /api/v1/jobs/:id/retry endpoint and pipeline resume capability. Requires: orchestrator accepts "start from stage" parameter, worker loads prior stage artifacts from disk, new API endpoint creates a re-run job. UI shows retry button in failed state.
+- [ ] **Retry from failed stage** — Add POST /api/v1/jobs/:id/retry endpoint and pipeline resume capability. Requires: orchestrator accepts "start from stage" parameter, worker loads prior stage artifacts from disk, new API endpoint creates a re-run job. UI shows retry button in failed state. Note: score replay (`--score`, v0.18.0) partially covers the "rerun from known-good score" case. The general retry system should subsume `--score` for API/UI while `--score` remains a CLI convenience.
   **Priority:** P2
   Deferred from plan: Pipeline Page UI/UX Redesign (eng review: no backend support exists)
 
