@@ -68,6 +68,8 @@ export interface PipelineOptions {
   videoProviders?: VideoProvider[];
   videoProvider?: VideoProviderKey;
   noVideo?: boolean;
+  direction?: string;
+  replayScore?: DirectorScore;
 }
 
 export interface PipelineResult {

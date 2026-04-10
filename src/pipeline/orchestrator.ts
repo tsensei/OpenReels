@@ -120,6 +120,9 @@ interface RunLog {
   stockResolutions?: StockResolution[];
   videoResolutions?: VideoResolution[];
   musicResolution?: { provider: string; prompt?: string; metadata?: Record<string, unknown>; fallback: boolean };
+  direction?: string;
+  replay?: boolean;
+  replayScorePath?: string;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -367,6 +370,18 @@ function buildPipelineWorkflow(
       sources: z.array(z.string()),
     }),
     execute: async ({ inputData }) => {
+      // Replay mode: skip research entirely
+      if (opts.replayScore) {
+        cb.onStageSkip?.("research", "Replaying from saved score");
+        log.stages.push({ name: "research", duration: 0, status: "skipped" });
+        return {
+          summary: `Topic: ${inputData.topic}`,
+          key_facts: [] as string[],
+          mood: "informative",
+          sources: [] as string[],
+        };
+      }
+
       cb.onStageStart?.("research");
       const start = Date.now();
       try {
@@ -412,7 +427,53 @@ function buildPipelineWorkflow(
       cb.onStageStart?.("director");
       const start = Date.now();
       const videoEnabled = !opts.noVideo && (opts.videoProviders?.length ?? 0) > 0;
-      const directorOpts = { archetype: opts.archetype, pacing: opts.pacing, videoEnabled };
+      const directorOpts = { archetype: opts.archetype, pacing: opts.pacing, videoEnabled, direction: opts.direction };
+
+      // ── Replay mode: use provided score, skip generation + revision ──
+      if (opts.replayScore) {
+        const score = opts.replayScore;
+        directorResult.score = score;
+        directorResult.config = getArchetype(score.archetype);
+
+        fs.writeFileSync(scorePath, JSON.stringify(score, null, 2));
+        cb.onProgress?.("director", { type: "score", score });
+
+        // Dry run during replay
+        if (opts.dryRun) {
+          const dur = (Date.now() - start) / 1000;
+          cb.onStageComplete?.("director", "Replayed from saved score", dur);
+          log.stages.push({ name: "creative-director", duration: dur, status: "done" });
+          cb.onStageSkip?.("tts", "dry run");
+          cb.onStageSkip?.("visuals", "dry run");
+          cb.onStageSkip?.("assembly", "dry run");
+          cb.onStageSkip?.("critic", "dry run");
+          cb.onLog?.("\n--- DirectorScore (replayed) ---");
+          cb.onLog?.(JSON.stringify(score, null, 2));
+          directorResult.dryRunExit = true;
+          return { done: true };
+        }
+
+        // Cost estimation with replay flag (omits research/director/critic LLM costs)
+        const costBreakdown = estimateCost(score, opts.imageProvider, opts.ttsProvider, opts.videoProvider, opts.llm.id, opts.musicProviderKey, 0, 0, { replay: true });
+        directorResult.costBreakdown = costBreakdown;
+        log.totalCost = { estimated: costBreakdown.totalCost };
+
+        if (cb.onCostEstimate) {
+          const stockSceneCount = score.scenes.filter(
+            (s) => s.visual_type === "stock_image" || s.visual_type === "stock_video",
+          ).length;
+          const proceed = await cb.onCostEstimate(costBreakdown, opts.imageProvider, stockSceneCount);
+          if (!proceed) {
+            directorResult.costRejected = true;
+            return { done: true };
+          }
+        }
+
+        const dur = (Date.now() - start) / 1000;
+        cb.onStageComplete?.("director", `Replayed: ${score.scenes.length} scenes, ${score.archetype}`, dur);
+        log.stages.push({ name: "creative-director", duration: dur, status: "done" });
+        return { done: true };
+      }
 
       // ── Generate initial DirectorScore ──
       const cdOutput = await generateDirectorScore(opts.llm, opts.topic, inputData, directorOpts);
@@ -797,6 +858,13 @@ function buildPipelineWorkflow(
         return { done: false };
       }
 
+      // Replay mode: skip critic (it evaluates the score text, not the rendered video)
+      if (opts.replayScore) {
+        cb.onStageSkip?.("critic", "Replaying from saved score");
+        log.stages.push({ name: "critic", duration: 0, status: "skipped" });
+        return { done: true };
+      }
+
       const score = directorResult.score!;
       cb.onStageStart?.("critic");
       const start = Date.now();
@@ -854,6 +922,8 @@ export async function runPipeline(
     topic: opts.topic,
     startedAt: new Date().toISOString(),
     stages: [],
+    ...(opts.direction ? { direction: opts.direction } : {}),
+    ...(opts.replayScore ? { replay: true } : {}),
   };
 
   // Create output directory with timestamp to avoid overwrites

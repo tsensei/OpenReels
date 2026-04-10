@@ -60,7 +60,7 @@ export async function generateDirectorScore(
   llm: LLMProvider,
   topic: string,
   researchContext: ResearchResult,
-  options?: { archetype?: string; pacing?: string; videoEnabled?: boolean },
+  options?: { archetype?: string; pacing?: string; videoEnabled?: boolean; direction?: string },
 ): Promise<DirectorScoreOutput> {
   const systemPrompt = loadDirectorSystemPrompt();
 
@@ -80,6 +80,10 @@ export async function generateDirectorScore(
   // Resolve pacing tier: explicit --pacing override > archetype default > lookup table
   const pacingInstruction = buildPacingInstruction(options?.archetype, options?.pacing);
 
+  const directionSection = options?.direction?.trim()
+    ? `\n## Creative Direction (from the producer)\n\n${options.direction}\n\nHonor these creative constraints while exercising your judgment on anything not specified.\n`
+    : "";
+
   const userMessage = `Topic: ${topic}
 
 Research context:
@@ -94,7 +98,7 @@ ${archetypeInstruction}
 
 ${pacingInstruction}
 Use ${visualTypes}.${videoGuidance}
-CRITICAL RULE: Never use the same visual_type more than 2 times in a row. With more scenes, plan your visual_type sequence BEFORE writing scenes to ensure variety.
+${directionSection}CRITICAL RULE: Never use the same visual_type more than 2 times in a row. With more scenes, plan your visual_type sequence BEFORE writing scenes to ensure variety.
 Every scene MUST have a script_line (the voiceover text).
 The first scene should be a strong hook.
 If over budget, cut a scene rather than cramming.`;
@@ -197,7 +201,7 @@ export async function reviseDirectorScore(
   researchContext: ResearchResult,
   originalScore: DirectorScore,
   critique: CritiqueResult,
-  options?: { archetype?: string; pacing?: string; videoEnabled?: boolean },
+  options?: { archetype?: string; pacing?: string; videoEnabled?: boolean; direction?: string },
 ): Promise<DirectorScoreOutput> {
   const systemPrompt = loadDirectorSystemPrompt();
 
@@ -212,6 +216,10 @@ export async function reviseDirectorScore(
     ? "all 5 visual types (ai_image, ai_video, stock_image, stock_video, text_card)"
     : "all 4 visual types (ai_image, stock_image, stock_video, text_card)";
 
+  const directionSection = options?.direction?.trim()
+    ? `\n## Creative Direction (from the producer)\n\n${options.direction}\n\nHonor these creative constraints while exercising your judgment on anything not specified.\n`
+    : "";
+
   const userMessage = `Topic: ${topic}
 
 Research context:
@@ -224,7 +232,7 @@ Mood: ${researchContext.mood}
 
 ${pacingInstruction}
 Use ${visualTypes}.
-
+${directionSection}
 ## Current Plan (score: ${critique.score}/10)
 
 ${JSON.stringify(originalScore, null, 2)}

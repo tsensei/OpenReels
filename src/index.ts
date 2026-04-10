@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 
+import * as fs from "node:fs";
 import { parseArgs } from "./cli/args.js";
 import { showUsageReport } from "./cli/usage-report.js";
 import { validateEnv } from "./cli/validate-env.js";
 import { createCliCallbacks, runPipeline } from "./pipeline/orchestrator.js";
 import { createProviders, createVerificationModel } from "./providers/factory.js";
+import { DirectorScore } from "./schema/director-score.js";
 
 async function main(): Promise<void> {
   const opts = parseArgs();
@@ -13,6 +15,60 @@ async function main(): Promise<void> {
   if (opts.usage) {
     showUsageReport(opts.output);
     return;
+  }
+
+  // Load direction file if provided
+  let direction: string | undefined;
+  if (opts.direction) {
+    try {
+      const stat = fs.statSync(opts.direction);
+      if (stat.size > 10240) {
+        console.error(`Direction file exceeds 10KB limit (${stat.size} bytes): ${opts.direction}`);
+        process.exit(1);
+      }
+      const content = fs.readFileSync(opts.direction, "utf-8");
+      // Check for binary content (null bytes)
+      if (content.includes("\0")) {
+        console.error(`Direction file appears to be binary, expected a text file: ${opts.direction}`);
+        process.exit(1);
+      }
+      if (content.trim()) {
+        direction = content;
+      }
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+        console.error(`Direction file not found: ${opts.direction}`);
+      } else if ((err as NodeJS.ErrnoException).code === "EACCES") {
+        console.error(`Cannot read direction file: ${opts.direction}`);
+      } else {
+        console.error(`Failed to read direction file: ${err}`);
+      }
+      process.exit(1);
+    }
+  }
+
+  // Load score.json for replay if provided
+  let replayScore: DirectorScore | undefined;
+  if (opts.score) {
+    try {
+      const raw = fs.readFileSync(opts.score, "utf-8");
+      replayScore = DirectorScore.parse(JSON.parse(raw));
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+        console.error(`Score file not found: ${opts.score}`);
+      } else if (err instanceof SyntaxError) {
+        console.error(`Invalid JSON in score file: ${err.message}`);
+      } else {
+        console.error(`Invalid score file: ${err instanceof Error ? err.message : err}`);
+      }
+      process.exit(1);
+    }
+
+    // Direction is ignored during replay (score already incorporates creative intent)
+    if (direction) {
+      console.warn("[warning] --direction is ignored when replaying from --score (score already incorporates creative intent)");
+      direction = undefined;
+    }
   }
 
   // Validate required API keys before constructing providers
@@ -74,6 +130,8 @@ async function main(): Promise<void> {
       stockConfidence: opts.stockConfidence,
       stockMaxAttempts: opts.stockMaxAttempts,
       verifyModel,
+      direction,
+      replayScore,
     },
     callbacks,
   );

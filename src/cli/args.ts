@@ -38,6 +38,8 @@ export interface CLIOptions {
   stockConfidence: number;
   stockMaxAttempts: number;
   verificationModel?: string;
+  direction?: string;
+  score?: string;
   usage: boolean;
 }
 
@@ -167,6 +169,11 @@ export function parseArgs(): CLIOptions {
       "Video model override (e.g. veo-3.1-lite-preview, fal-ai/kling-video/v2.1/standard/image-to-video)",
     )
     .option("--video", "Enable AI video generation (use --no-video to disable)", true)
+    .option(
+      "--direction <file>",
+      "Creative brief file (markdown). Describe visual style, script notes, music mood, scene ideas. The AI reads it like a human editor would. See examples/direction-brief.md",
+    )
+    .option("--score <path>", "Replay from a saved score.json, skipping research and director stages")
     .option("--usage", "Show cost usage report from past runs in the output directory", false)
     .parse();
 
@@ -244,6 +251,8 @@ export function parseArgs(): CLIOptions {
     stockConfidence: opts["stockConfidence"] as number,
     stockMaxAttempts: opts["stockMaxAttempts"] as number,
     verificationModel: opts["verificationModel"] as string | undefined,
+    direction: opts["direction"] as string | undefined,
+    score: opts["score"] as string | undefined,
     usage: false,
   };
 }

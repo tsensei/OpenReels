@@ -105,24 +105,29 @@ export function estimateCost(
   musicProvider: MusicProviderKey = "bundled",
   gateEvaluations = 0,
   revisionRounds = 0,
+  options?: { replay?: boolean },
 ): CostBreakdown {
+  const replay = options?.replay ?? false;
   const aiImageScenes = score.scenes.filter((s) => s.visual_type === "ai_image").length;
   const aiVideoScenes = score.scenes.filter((s) => s.visual_type === "ai_video").length;
   // ai_video scenes also generate a Phase 1 AI image
   const aiImages = aiImageScenes + aiVideoScenes;
   const ttsCharacters = score.scenes.reduce((sum, s) => sum + s.script_line.length, 0);
   // research + CD + critic + 1 per ai_image + 2 per ai_video (image prompt + motion prompt)
-  const llmCalls = 3 + aiImageScenes + aiVideoScenes * 2;
+  const baseLlmCalls = replay ? 0 : 3;
+  const llmCalls = baseLlmCalls + aiImageScenes + aiVideoScenes * 2;
 
   const p = LLM_PRICING[llmProvider as keyof typeof LLM_PRICING] ?? LLM_PRICING_DEFAULT;
   const callCost = (est: { input: number; output: number }) =>
     est.input * p.perInputToken + est.output * p.perOutputToken;
 
-  const llmCost =
-    callCost(TOKEN_ESTIMATES.research) +
-    callCost(TOKEN_ESTIMATES.creativeDirector) +
-    callCost(TOKEN_ESTIMATES.critic) +
-    aiImages * callCost(TOKEN_ESTIMATES.imagePrompter);
+  // During replay, research + creative director + critic LLM calls are skipped
+  const llmCost = replay
+    ? aiImages * callCost(TOKEN_ESTIMATES.imagePrompter)
+    : callCost(TOKEN_ESTIMATES.research) +
+      callCost(TOKEN_ESTIMATES.creativeDirector) +
+      callCost(TOKEN_ESTIMATES.critic) +
+      aiImages * callCost(TOKEN_ESTIMATES.imagePrompter);
 
   // Quality gate cost: critic calls for evaluation + director calls for revision.
   // Split because evaluations > revisions (gate always evaluates, only revises if score < 7).
