@@ -94,4 +94,54 @@ describe("FalVideo", () => {
       }),
     ).rejects.toThrow("Failed to download fal.ai video: 500");
   });
+
+  it("passes cfg_scale and negative_prompt in input", async () => {
+    const provider = new FalVideo(undefined, "test-key");
+
+    mockUpload.mockResolvedValueOnce("https://fal.storage/image.png");
+    mockSubscribe.mockResolvedValueOnce({
+      data: { video: { url: "https://fal.storage/video.mp4" } },
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      arrayBuffer: () => Promise.resolve(new ArrayBuffer(100)),
+    });
+
+    const result = await provider.generate({
+      sourceImage: Buffer.from("fake-image"),
+      prompt: "A rocket launching",
+      negativePrompt: "blur, flickering",
+    });
+
+    const subscribeCall = mockSubscribe.mock.lastCall!;
+    const input = subscribeCall[1].input;
+    expect(input.cfg_scale).toBe(0.5);
+    expect(input.negative_prompt).toBe("blur, flickering");
+
+    const fs = await import("node:fs");
+    if (fs.existsSync(result.filePath)) fs.unlinkSync(result.filePath);
+  });
+
+  it("uses Kling v2.6 Pro model by default", () => {
+    const provider = new FalVideo(undefined, "test-key");
+    // Access the modelId via a generate call check
+    expect(provider).toBeDefined();
+    // The default model is verified through the subscribe call
+    mockUpload.mockResolvedValueOnce("https://fal.storage/image.png");
+    mockSubscribe.mockResolvedValueOnce({
+      data: { video: { url: "https://fal.storage/video.mp4" } },
+    });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      arrayBuffer: () => Promise.resolve(new ArrayBuffer(100)),
+    });
+
+    provider.generate({
+      sourceImage: Buffer.from("fake-image"),
+      prompt: "test",
+    }).then(() => {
+      const subscribeCall = mockSubscribe.mock.calls.at(-1)!;
+      expect(subscribeCall[0]).toBe("fal-ai/kling-video/v2.6/pro/image-to-video");
+    });
+  });
 });

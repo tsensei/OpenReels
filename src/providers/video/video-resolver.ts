@@ -18,10 +18,15 @@ export interface VideoResolution {
   error?: string;
   imageGenTimeMs: number;
   videoGenTimeMs: number | null;
+  motionPrompt?: string;
+  negativePrompt?: string;
 }
 
 // Module-level concurrency limiter for video gen API calls
 const videoGenLimit = pLimit(3);
+
+const DEFAULT_VIDEO_NEGATIVES =
+  "blur, low resolution, flickering, compression artifacts, frame drops, jitter, stutter, warping, morphing, unnatural physics, deformed hands, extra fingers, morphing faces, sliding motion";
 
 /**
  * Pick the smallest supported duration that is >= the target.
@@ -75,6 +80,12 @@ export async function resolveAIVideo(
 
   opts.callbacks.onProgress?.("visuals", { type: "video_image_ready", scene: sceneIndex });
 
+  // Construct negative prompt: defaults + archetype anti-artifact guidance
+  const archetypeGuidance = opts.archetype.antiArtifactGuidance?.trim();
+  const negativePrompt = archetypeGuidance
+    ? `${DEFAULT_VIDEO_NEGATIVES}, ${archetypeGuidance}`
+    : DEFAULT_VIDEO_NEGATIVES;
+
   // Try each video provider in order
   for (let i = 0; i < opts.videoProviders.length; i++) {
     const provider = opts.videoProviders[i]!;
@@ -90,6 +101,7 @@ export async function resolveAIVideo(
           prompt: motionPrompt,
           durationSeconds: genDuration,
           aspectRatio: "9:16",
+          negativePrompt,
         }),
       );
       const videoGenTimeMs = Date.now() - videoStart;
@@ -120,6 +132,8 @@ export async function resolveAIVideo(
           durationSeconds: videoResult.durationSeconds,
           imageGenTimeMs,
           videoGenTimeMs,
+          motionPrompt,
+          negativePrompt,
         },
       };
     } catch (err) {

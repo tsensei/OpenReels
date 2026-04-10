@@ -67,6 +67,35 @@ describe("GeminiVideo", () => {
     if (fs.existsSync(result.filePath)) fs.unlinkSync(result.filePath);
   });
 
+  it("does not pass unsupported params to veo-3.1-lite config", async () => {
+    const provider = new GeminiVideo("veo-3.1-lite-generate-preview", "test-key");
+
+    generateVideos.mockResolvedValueOnce({
+      done: true,
+      response: {
+        generatedVideos: [{ video: { uri: "gs://bucket/video.mp4" } }],
+      },
+    });
+    download.mockImplementationOnce(async ({ downloadPath }: { downloadPath: string }) => {
+      fs.writeFileSync(downloadPath, "fake-mp4-data");
+    });
+
+    const result = await provider.generate({
+      sourceImage: Buffer.from("fake-image"),
+      prompt: "A rocket launching",
+      negativePrompt: "blur, flickering",
+    });
+
+    const callArgs = generateVideos.mock.lastCall![0];
+    // veo-3.1-lite does NOT support these params
+    expect(callArgs.config.enhancePrompt).toBeUndefined();
+    expect(callArgs.config.generateAudio).toBeUndefined();
+    expect(callArgs.config.negativePrompt).toBeUndefined();
+    expect(callArgs.config.personGeneration).toBeUndefined();
+
+    if (fs.existsSync(result.filePath)) fs.unlinkSync(result.filePath);
+  });
+
   it("throws on empty response", async () => {
     const provider = new GeminiVideo("veo-3.1-lite-generate-preview", "test-key");
 

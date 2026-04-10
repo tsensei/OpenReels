@@ -76,6 +76,7 @@ export interface VideoProvider {
     prompt: string;
     durationSeconds?: number;
     aspectRatio?: string;
+    negativePrompt?: string;
   }): Promise<VideoResult>;
 }
 

@@ -25,6 +25,7 @@ export class GeminiVideo implements VideoProvider {
     prompt: string;
     durationSeconds?: number;
     aspectRatio?: string;
+    negativePrompt?: string;
   }): Promise<VideoResult> {
     const durationSeconds = opts.durationSeconds ?? 6;
     const aspectRatio = opts.aspectRatio ?? "9:16";
@@ -37,11 +38,13 @@ export class GeminiVideo implements VideoProvider {
         imageBytes: opts.sourceImage.toString("base64"),
         mimeType: "image/png",
       },
+      // Note: veo-3.1-lite-generate-preview does NOT support personGeneration,
+      // enhancePrompt, generateAudio, or negativePrompt. These are only
+      // available on the full veo-3.1-generate-preview model (Vertex AI).
       config: {
         numberOfVideos: 1,
         durationSeconds,
         aspectRatio,
-        personGeneration: "allow_adult",
       },
     });
 

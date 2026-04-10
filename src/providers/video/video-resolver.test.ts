@@ -153,4 +153,69 @@ describe("resolveAIVideo", () => {
     );
     expect(readyCall).toBeDefined();
   });
+
+  it("passes negativePrompt combining defaults and archetype antiArtifactGuidance", async () => {
+    const primary = makeProvider();
+    await resolveAIVideo(mockScene, mockImageResult, 0, path.join(tmpDir, "assets"), {
+      videoProviders: [primary],
+      llm: mockLlm,
+      archetype: mockArchetype,
+      callbacks: mockCallbacks,
+    });
+
+    const generateCall = (primary.generate as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(generateCall.negativePrompt).toContain("blur");
+    expect(generateCall.negativePrompt).toContain("flickering");
+    expect(generateCall.negativePrompt).toContain("no artifacts");
+  });
+
+  it("uses defaults only when antiArtifactGuidance is empty", async () => {
+    const primary = makeProvider();
+    const emptyArchetype = { ...mockArchetype, antiArtifactGuidance: "" } as unknown as ArchetypeConfig;
+
+    await resolveAIVideo(mockScene, mockImageResult, 0, path.join(tmpDir, "assets"), {
+      videoProviders: [primary],
+      llm: mockLlm,
+      archetype: emptyArchetype,
+      callbacks: mockCallbacks,
+    });
+
+    const generateCall = (primary.generate as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(generateCall.negativePrompt).toContain("blur");
+    expect(generateCall.negativePrompt).not.toContain(", ,");
+    expect(generateCall.negativePrompt).not.toMatch(/, $/);
+    expect(generateCall.negativePrompt).toBe(generateCall.negativePrompt.trim());
+  });
+
+  it("includes motionPrompt and negativePrompt in VideoResolution metadata", async () => {
+    const primary = makeProvider();
+    const result = await resolveAIVideo(mockScene, mockImageResult, 0, path.join(tmpDir, "assets"), {
+      videoProviders: [primary],
+      llm: mockLlm,
+      archetype: mockArchetype,
+      callbacks: mockCallbacks,
+    });
+
+    expect(result.videoResolution.motionPrompt).toBeDefined();
+    expect(result.videoResolution.motionPrompt).toContain("rocket");
+    expect(result.videoResolution.negativePrompt).toBeDefined();
+    expect(result.videoResolution.negativePrompt).toContain("blur");
+  });
+
+  it("uses raw visual_prompt as motion prompt when LLM optimization fails", async () => {
+    const { optimizeImagePrompt } = await import("../../agents/image-prompter.js");
+    (optimizeImagePrompt as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("LLM failed"));
+
+    const primary = makeProvider();
+    const result = await resolveAIVideo(mockScene, mockImageResult, 0, path.join(tmpDir, "assets"), {
+      videoProviders: [primary],
+      llm: mockLlm,
+      archetype: mockArchetype,
+      callbacks: mockCallbacks,
+    });
+
+    const generateCall = (primary.generate as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(generateCall.prompt).toBe("A rocket launching");
+    expect(result.videoResolution.motionPrompt).toBe("A rocket launching");
+  });
 });

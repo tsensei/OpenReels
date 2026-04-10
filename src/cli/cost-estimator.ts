@@ -83,7 +83,7 @@ const PRICING = {
   openaiPerImage: 0.167,
   // Video generation pricing (per second of generated video)
   veoLitePerSecond: 0.05, // Veo 3.1 Lite ($0.30 for 6s clip)
-  falKlingPerSecond: 0.07, // Kling v2.1 via fal.ai ($0.35 for 5s clip)
+  falKlingPerSecond: 0.07, // Kling v2.6 Pro via fal.ai ($0.35 for 5s clip)
   // Music generation pricing
   lyriaPerTrack: 0.08, // Lyria 3 Pro: $0.08 per song (ai.google.dev/gemini-api/docs/music-generation)
 };

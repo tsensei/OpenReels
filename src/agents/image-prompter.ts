@@ -4,7 +4,8 @@ import { z } from "zod";
 import type { ArchetypeConfig } from "../schema/archetype.js";
 import type { LLMProvider, LLMUsage } from "../schema/providers.js";
 
-const SYSTEM_PROMPT_PATH = path.join(process.cwd(), "prompts", "image-prompter.md");
+const IMAGE_PROMPT_PATH = path.join(process.cwd(), "prompts", "image-prompter.md");
+const VIDEO_PROMPT_PATH = path.join(process.cwd(), "prompts", "video-prompter.md");
 
 const ImagePromptResult = z.object({
   optimized_prompt: z.string(),
@@ -38,13 +39,9 @@ export async function optimizeImagePrompt(
       : "You are a visual prompt engineer for AI image generation. Transform scene descriptions into detailed, image-generator-friendly prompts. Return the optimized prompt in the optimized_prompt field.";
 
   try {
-    systemPrompt = fs.readFileSync(SYSTEM_PROMPT_PATH, "utf-8");
-    if (mode === "video") {
-      systemPrompt +=
-        "\n\nIMPORTANT: This prompt is for AI VIDEO generation, not still images. Focus on motion, camera movement, and temporal dynamics. Describe what changes over the 5-second clip.";
-    }
+    systemPrompt = fs.readFileSync(mode === "video" ? VIDEO_PROMPT_PATH : IMAGE_PROMPT_PATH, "utf-8");
   } catch {
-    // Use default
+    // Use default inline prompt above
   }
 
   // Inject style bible from archetype's creative fields

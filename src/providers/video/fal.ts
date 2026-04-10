@@ -5,7 +5,7 @@ import * as path from "node:path";
 import { createFalClient, type FalClient } from "@fal-ai/client";
 import type { VideoProvider, VideoResult } from "../../schema/providers.js";
 
-const DEFAULT_MODEL = "fal-ai/kling-video/v2.1/standard/image-to-video";
+const DEFAULT_MODEL = "fal-ai/kling-video/v2.6/pro/image-to-video";
 
 export class FalVideo implements VideoProvider {
   private client: FalClient;
@@ -25,6 +25,7 @@ export class FalVideo implements VideoProvider {
     prompt: string;
     durationSeconds?: number;
     aspectRatio?: string;
+    negativePrompt?: string;
   }): Promise<VideoResult> {
     const durationSeconds = opts.durationSeconds ?? 5;
     const aspectRatio = opts.aspectRatio ?? "9:16";
@@ -40,6 +41,8 @@ export class FalVideo implements VideoProvider {
         image_url: imageUrl,
         duration: durationSeconds,
         aspect_ratio: aspectRatio,
+        cfg_scale: 0.5,
+        ...(opts.negativePrompt ? { negative_prompt: opts.negativePrompt } : {}),
       },
       pollInterval: 5_000,
     });

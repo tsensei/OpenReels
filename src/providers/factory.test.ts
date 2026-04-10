@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createProviders } from "./factory.js";
+import { FalVideo } from "./video/fal.js";
+import { GeminiVideo } from "./video/gemini.js";
 import { GeminiImage } from "./image/gemini.js";
 import { OpenAIImage } from "./image/openai.js";
 import { AnthropicLLM } from "./llm/anthropic.js";
@@ -80,6 +82,12 @@ vi.mock("./llm/openai-compatible.js", () => ({
 }));
 vi.mock("./search/tavily.js", () => ({
   createTavilySearchTools: vi.fn((apiKey?: string) => ({ tavily_search: { apiKey } })),
+}));
+vi.mock("./video/gemini.js", () => ({
+  GeminiVideo: vi.fn().mockImplementation(() => ({ supportedDurations: [4, 6, 8], generate: vi.fn() })),
+}));
+vi.mock("./video/fal.js", () => ({
+  FalVideo: vi.fn().mockImplementation(() => ({ supportedDurations: [5, 10], generate: vi.fn() })),
 }));
 
 describe("createProviders", () => {
@@ -407,5 +415,60 @@ describe("createProviders", () => {
 
     const args = vi.mocked(AnthropicLLM).mock.calls[0]!;
     expect(args[0]).toBe("claude-opus-4-6");
+  });
+
+  it("passes videoModel to GeminiVideo but not FalVideo", () => {
+    const origGoogle = process.env["GOOGLE_API_KEY"];
+    const origFal = process.env["FAL_API_KEY"];
+    process.env["GOOGLE_API_KEY"] = "test-goog";
+    process.env["FAL_API_KEY"] = "test-fal";
+
+    createProviders({
+      llm: "anthropic",
+      tts: "elevenlabs",
+      image: "gemini",
+      videoModel: "veo-3.1-generate-preview",
+    });
+
+    // GeminiVideo should receive the model override
+    const geminiArgs = vi.mocked(GeminiVideo).mock.calls[0]!;
+    expect(geminiArgs[0]).toBe("veo-3.1-generate-preview");
+
+    // FalVideo should receive undefined (uses its own default)
+    const falArgs = vi.mocked(FalVideo).mock.calls[0]!;
+    expect(falArgs[0]).toBeUndefined();
+
+    process.env["GOOGLE_API_KEY"] = origGoogle ?? "";
+    process.env["FAL_API_KEY"] = origFal ?? "";
+    if (!origGoogle) delete process.env["GOOGLE_API_KEY"];
+    if (!origFal) delete process.env["FAL_API_KEY"];
+  });
+
+  it("passes videoModel to GeminiVideo even when Fal is primary", () => {
+    const origGoogle = process.env["GOOGLE_API_KEY"];
+    const origFal = process.env["FAL_API_KEY"];
+    process.env["GOOGLE_API_KEY"] = "test-goog";
+    process.env["FAL_API_KEY"] = "test-fal";
+
+    createProviders({
+      llm: "anthropic",
+      tts: "elevenlabs",
+      image: "gemini",
+      video: "fal",
+      videoModel: "veo-3.1-generate-preview",
+    });
+
+    // GeminiVideo (secondary) should still receive the model override
+    const geminiArgs = vi.mocked(GeminiVideo).mock.calls[0]!;
+    expect(geminiArgs[0]).toBe("veo-3.1-generate-preview");
+
+    // FalVideo (primary) should receive undefined
+    const falArgs = vi.mocked(FalVideo).mock.calls[0]!;
+    expect(falArgs[0]).toBeUndefined();
+
+    process.env["GOOGLE_API_KEY"] = origGoogle ?? "";
+    process.env["FAL_API_KEY"] = origFal ?? "";
+    if (!origGoogle) delete process.env["GOOGLE_API_KEY"];
+    if (!origFal) delete process.env["FAL_API_KEY"];
   });
 });

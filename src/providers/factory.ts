@@ -188,8 +188,8 @@ export function createProviders(config: ProviderConfig): Providers {
   const videoPrimary = config.video ?? (googleKey ? "gemini" : falKey ? "fal" : undefined);
 
   if (videoPrimary === "fal") {
-    if (falKey) videoProviders.push(new FalVideo(config.videoModel, falKey));
-    if (googleKey) videoProviders.push(new GeminiVideo(undefined, googleKey));
+    if (falKey) videoProviders.push(new FalVideo(undefined, falKey));
+    if (googleKey) videoProviders.push(new GeminiVideo(config.videoModel, googleKey));
   } else if (videoPrimary === "gemini" || videoPrimary === undefined) {
     if (googleKey) videoProviders.push(new GeminiVideo(config.videoModel, googleKey));
     if (falKey) videoProviders.push(new FalVideo(undefined, falKey));
