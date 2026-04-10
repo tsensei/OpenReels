@@ -196,6 +196,25 @@ describe("estimateCost", () => {
     const result = estimateCost(score, "gemini", "elevenlabs", undefined, "openai-compatible");
     expect(result.llmCost).toBe(0);
   });
+
+  it("zeroes research/director/critic LLM costs in replay mode", () => {
+    const score = makeScore([
+      { visual_type: "ai_image", script_line: "Test" },
+      { visual_type: "stock_video", script_line: "Test two" },
+    ]);
+    const full = estimateCost(score);
+    const replay = estimateCost(
+      score, "gemini", "elevenlabs", undefined, "anthropic", "bundled", 0, 0, { replay: true },
+    );
+    // Replay LLM cost should only include image prompter (1 ai_image = 1 call)
+    expect(replay.llmCost).toBeLessThan(full.llmCost);
+    // Base LLM calls: 0 (replay) vs 3 (full)
+    expect(replay.details.llmCalls).toBe(1); // only 1 image prompter call
+    expect(full.details.llmCalls).toBe(4); // 3 base + 1 image prompter
+    // Non-LLM costs should be identical
+    expect(replay.ttsCost).toBe(full.ttsCost);
+    expect(replay.imageCost).toBe(full.imageCost);
+  });
 });
 
 describe("formatCostEstimate", () => {
