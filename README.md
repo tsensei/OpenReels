@@ -68,7 +68,7 @@ Give it a topic. It handles everything:
 | **Research** | Web search grounds the script in real facts, not hallucinations |
 | **Script** | Writes a punchy short-form script with scene breakdowns, visual direction, and emotional arc |
 | **Voiceover** | Generates TTS audio with word-level timestamps for karaoke-style captions |
-| **Visuals** | AI images (Gemini, DALL-E), AI video clips (Google Veo, fal.ai Kling), and vision-verified stock footage that rejects bad matches and retries automatically |
+| **Visuals** | AI images (Gemini, DALL-E), AI video clips (Google Veo 3.1, fal.ai Kling 2.6 Pro) with dedicated cinematography prompts and negative prompt guidance, plus vision-verified stock footage that rejects bad matches and retries automatically |
 | **Music** | AI-generated background score via Google Lyria 3 Pro, scene-synced to match the video's emotional arc. Or pick from 25 bundled royalty-free tracks |
 | **Captions** | Spring-animated 3-state captions with 7 distinct styles, per-archetype theming, and word-level karaoke highlighting |
 | **Assembly** | Composites everything into a vertical MP4 via Remotion with crossfade, slide, wipe, and flip transitions |
@@ -86,7 +86,7 @@ Mix and match providers or go all-in on one ecosystem:
 | **Search** | Native (provider built-in), Tavily, or parametric knowledge |
 | **TTS** | ElevenLabs, Inworld, OpenAI TTS, Gemini TTS, Kokoro (free, local) |
 | **Images** | Gemini Imagen, OpenAI DALL-E |
-| **Video** | Google Veo, fal.ai Kling (with cross-provider fallback) |
+| **Video** | Google Veo 3.1, fal.ai Kling 2.6 Pro (with cross-provider fallback, negative prompts, structured cinematography prompts) |
 | **Music** | Google Lyria 3 Pro (AI-generated, $0.08/track), Bundled library (free) |
 | **Stock** | Pexels, Pixabay (both searched, vision-verified, with AI fallback) |
 
@@ -244,7 +244,7 @@ The rewrite moves from Python to TypeScript for native [Remotion](https://www.re
 
 ## Status
 
-v0.13.1 shipped. See [CHANGELOG.md](CHANGELOG.md) for full version history and [TODOS.md](TODOS.md) for known issues and roadmap.
+v0.17.0 shipped. See [CHANGELOG.md](CHANGELOG.md) for full version history and [TODOS.md](TODOS.md) for known issues and roadmap.
 
 ## Star History
 

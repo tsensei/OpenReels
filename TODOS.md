@@ -95,6 +95,14 @@
 - [ ] **Gemini generateVideos initial call timeout** — The 180s `TIMEOUT_MS` in gemini.ts only guards the polling loop. The initial `this.client.models.generateVideos()` call that submits the job has no application-level timeout, relying on OS socket timeout (~120s). Wrap with `Promise.race` or `AbortSignal.timeout()`. Same class of issue as the fal.ai subscribe timeout (P1 in Pipeline Robustness).
   **Priority:** P2
 
+- [ ] **Expand Motion enum with cinematic camera directions** — Current Motion enum is `zoom_in | zoom_out | pan_right | pan_left | static`. For `ai_video` scenes, the creative director could specify richer camera directions (`dolly_in`, `tracking`, `crane_up`, `orbit`) that feed into the video-prompter. Touches schema (breaking change), creative-director prompt, Remotion score-to-props mapper. Phase 2 after video quality enhancement ships and we evaluate improvement.
+  **Priority:** P2
+  **Depends on:** Video generation quality enhancement
+  Deferred from plan: Video Generation Quality Enhancement (CEO review: accepted as follow-up)
+
+- [ ] **Video generation safety re-prompting** — Unlike image generation (which retries with a sanitized prompt on safety rejection), video generation falls back to static image immediately. The motion prompt could be sanitized the same way. Also, `isSafetyRejection()` in orchestrator.ts:204 doesn't check for `"forbidden"` which is what Veo returns for RAI-filtered content.
+  **Priority:** P2
+
 ## TTS
 
 - [ ] **Voice catalog command** — Add `--list-voices <provider>` CLI flag that prints available voices for any TTS provider (ElevenLabs, Inworld, Kokoro, Gemini TTS, OpenAI TTS) and exits. Users currently have no way to discover voice options without reading provider docs. Kokoro has ~50 voices, Gemini TTS has multiple, ElevenLabs has hundreds. Build as a unified interface across all providers rather than provider-specific flags.

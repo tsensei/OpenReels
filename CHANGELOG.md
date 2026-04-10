@@ -2,6 +2,24 @@
 
 All notable changes to OpenReels will be documented in this file.
 
+## [0.17.0] - 2026-04-10
+
+### Added
+- **Dedicated video motion prompter**: new `prompts/video-prompter.md` with structured cinematography language. Video prompts now follow a professional anatomy: shot type, subject, action, camera movement, lighting, and style. Temporal progression, single-action constraints, and physics/realism guidance produce more natural motion.
+- **Negative prompts for video generation**: both Veo and Kling providers now receive anti-artifact guidance. Default negatives (blur, flickering, morphing, unnatural physics) are combined with each archetype's existing `antiArtifactGuidance` for style-aware quality control.
+- **Video prompt observability**: `motionPrompt` and `negativePrompt` fields are now logged in `VideoResolution` metadata (visible in `log.json`), making video quality issues debuggable without re-running the pipeline.
+- **Kling 2.6 Pro upgrade**: Fal/Kling video provider upgraded from v2.1 standard to v2.6 Pro. Better motion physics and realism at the same $0.07/s price.
+- **Kling cfg_scale parameter**: prompt adherence control (0.5 default) now passed to the Kling API.
+
+### Fixed
+- **Veo API compatibility**: removed `personGeneration`, `enhancePrompt`, `generateAudio`, and `negativePrompt` config params that `veo-3.1-lite-generate-preview` rejects. These exist in the SDK types but are only supported on the full Veo model (Vertex AI). This fixes `Forbidden`/`INVALID_ARGUMENT` errors that silently caused all Veo video generation to fail.
+- **Factory videoModel routing**: `config.videoModel` is now passed to GeminiVideo regardless of primary/secondary position. FalVideo always uses its own default model, preventing Veo model strings from reaching the Fal endpoint.
+
+### For contributors
+- `VideoProvider.generate()` opts now include optional `negativePrompt` field.
+- `VideoResolution` interface has new `motionPrompt` and `negativePrompt` fields.
+- `image-prompter.ts` loads `video-prompter.md` when `mode="video"` instead of appending to `image-prompter.md`.
+
 ## [0.16.0] - 2026-04-09
 
 ### Added
