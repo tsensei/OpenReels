@@ -2,8 +2,7 @@ import { execFile } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { TTSProvider, TTSResult } from "../../schema/providers.js";
-import type { WhisperAligner } from "./whisper-aligner.js";
+import type { Aligner, TTSProvider, TTSResult } from "../../schema/providers.js";
 
 /**
  * Decorator that wraps any TTSProvider and auto-injects word-level timestamps
@@ -24,7 +23,7 @@ import type { WhisperAligner } from "./whisper-aligner.js";
 export class AlignedTTSProvider implements TTSProvider {
   constructor(
     private inner: TTSProvider,
-    private aligner: WhisperAligner,
+    private aligner: Aligner,
   ) {}
 
   async generate(text: string): Promise<TTSResult> {

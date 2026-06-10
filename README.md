@@ -82,9 +82,9 @@ Mix and match providers or go all-in on one ecosystem:
 
 | Capability | Providers |
 |-----------|-----------|
-| **LLM** | Anthropic Claude, OpenAI GPT, Google Gemini, OpenRouter (300+ models), any OpenAI-compatible endpoint |
+| **LLM** | Anthropic Claude, OpenAI GPT, Google Gemini, OpenRouter (300+ models), 60db, any OpenAI-compatible endpoint |
 | **Search** | Native (provider built-in), Tavily, or parametric knowledge |
-| **TTS** | ElevenLabs, Inworld, OpenAI TTS, Gemini TTS, Kokoro (free, local) |
+| **TTS** | ElevenLabs, Inworld, OpenAI TTS, Gemini TTS, Kokoro (free, local), 60db (sync REST + NDJSON stream + WebSocket) |
 | **Images** | Gemini Imagen, OpenAI DALL-E |
 | **Video** | Google Veo 3.1, fal.ai Kling 2.6 Pro (with cross-provider fallback, negative prompts, structured cinematography prompts) |
 | **Music** | Google Lyria 3 Pro (AI-generated, $0.08/track), Bundled library (free) |
@@ -93,6 +93,34 @@ Mix and match providers or go all-in on one ecosystem:
 **One key, everything Google:** `--provider google` sets LLM, images, TTS, video, and music to Google APIs with a single `GOOGLE_API_KEY`.
 
 **Zero-cost voiceover:** `--provider local` uses Kokoro for free local TTS. No API key needed.
+
+### 60db cloud provider
+
+This fork adds [60db](https://docs.60db.ai) as a first-class provider. One `SIXTYDB_API_KEY` unlocks LLM + 3 TTS surfaces + optional cloud STT alignment.
+
+| Flag | Surface | Wire |
+|---|---|---|
+| `--provider 60db` | LLM | `POST https://api.60db.ai/v1/chat/completions` (default model: `60db-tiny`) |
+| `--tts-provider 60db` | TTS sync REST | `POST /tts-synthesize` — one-shot mp3 + Whisper alignment |
+| `--tts-provider 60db-stream` | TTS NDJSON | `POST /tts-stream` — chunked mp3 + Whisper alignment |
+| `--tts-provider 60db-ws` | TTS WebSocket | `wss://api.60db.ai/ws/tts` — LINEAR16 PCM → WAV → MP3 transcoded via ffmpeg |
+| `SIXTYDB_USE_CLOUD_ALIGNER=true` | Word alignment | Swap local Whisper for `POST /stt` (no GPU needed) |
+
+Env:
+
+```env
+SIXTYDB_API_KEY=sk_live_...
+SIXTYDB_API_BASE=https://api.60db.ai          # optional
+SIXTYDB_LLM_MODEL=60db-tiny                   # optional
+SIXTYDB_TTS_VOICE_ID=fbb75ed2-975a-40c7-9e06-38e30524a9a1   # optional
+SIXTYDB_USE_CLOUD_ALIGNER=true                # optional, swap WhisperAligner
+```
+
+Example — go end-to-end on 60db:
+
+```bash
+openreels "the dawn of stoicism" --provider 60db --tts-provider 60db
+```
 
 ## Quickstart
 

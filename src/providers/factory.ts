@@ -26,6 +26,7 @@ import { GeminiLLM } from "./llm/gemini.js";
 import { OpenAILLM } from "./llm/openai.js";
 import { OpenAICompatibleLLM } from "./llm/openai-compatible.js";
 import { OpenRouterLLM } from "./llm/openrouter.js";
+import { SixtyDbLLM } from "./llm/sixtydb.js";
 import { BundledMusic } from "./music/bundled-adapter.js";
 import { LyriaMusic } from "./music/lyria.js";
 import { createTavilySearchTools } from "./search/tavily.js";
@@ -37,6 +38,10 @@ import { GeminiTTS } from "./tts/gemini.js";
 import { InworldTTS } from "./tts/inworld.js";
 import { KokoroTTS } from "./tts/kokoro.js";
 import { OpenAITTS } from "./tts/openai.js";
+import { SixtyDbAligner } from "./tts/sixtydb-aligner.js";
+import { SixtyDbStreamTTS } from "./tts/sixtydb-stream.js";
+import { SixtyDbWsTTS } from "./tts/sixtydb-ws.js";
+import { SixtyDbTTS } from "./tts/sixtydb.js";
 import { WhisperAligner } from "./tts/whisper-aligner.js";
 import { FalVideo } from "./video/fal.js";
 import { GeminiVideo } from "./video/gemini.js";
@@ -133,14 +138,22 @@ export function createProviders(config: ProviderConfig): Providers {
       llm = new OpenAICompatibleLLM(baseUrl, model, apiKey, searchTools);
       break;
     }
+    case "60db":
+      llm = new SixtyDbLLM(config.llmModel, k["SIXTYDB_API_KEY"], searchTools);
+      break;
     default:
       llm = new AnthropicLLM(config.llmModel, k["ANTHROPIC_API_KEY"], searchTools);
       break;
   }
 
   // Providers that lack native timestamps get wrapped with the alignment decorator.
-  // The aligner is shared (lazy singleton) so the Whisper model loads only once.
-  const aligner = new WhisperAligner();
+  // The aligner is shared so the Whisper model loads only once (or replaced
+  // with the 60db cloud aligner when SIXTYDB_USE_CLOUD_ALIGNER=true).
+  const useCloudAligner =
+    (process.env["SIXTYDB_USE_CLOUD_ALIGNER"] ?? "").toLowerCase() === "true";
+  const aligner = useCloudAligner
+    ? new SixtyDbAligner(k["SIXTYDB_API_KEY"])
+    : new WhisperAligner();
 
   let tts: TTSProvider;
   switch (config.tts) {
@@ -155,6 +168,15 @@ export function createProviders(config: ProviderConfig): Providers {
       break;
     case "inworld":
       tts = new InworldTTS(undefined, undefined, k["INWORLD_TTS_API_KEY"]);
+      break;
+    case "60db":
+      tts = new AlignedTTSProvider(new SixtyDbTTS(undefined, k["SIXTYDB_API_KEY"]), aligner);
+      break;
+    case "60db-stream":
+      tts = new AlignedTTSProvider(new SixtyDbStreamTTS(undefined, k["SIXTYDB_API_KEY"]), aligner);
+      break;
+    case "60db-ws":
+      tts = new AlignedTTSProvider(new SixtyDbWsTTS(undefined, k["SIXTYDB_API_KEY"]), aligner);
       break;
     default:
       tts = new ElevenLabsTTS(undefined, k["ELEVENLABS_API_KEY"]);
