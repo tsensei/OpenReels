@@ -96,6 +96,7 @@ export function parseArgs(): CLIOptions {
           "openai-compatible",
           "google",
           "local",
+          "60db",
         ])
         .default("anthropic"),
     )
@@ -120,7 +121,16 @@ export function parseArgs(): CLIOptions {
     )
     .addOption(
       new Option("--tts-provider <provider>", "TTS provider")
-        .choices(["elevenlabs", "inworld", "kokoro", "gemini-tts", "openai-tts"])
+        .choices([
+          "elevenlabs",
+          "inworld",
+          "kokoro",
+          "gemini-tts",
+          "openai-tts",
+          "60db",
+          "60db-stream",
+          "60db-ws",
+        ])
         .default("elevenlabs"),
     )
     .option(

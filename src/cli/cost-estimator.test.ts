@@ -184,6 +184,31 @@ describe("estimateCost", () => {
     expect(geminiLlm.llmCost).toBeGreaterThan(0);
   });
 
+  it("uses 60db LLM pricing when llmProvider is 60db", () => {
+    const score = makeScore([{ visual_type: "ai_image", script_line: "Test" }]);
+    const result = estimateCost(score, "gemini", "elevenlabs", undefined, "60db");
+    // 60db chat is $0.50/1M tokens in and out (60db.ai/pricing):
+    // research + creative director + critic + 1 image prompt
+    // = 10,800 input + 3,700 output tokens = 14,500 * $0.50/1M = $0.00725
+    expect(result.llmCost).toBeGreaterThan(0);
+    expect(result.llmCost).toBeCloseTo(0.00725, 5);
+  });
+
+  it("uses 60db TTS pricing when ttsProvider is 60db", () => {
+    const score = makeScore([{ visual_type: "text_card", script_line: "Hello world" }]);
+    const result = estimateCost(score, "gemini", "60db");
+    // 60db TTS is $0.02/1K chars (60db.ai/pricing): 11 chars * $0.00002
+    expect(result.ttsCost).toBeCloseTo(11 * 0.00002, 8);
+  });
+
+  it("uses 60db TTS pricing for stream and ws variants", () => {
+    const score = makeScore([{ visual_type: "text_card", script_line: "Hello world" }]);
+    const stream = estimateCost(score, "gemini", "60db-stream");
+    const ws = estimateCost(score, "gemini", "60db-ws");
+    expect(stream.ttsCost).toBeCloseTo(11 * 0.00002, 8);
+    expect(ws.ttsCost).toBeCloseTo(11 * 0.00002, 8);
+  });
+
   it("uses zero-cost fallback for unknown providers (openrouter)", () => {
     const score = makeScore([{ visual_type: "ai_image", script_line: "Test" }]);
     const result = estimateCost(score, "gemini", "elevenlabs", undefined, "openrouter");
@@ -322,6 +347,13 @@ describe("computeActualLLMCost", () => {
     const gemini = computeActualLLMCost(usages, { aiImages: 0, ttsCharacters: 0 }, "gemini");
     expect(gemini.llmCost).toBeLessThan(anthropic.llmCost);
     expect(gemini.llmCost).toBeGreaterThan(0);
+  });
+
+  it("uses 60db pricing in computeActualLLMCost", () => {
+    const usages: LLMUsage[] = [{ inputTokens: 1_000_000, outputTokens: 1_000_000 }];
+    const result = computeActualLLMCost(usages, { aiImages: 0, ttsCharacters: 0 }, "60db");
+    // $0.50/1M in + $0.50/1M out = $1.00
+    expect(result.llmCost).toBeCloseTo(1.0, 5);
   });
 
   it("uses zero-cost fallback for unknown LLM provider (openrouter)", () => {

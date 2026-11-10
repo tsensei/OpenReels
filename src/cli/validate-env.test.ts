@@ -292,4 +292,91 @@ describe("validateEnv", () => {
     delete process.env["ELEVENLABS_API_KEY"];
     delete process.env["GOOGLE_API_KEY"];
   });
+
+  it("requires SIXTYDB_API_KEY when --provider 60db", () => {
+    delete process.env.SIXTYDB_API_KEY;
+    process.env.ELEVENLABS_API_KEY = "test";
+    process.env.GOOGLE_API_KEY = "test";
+
+    validateEnv({ provider: "60db", ttsProvider: "elevenlabs", imageProvider: "gemini" });
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const output = errorSpy.mock.calls.flat().join("");
+    expect(output).toContain("SIXTYDB_API_KEY");
+
+    delete process.env.ELEVENLABS_API_KEY;
+    delete process.env.GOOGLE_API_KEY;
+  });
+
+  it("requires SIXTYDB_API_KEY when --tts-provider 60db", () => {
+    delete process.env.SIXTYDB_API_KEY;
+    process.env.ANTHROPIC_API_KEY = "test";
+    process.env.GOOGLE_API_KEY = "test";
+
+    validateEnv({ provider: "anthropic", ttsProvider: "60db", imageProvider: "gemini" });
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const output = errorSpy.mock.calls.flat().join("");
+    expect(output).toContain("SIXTYDB_API_KEY");
+
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.GOOGLE_API_KEY;
+  });
+
+  it("requires SIXTYDB_API_KEY when --tts-provider 60db-stream", () => {
+    delete process.env.SIXTYDB_API_KEY;
+    process.env.ANTHROPIC_API_KEY = "test";
+    process.env.GOOGLE_API_KEY = "test";
+
+    validateEnv({ provider: "anthropic", ttsProvider: "60db-stream", imageProvider: "gemini" });
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const output = errorSpy.mock.calls.flat().join("");
+    expect(output).toContain("SIXTYDB_API_KEY");
+
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.GOOGLE_API_KEY;
+  });
+
+  it("requires SIXTYDB_API_KEY when --tts-provider 60db-ws", () => {
+    delete process.env.SIXTYDB_API_KEY;
+    process.env.ANTHROPIC_API_KEY = "test";
+    process.env.GOOGLE_API_KEY = "test";
+
+    validateEnv({ provider: "anthropic", ttsProvider: "60db-ws", imageProvider: "gemini" });
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    const output = errorSpy.mock.calls.flat().join("");
+    expect(output).toContain("SIXTYDB_API_KEY");
+
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.GOOGLE_API_KEY;
+  });
+
+  it("passes when --provider 60db and SIXTYDB_API_KEY is set", () => {
+    process.env.SIXTYDB_API_KEY = "test";
+    process.env.GOOGLE_API_KEY = "test";
+
+    validateEnv({ provider: "60db", ttsProvider: "60db", imageProvider: "gemini" });
+
+    expect(exitSpy).not.toHaveBeenCalled();
+
+    delete process.env.SIXTYDB_API_KEY;
+    delete process.env.GOOGLE_API_KEY;
+  });
+
+  it("does not require SIXTYDB_API_KEY when 60db is not used", () => {
+    process.env.ANTHROPIC_API_KEY = "test";
+    process.env.ELEVENLABS_API_KEY = "test";
+    process.env.GOOGLE_API_KEY = "test";
+    delete process.env.SIXTYDB_API_KEY;
+
+    validateEnv({ provider: "anthropic", ttsProvider: "elevenlabs", imageProvider: "gemini" });
+
+    expect(exitSpy).not.toHaveBeenCalled();
+
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.ELEVENLABS_API_KEY;
+    delete process.env.GOOGLE_API_KEY;
+  });
 });

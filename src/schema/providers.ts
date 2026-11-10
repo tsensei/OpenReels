@@ -1,9 +1,30 @@
 import type { z } from "zod";
 import type { MusicMood } from "./director-score.js";
 
-export type LLMProviderKey = "anthropic" | "openai" | "gemini" | "openrouter" | "openai-compatible";
+export type LLMProviderKey =
+  | "anthropic"
+  | "openai"
+  | "gemini"
+  | "openrouter"
+  | "openai-compatible"
+  | "60db";
 export type SearchProviderKey = "native" | "tavily" | "none";
-export type TTSProviderKey = "elevenlabs" | "inworld" | "kokoro" | "gemini-tts" | "openai-tts";
+export type TTSProviderKey =
+  | "elevenlabs"
+  | "inworld"
+  | "kokoro"
+  | "gemini-tts"
+  | "openai-tts"
+  | "60db"
+  | "60db-stream"
+  | "60db-ws";
+
+// Aligner: structural interface that WhisperAligner and SixtyDbAligner
+// both satisfy. AlignedTTSProvider depends on this so the choice of
+// aligner can be swapped without touching the decorator.
+export interface Aligner {
+  align(audio: Buffer, text: string): Promise<WordTimestamp[]>;
+}
 export type ImageProviderKey = "gemini" | "openai";
 export type StockProviderKey = "pexels" | "pixabay";
 export type VideoProviderKey = "gemini" | "fal";
