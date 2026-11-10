@@ -64,6 +64,10 @@ const LLM_PRICING = {
     perInputToken: 0.1 / 1_000_000, // $0.10 per 1M input tokens (Gemini 2.5 Flash)
     perOutputToken: 0.4 / 1_000_000, // $0.40 per 1M output tokens (Gemini 2.5 Flash)
   },
+  "60db": {
+    perInputToken: 0.5 / 1_000_000, // $0.50 per 1M input tokens (60db chat, 60db.ai/pricing)
+    perOutputToken: 0.5 / 1_000_000, // $0.50 per 1M output tokens (60db chat, 60db.ai/pricing)
+  },
 };
 
 const PRICING = {
@@ -73,6 +77,9 @@ const PRICING = {
     kokoro: 0, // Free — local inference
     "gemini-tts": 0.00002, // ~$0.02/1K chars (Gemini 2.5 Flash TTS: $0.50/1M text in + $10/1M audio out, ~2 audio tokens per char)
     "openai-tts": 0.00005, // ~$0.05 per 1K chars (gpt-4o-mini-tts: $0.60/1M text tokens in + $12/1M audio tokens out)
+    "60db": 0.00002, // $0.02 per 1K chars (60db TTS, 60db.ai/pricing)
+    "60db-stream": 0.00002, // $0.02 per 1K chars (60db TTS stream, 60db.ai/pricing)
+    "60db-ws": 0.00002, // $0.02 per 1K chars (60db TTS WebSocket, 60db.ai/pricing)
   } satisfies Record<TTSProviderKey, number>,
   // Gemini 3.1 Flash Image Preview: $60/M output tokens
   // 1080x1920 (>1024px, <=2048px) = 1680 tokens = $0.101/image

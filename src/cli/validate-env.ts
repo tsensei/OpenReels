@@ -68,6 +68,13 @@ export function validateEnv(opts: {
       required: opts.provider === "openrouter",
     },
     {
+      key: "SIXTYDB_API_KEY",
+      provider: "60db (LLM/TTS)",
+      signupUrl: "https://60db.ai",
+      required:
+        opts.provider === "60db" || ["60db", "60db-stream", "60db-ws"].includes(opts.ttsProvider),
+    },
+    {
       key: "TAVILY_API_KEY",
       provider: "Tavily (Web Search)",
       signupUrl: "https://tavily.com/",

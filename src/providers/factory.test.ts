@@ -9,6 +9,7 @@ import { GeminiLLM } from "./llm/gemini.js";
 import { OpenAILLM } from "./llm/openai.js";
 import { OpenAICompatibleLLM } from "./llm/openai-compatible.js";
 import { OpenRouterLLM } from "./llm/openrouter.js";
+import { SixtyDbLLM } from "./llm/sixtydb.js";
 import { BundledMusic } from "./music/bundled-adapter.js";
 import { LyriaMusic } from "./music/lyria.js";
 import { PexelsStock } from "./stock/pexels.js";
@@ -19,6 +20,10 @@ import { GeminiTTS } from "./tts/gemini.js";
 import { InworldTTS } from "./tts/inworld.js";
 import { KokoroTTS } from "./tts/kokoro.js";
 import { OpenAITTS } from "./tts/openai.js";
+import { SixtyDbAligner } from "./tts/sixtydb-aligner.js";
+import { SixtyDbStreamTTS } from "./tts/sixtydb-stream.js";
+import { SixtyDbWsTTS } from "./tts/sixtydb-ws.js";
+import { SixtyDbTTS } from "./tts/sixtydb.js";
 
 vi.mock("./llm/anthropic.js", () => ({
   AnthropicLLM: vi.fn().mockImplementation(() => ({ id: "anthropic", generate: vi.fn() })),
@@ -79,6 +84,21 @@ vi.mock("./llm/openai-compatible.js", () => ({
   OpenAICompatibleLLM: vi
     .fn()
     .mockImplementation(() => ({ id: "openai-compatible", generate: vi.fn() })),
+}));
+vi.mock("./llm/sixtydb.js", () => ({
+  SixtyDbLLM: vi.fn().mockImplementation(() => ({ id: "60db", generate: vi.fn() })),
+}));
+vi.mock("./tts/sixtydb.js", () => ({
+  SixtyDbTTS: vi.fn().mockImplementation(() => ({ generate: vi.fn() })),
+}));
+vi.mock("./tts/sixtydb-stream.js", () => ({
+  SixtyDbStreamTTS: vi.fn().mockImplementation(() => ({ generate: vi.fn() })),
+}));
+vi.mock("./tts/sixtydb-ws.js", () => ({
+  SixtyDbWsTTS: vi.fn().mockImplementation(() => ({ generate: vi.fn() })),
+}));
+vi.mock("./tts/sixtydb-aligner.js", () => ({
+  SixtyDbAligner: vi.fn().mockImplementation(() => ({ align: vi.fn() })),
 }));
 vi.mock("./search/tavily.js", () => ({
   createTavilySearchTools: vi.fn((apiKey?: string) => ({ tavily_search: { apiKey } })),
@@ -253,6 +273,79 @@ describe("createProviders", () => {
     expect(OpenAITTS).toHaveBeenCalled();
     expect(AlignedTTSProvider).toHaveBeenCalled();
     expect(providers.tts).toBeDefined();
+  });
+
+  it("creates SixtyDbLLM when llm config is 60db", () => {
+    const providers = createProviders({
+      llm: "60db",
+      tts: "elevenlabs",
+      image: "gemini",
+      searchProvider: "none",
+      keys: { SIXTYDB_API_KEY: "test-60db-key" },
+    });
+
+    expect(SixtyDbLLM).toHaveBeenCalledWith(undefined, "test-60db-key", {});
+    expect(providers.llm).toBeDefined();
+  });
+
+  it("wraps SixtyDbTTS in AlignedTTSProvider", () => {
+    const providers = createProviders({
+      llm: "anthropic",
+      tts: "60db",
+      image: "gemini",
+      searchProvider: "none",
+      keys: { SIXTYDB_API_KEY: "test-60db-key" },
+    });
+
+    expect(SixtyDbTTS).toHaveBeenCalledWith(undefined, "test-60db-key");
+    expect(AlignedTTSProvider).toHaveBeenCalled();
+    expect(providers.tts).toBeDefined();
+  });
+
+  it("wraps SixtyDbStreamTTS in AlignedTTSProvider", () => {
+    const providers = createProviders({
+      llm: "anthropic",
+      tts: "60db-stream",
+      image: "gemini",
+      searchProvider: "none",
+      keys: { SIXTYDB_API_KEY: "test-60db-key" },
+    });
+
+    expect(SixtyDbStreamTTS).toHaveBeenCalledWith(undefined, "test-60db-key");
+    expect(AlignedTTSProvider).toHaveBeenCalled();
+    expect(providers.tts).toBeDefined();
+  });
+
+  it("wraps SixtyDbWsTTS in AlignedTTSProvider", () => {
+    const providers = createProviders({
+      llm: "anthropic",
+      tts: "60db-ws",
+      image: "gemini",
+      searchProvider: "none",
+      keys: { SIXTYDB_API_KEY: "test-60db-key" },
+    });
+
+    expect(SixtyDbWsTTS).toHaveBeenCalledWith(undefined, "test-60db-key");
+    expect(AlignedTTSProvider).toHaveBeenCalled();
+    expect(providers.tts).toBeDefined();
+  });
+
+  it("uses SixtyDbAligner when SIXTYDB_USE_CLOUD_ALIGNER is true", () => {
+    process.env.SIXTYDB_USE_CLOUD_ALIGNER = "true";
+
+    const providers = createProviders({
+      llm: "anthropic",
+      tts: "60db",
+      image: "gemini",
+      searchProvider: "none",
+      keys: { SIXTYDB_API_KEY: "test-60db-key" },
+    });
+
+    expect(SixtyDbAligner).toHaveBeenCalledWith("test-60db-key");
+    expect(AlignedTTSProvider).toHaveBeenCalled();
+    expect(providers.tts).toBeDefined();
+
+    delete process.env.SIXTYDB_USE_CLOUD_ALIGNER;
   });
 
   it("does not wrap ElevenLabs in AlignedTTSProvider", () => {
